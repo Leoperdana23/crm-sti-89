@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -9,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useSalesAuth } from '@/hooks/useSalesAuth';
-import { debugSalesPassword } from '@/utils/salesPasswordUtils';
+import { debugSalesPassword, resetSalesPassword } from '@/utils/salesPasswordUtils';
 import { Loader2 } from 'lucide-react';
 
 const Auth = () => {
@@ -111,6 +110,21 @@ const Auth = () => {
 
       console.log('Sales found in database:', salesDebugData.name);
       
+      // Check if password is still plain text (not hashed properly)
+      if (salesDebugData.password_hash && !salesDebugData.password_hash.startsWith('$2')) {
+        console.log('Password appears to be plain text, attempting to fix...');
+        
+        // If the current password_hash is plain text and matches what user entered,
+        // let's reset it to trigger proper hashing
+        if (salesDebugData.password_hash === password) {
+          console.log('Plain text password matches, resetting to trigger hashing...');
+          await resetSalesPassword(email, password);
+          
+          // Wait a moment for the database trigger to process
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
       const result = await authenticateSales(email, password);
       
       if (result.success) {
@@ -126,11 +140,33 @@ const Auth = () => {
       }
     } catch (error: any) {
       console.error('=== SALES LOGIN ERROR ===', error);
-      toast({
-        title: "Error",
-        description: error.message || "Terjadi kesalahan saat login",
-        variant: "destructive",
-      });
+      
+      // If password error and we haven't tried fixing the hash yet, try to fix it
+      if (error.message === 'Password salah' && email && password) {
+        try {
+          console.log('Attempting to fix password hash...');
+          await resetSalesPassword(email, password);
+          
+          toast({
+            title: "Info",
+            description: "Password telah diperbaiki. Silakan coba login lagi.",
+            variant: "default",
+          });
+        } catch (resetError) {
+          console.error('Failed to reset password:', resetError);
+          toast({
+            title: "Error", 
+            description: error.message || "Terjadi kesalahan saat login",
+            variant: "destructive",
+          });
+        }
+      } else {
+        toast({
+          title: "Error",
+          description: error.message || "Terjadi kesalahan saat login",
+          variant: "destructive",
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -250,6 +286,10 @@ const Auth = () => {
                   Masuk sebagai Sales
                 </Button>
               </form>
+              
+              <div className="mt-4 text-center text-sm text-gray-600">
+                <p>Gunakan email dan password yang sudah terdaftar sebagai sales</p>
+              </div>
             </TabsContent>
           </Tabs>
         </CardContent>

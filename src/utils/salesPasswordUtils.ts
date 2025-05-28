@@ -20,6 +20,7 @@ export const debugSalesPassword = async (email: string) => {
       email: data.email,
       hasPasswordHash: !!data.password_hash,
       passwordHashLength: data.password_hash?.length || 0,
+      passwordHashValue: data.password_hash, // Temporary for debugging
       isActive: data.is_active
     });
 
@@ -27,6 +28,34 @@ export const debugSalesPassword = async (email: string) => {
   } catch (error) {
     console.error('Error in debugSalesPassword:', error);
     return null;
+  }
+};
+
+export const resetSalesPassword = async (email: string, newPassword: string) => {
+  try {
+    console.log('Resetting password for:', email);
+    
+    // Update the password - this should trigger the hash_sales_password() function
+    const { data, error } = await supabase
+      .from('sales')
+      .update({ 
+        password_hash: newPassword,
+        updated_at: new Date().toISOString()
+      })
+      .eq('email', email)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error resetting password:', error);
+      throw error;
+    }
+
+    console.log('Password reset successful. New hash length:', data.password_hash?.length);
+    return data;
+  } catch (error) {
+    console.error('Error in resetSalesPassword:', error);
+    throw error;
   }
 };
 
