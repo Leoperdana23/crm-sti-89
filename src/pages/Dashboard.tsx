@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Users, Building, TrendingUp, DollarSign, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -77,14 +76,20 @@ const Dashboard = () => {
           title="Total Pelanggan"
           value={totalCustomers}
           icon={Users}
-          trend={monthlyGrowth}
+          trend={{
+            value: monthlyGrowth,
+            isPositive: true
+          }}
           color="blue"
         />
         <StatsCard
           title="Total Deal"
           value={totalDeals}
           icon={CheckCircle}
-          trend={conversionRate}
+          trend={{
+            value: conversionRate,
+            isPositive: conversionRate > 0
+          }}
           color="green"
         />
         <StatsCard
