@@ -9,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useSalesAuth } from '@/hooks/useSalesAuth';
+import { debugSalesPassword } from '@/utils/salesPasswordUtils';
 import { Loader2 } from 'lucide-react';
 
 const Auth = () => {
@@ -100,6 +101,16 @@ const Auth = () => {
     setLoading(true);
 
     try {
+      console.log('=== SALES LOGIN DEBUG START ===');
+      
+      // Debug: Check sales data first
+      const salesDebugData = await debugSalesPassword(email);
+      if (!salesDebugData) {
+        throw new Error('Sales tidak ditemukan di database');
+      }
+
+      console.log('Sales found in database:', salesDebugData.name);
+      
       const result = await authenticateSales(email, password);
       
       if (result.success) {
@@ -110,9 +121,11 @@ const Auth = () => {
         
         // Store sales user info in localStorage for simple session management
         localStorage.setItem('salesUser', JSON.stringify(result.user));
+        console.log('=== SALES LOGIN SUCCESS ===');
         navigate('/');
       }
     } catch (error: any) {
+      console.error('=== SALES LOGIN ERROR ===', error);
       toast({
         title: "Error",
         description: error.message || "Terjadi kesalahan saat login",
