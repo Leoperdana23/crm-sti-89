@@ -1,9 +1,10 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Phone, MapPin, Calendar, Edit, Trash2 } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Phone, MapPin, Calendar, Edit, Trash2, RotateCcw } from 'lucide-react';
 import { Customer } from '@/types/customer';
 
 interface CustomerCardProps {
@@ -11,9 +12,18 @@ interface CustomerCardProps {
   onEdit: (customer: Customer) => void;
   onDelete: (id: string) => void;
   onWhatsApp: (phone: string) => void;
+  onStatusUpdate?: (customerId: string, status: Customer['status']) => void;
 }
 
-const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onEdit, onDelete, onWhatsApp }) => {
+const CustomerCard: React.FC<CustomerCardProps> = ({ 
+  customer, 
+  onEdit, 
+  onDelete, 
+  onWhatsApp, 
+  onStatusUpdate 
+}) => {
+  const [isEditingStatus, setIsEditingStatus] = useState(false);
+
   const getStatusColor = (status: string) => {
     switch (status) {
       case 'Prospek': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
@@ -32,15 +42,61 @@ const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onEdit, onDelete,
     }
   };
 
+  const handleStatusChange = (newStatus: string) => {
+    if (onStatusUpdate) {
+      onStatusUpdate(customer.id, newStatus as Customer['status']);
+    }
+    setIsEditingStatus(false);
+  };
+
   return (
     <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
       <CardHeader className="pb-3">
         <div className="flex justify-between items-start">
-          <div>
+          <div className="flex-1">
             <h3 className="font-semibold text-lg text-gray-900">{customer.name}</h3>
-            <Badge className={getStatusColor(customer.status)}>
-              {customer.status}
-            </Badge>
+            <div className="flex items-center gap-2 mt-1">
+              {!isEditingStatus ? (
+                <>
+                  <Badge className={getStatusColor(customer.status)}>
+                    {customer.status}
+                  </Badge>
+                  {(customer.status === 'Deal' || customer.status === 'Tidak Jadi') && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setIsEditingStatus(true)}
+                      className="h-6 px-2 text-gray-500 hover:text-gray-700"
+                      title="Edit Status"
+                    >
+                      <RotateCcw className="h-3 w-3" />
+                    </Button>
+                  )}
+                </>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <Select onValueChange={handleStatusChange} defaultValue={customer.status}>
+                    <SelectTrigger className="h-7 w-32 text-xs">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Prospek">Prospek</SelectItem>
+                      <SelectItem value="Follow-up">Follow-up</SelectItem>
+                      <SelectItem value="Deal">Deal</SelectItem>
+                      <SelectItem value="Tidak Jadi">Tidak Jadi</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setIsEditingStatus(false)}
+                    className="h-6 px-2 text-gray-500 hover:text-gray-700"
+                  >
+                    ✕
+                  </Button>
+                </div>
+              )}
+            </div>
           </div>
           <div className="flex space-x-2">
             <Button

@@ -81,6 +81,32 @@ const Customers = () => {
     window.open(`https://wa.me/${whatsappPhone}`, '_blank');
   };
 
+  const handleStatusUpdate = async (customerId: string, newStatus: Customer['status']) => {
+    try {
+      const customer = customers.find(c => c.id === customerId);
+      if (!customer) return;
+
+      const updateData = {
+        ...customer,
+        status: newStatus,
+        dealDate: newStatus === 'Deal' && customer.status !== 'Deal' ? new Date().toISOString().split('T')[0] : customer.dealDate
+      };
+
+      await updateCustomer(customerId, updateData);
+      
+      toast({
+        title: "Berhasil",
+        description: `Status pelanggan berhasil diubah ke ${newStatus}`,
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat mengubah status pelanggan.",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -167,6 +193,7 @@ const Customers = () => {
             onEdit={handleEdit}
             onDelete={handleDelete}
             onWhatsApp={handleWhatsApp}
+            onStatusUpdate={handleStatusUpdate}
           />
         ))}
       </div>
