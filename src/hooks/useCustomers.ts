@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Customer } from '@/types/customer';
@@ -58,24 +57,50 @@ export const useCustomers = () => {
 
   const addCustomer = async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'interactions'>) => {
     try {
+      console.log('Adding customer with data:', customerData);
+      
+      // Ensure required fields are present
+      if (!customerData.name?.trim()) {
+        throw new Error('Nama harus diisi');
+      }
+      if (!customerData.phone?.trim()) {
+        throw new Error('Nomor HP harus diisi');
+      }
+      if (!customerData.address?.trim()) {
+        throw new Error('Alamat harus diisi');
+      }
+      if (!customerData.needs?.trim()) {
+        throw new Error('Kebutuhan harus diisi');
+      }
+      if (!customerData.branch_id) {
+        throw new Error('Cabang harus dipilih');
+      }
+      if (!customerData.sales_id) {
+        throw new Error('Sales harus dipilih');
+      }
+
+      const insertData = {
+        name: customerData.name.trim(),
+        phone: customerData.phone.trim(),
+        address: customerData.address.trim(),
+        birth_date: customerData.birth_date || null,
+        id_number: customerData.id_number || null,
+        needs: customerData.needs.trim(),
+        notes: customerData.notes || null,
+        status: customerData.status,
+        deal_date: customerData.deal_date || null,
+        branch_id: customerData.branch_id,
+        sales_id: customerData.sales_id,
+        survey_status: customerData.status === 'Deal' ? 'belum_disurvei' : null,
+        work_status: customerData.status === 'Deal' ? 'not_started' : null,
+        assigned_employees: customerData.assigned_employees ? JSON.stringify(customerData.assigned_employees) : null
+      };
+
+      console.log('Insert data:', insertData);
+
       const { data, error } = await supabase
         .from('customers')
-        .insert({
-          name: customerData.name,
-          phone: customerData.phone,
-          address: customerData.address,
-          birth_date: customerData.birth_date,
-          id_number: customerData.id_number,
-          needs: customerData.needs,
-          notes: customerData.notes,
-          status: customerData.status,
-          deal_date: customerData.deal_date,
-          branch_id: customerData.branch_id,
-          sales_id: customerData.sales_id === 'no-sales' ? null : customerData.sales_id,
-          survey_status: customerData.status === 'Deal' ? 'belum_disurvei' : null,
-          work_status: customerData.status === 'Deal' ? 'not_started' : null,
-          assigned_employees: customerData.assigned_employees ? JSON.stringify(customerData.assigned_employees) : null
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -116,7 +141,7 @@ export const useCustomers = () => {
           status: updates.status,
           deal_date: updates.deal_date,
           branch_id: updates.branch_id,
-          sales_id: updates.sales_id === 'no-sales' ? null : updates.sales_id,
+          sales_id: updates.sales_id,
           survey_status: updates.status === 'Deal' ? 'belum_disurvei' : updates.survey_status,
           work_status: updates.work_status,
           work_start_date: updates.work_start_date,

@@ -22,7 +22,7 @@ const customerSchema = z.object({
   notes: z.string().optional(),
   status: z.enum(['Prospek', 'Follow-up', 'Deal', 'Tidak Jadi']),
   branch_id: z.string().min(1, 'Cabang harus dipilih'),
-  sales_id: z.string().min(1, 'Sales harus dipilih').refine(val => val !== 'no-sales', 'Sales harus dipilih'),
+  sales_id: z.string().min(1, 'Sales harus dipilih'),
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
@@ -53,9 +53,17 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
     },
   });
 
+  console.log('Form errors:', form.formState.errors);
+  console.log('Form values:', form.getValues());
+
+  const handleSubmit = (data: CustomerFormData) => {
+    console.log('Submitting customer data:', data);
+    onSubmit(data);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
@@ -135,7 +143,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Cabang *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih cabang" />
@@ -160,7 +168,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Status *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih status" />
@@ -184,7 +192,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Sales *</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih sales" />
