@@ -4,25 +4,67 @@ import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, LogOut, UserCog, Settings, Shield, Wrench } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
+import { usePermissions } from '@/hooks/usePermissions';
 import { Button } from '@/components/ui/button';
 
 const Layout = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
+  const { permissions, rolePermissions } = usePermissions();
 
-  // Define all navigation items - now showing all menus without role filtering
-  const navigation = [
-    { name: 'Dashboard', href: '/', icon: BarChart3 },
-    { name: 'Pelanggan', href: '/customers', icon: Users },
-    { name: 'Follow-Up', href: '/follow-up', icon: UserCheck },
-    { name: 'Proses Pekerjaan', href: '/work-process', icon: Wrench },
-    { name: 'Survei', href: '/survey', icon: MessageSquare },
-    { name: 'Sales', href: '/sales', icon: UserCog },
-    { name: 'Cabang', href: '/branches', icon: Building },
-    { name: 'Laporan', href: '/reports', icon: FileText },
-    { name: 'Master User', href: '/users', icon: Settings },
-    { name: 'Hak Akses Role', href: '/role-permissions', icon: Shield },
+  // Get current user role - simplified for sales users
+  const getCurrentUserRole = () => {
+    const salesUser = localStorage.getItem('salesUser');
+    if (salesUser) {
+      return 'staff'; // Sales users are treated as staff
+    }
+    
+    // For regular auth users, you might want to implement role fetching
+    // For now, defaulting to 'staff' for safety
+    return 'staff';
+  };
+
+  const userRole = getCurrentUserRole();
+
+  // Define all navigation items with their permission mappings
+  const allNavigation = [
+    { name: 'Dashboard', href: '/', icon: BarChart3, permission: 'dashboard' },
+    { name: 'Pelanggan', href: '/customers', icon: Users, permission: 'customers' },
+    { name: 'Follow-Up', href: '/follow-up', icon: UserCheck, permission: 'follow_up' },
+    { name: 'Proses Pekerjaan', href: '/work-process', icon: Wrench, permission: 'work_process' },
+    { name: 'Survei', href: '/survey', icon: MessageSquare, permission: 'survey' },
+    { name: 'Sales', href: '/sales', icon: UserCog, permission: 'sales' },
+    { name: 'Cabang', href: '/branches', icon: Building, permission: 'branches' },
+    { name: 'Laporan', href: '/reports', icon: FileText, permission: 'reports' },
+    { name: 'Master User', href: '/users', icon: Settings, permission: 'users' },
+    { name: 'Hak Akses Role', href: '/role-permissions', icon: Shield, permission: 'role_permissions' },
   ];
+
+  // Filter navigation based on user permissions
+  const getVisibleNavigation = () => {
+    if (!permissions.length || !rolePermissions.length) {
+      // If permissions are still loading, show basic navigation for staff
+      if (userRole === 'staff') {
+        return allNavigation.filter(item => 
+          ['dashboard', 'customers', 'follow_up', 'work_process', 'survey'].includes(item.permission)
+        );
+      }
+      return allNavigation;
+    }
+
+    return allNavigation.filter(navItem => {
+      const permission = permissions.find(p => p.name === navItem.permission);
+      if (!permission) return false;
+
+      const rolePermission = rolePermissions.find(rp => 
+        rp.role === userRole && rp.permission_id === permission.id
+      );
+      
+      return rolePermission?.can_view || false;
+    });
+  };
+
+  const navigation = getVisibleNavigation();
 
   const handleLogout = async () => {
     await signOut();
@@ -72,7 +114,9 @@ const Layout = () => {
                   <p className="text-sm font-medium text-gray-900">
                     {user?.user_metadata?.full_name || user?.email || 'User'}
                   </p>
-                  <p className="text-xs text-gray-500">{user?.email}</p>
+                  <p className="text-xs text-gray-500">
+                    {user?.email} ({userRole})
+                  </p>
                 </div>
               </div>
               <Button

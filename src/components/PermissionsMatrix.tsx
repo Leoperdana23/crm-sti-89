@@ -27,7 +27,10 @@ const PermissionsMatrix: React.FC = () => {
   ) => {
     try {
       const currentPermission = getRolePermission(role, permissionId);
-      if (!currentPermission) return;
+      if (!currentPermission) {
+        console.log('No current permission found for', role, permissionId);
+        return;
+      }
 
       const updatedPermissions = {
         can_view: currentPermission.can_view,
@@ -44,6 +47,7 @@ const PermissionsMatrix: React.FC = () => {
         description: "Hak akses berhasil diperbarui",
       });
     } catch (error) {
+      console.error('Error updating permission:', error);
       toast({
         title: "Error",
         description: "Terjadi kesalahan saat memperbarui hak akses",

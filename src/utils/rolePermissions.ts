@@ -26,11 +26,12 @@ export const createRolePermissionsData = (permissions: Permission[]) => {
         canEdit = permission.name !== 'role_permissions';
         canDelete = permission.name !== 'role_permissions' && permission.name !== 'users';
       } else if (role === 'manager') {
-        // Manager gets access to all menus
-        hasAccess = true;
-        canCreate = true;
-        canEdit = true;
-        canDelete = permission.name !== 'users' && permission.name !== 'role_permissions';
+        // Manager gets access to all menus except user and role management
+        const managerRestrictedModules = ['users', 'role_permissions'];
+        hasAccess = !managerRestrictedModules.includes(permission.name);
+        canCreate = hasAccess;
+        canEdit = hasAccess;
+        canDelete = hasAccess && !['sales', 'branches'].includes(permission.name);
       } else if (role === 'staff') {
         // Staff only gets access to dashboard, customers, follow-up, work process, and survey
         const staffModules = ['dashboard', 'customers', 'follow_up', 'work_process', 'survey'];
