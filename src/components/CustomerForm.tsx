@@ -16,13 +16,13 @@ const customerSchema = z.object({
   name: z.string().min(1, 'Nama lengkap harus diisi'),
   phone: z.string().min(1, 'Nomor HP/WA harus diisi'),
   address: z.string().min(1, 'Alamat harus diisi'),
-  birthDate: z.string().optional(),
-  idNumber: z.string().optional(),
+  birth_date: z.string().optional(),
+  id_number: z.string().optional(),
   needs: z.string().min(1, 'Kebutuhan harus diisi'),
   notes: z.string().optional(),
   status: z.enum(['Prospek', 'Follow-up', 'Deal', 'Tidak Jadi']),
-  branchId: z.string().min(1, 'Cabang harus dipilih'),
-  salesId: z.string().min(1, 'Sales harus dipilih').refine(val => val !== 'no-sales', 'Sales harus dipilih'),
+  branch_id: z.string().min(1, 'Cabang harus dipilih'),
+  sales_id: z.string().min(1, 'Sales harus dipilih').refine(val => val !== 'no-sales', 'Sales harus dipilih'),
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
@@ -43,13 +43,13 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
       name: customer?.name || '',
       phone: customer?.phone || '',
       address: customer?.address || '',
-      birthDate: customer?.birthDate || '',
-      idNumber: customer?.idNumber || '',
+      birth_date: customer?.birth_date || '',
+      id_number: customer?.id_number || '',
       needs: customer?.needs || '',
       notes: customer?.notes || '',
       status: customer?.status || 'Prospek',
-      branchId: customer?.branchId || '',
-      salesId: customer?.salesId || '',
+      branch_id: customer?.branch_id || '',
+      sales_id: customer?.sales_id || '',
     },
   });
 
@@ -87,7 +87,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
 
           <FormField
             control={form.control}
-            name="birthDate"
+            name="birth_date"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Tanggal Lahir</FormLabel>
@@ -101,7 +101,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
 
           <FormField
             control={form.control}
-            name="idNumber"
+            name="id_number"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Nomor Identitas</FormLabel>
@@ -131,7 +131,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <FormField
             control={form.control}
-            name="branchId"
+            name="branch_id"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Cabang *</FormLabel>
@@ -180,7 +180,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
 
           <FormField
             control={form.control}
-            name="salesId"
+            name="sales_id"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Sales *</FormLabel>

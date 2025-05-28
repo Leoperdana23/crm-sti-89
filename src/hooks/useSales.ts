@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Sales } from '@/types/sales';
@@ -27,16 +28,7 @@ export const useSales = () => {
         return;
       }
 
-      const transformedSales: Sales[] = (data || []).map(sale => ({
-        ...sale,
-        branchId: sale.branch_id,
-        isActive: sale.is_active,
-        passwordHash: sale.password_hash,
-        createdAt: sale.created_at,
-        updatedAt: sale.updated_at,
-      }));
-
-      setSales(transformedSales);
+      setSales(data || []);
     } catch (error) {
       console.error('Error in fetchSales:', error);
     } finally {
@@ -48,15 +40,15 @@ export const useSales = () => {
     fetchSales();
   }, []);
 
-  const addSales = async (salesData: Omit<Sales, 'id' | 'createdAt' | 'updatedAt'> & { password?: string }) => {
+  const addSales = async (salesData: Omit<Sales, 'id' | 'created_at' | 'updated_at'> & { password?: string }) => {
     try {
       const insertData: any = {
         name: salesData.name,
         code: salesData.code,
         phone: salesData.phone,
         email: salesData.email,
-        branch_id: salesData.branchId === 'no-branch' ? null : salesData.branchId,
-        is_active: salesData.isActive
+        branch_id: salesData.branch_id === 'no-branch' ? null : salesData.branch_id,
+        is_active: salesData.is_active
       };
 
       // Add password if provided - let the database trigger handle the hashing
@@ -78,17 +70,8 @@ export const useSales = () => {
       }
 
       if (data) {
-        const newSales: Sales = {
-          ...data,
-          branchId: data.branch_id,
-          isActive: data.is_active,
-          passwordHash: data.password_hash,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        };
-        
-        setSales(prev => [newSales, ...prev]);
-        return newSales;
+        setSales(prev => [data, ...prev]);
+        return data;
       }
     } catch (error) {
       console.error('Error in addSales:', error);
@@ -103,8 +86,8 @@ export const useSales = () => {
         code: updates.code,
         phone: updates.phone,
         email: updates.email,
-        branch_id: updates.branchId === 'no-branch' ? null : updates.branchId,
-        is_active: updates.isActive
+        branch_id: updates.branch_id === 'no-branch' ? null : updates.branch_id,
+        is_active: updates.is_active
       };
 
       // Only update password if provided - let the database trigger handle the hashing
@@ -127,18 +110,9 @@ export const useSales = () => {
       }
 
       if (data) {
-        const updatedSales: Sales = {
-          ...data,
-          branchId: data.branch_id,
-          isActive: data.is_active,
-          passwordHash: data.password_hash,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        };
-
         setSales(prev => 
           prev.map(sale => 
-            sale.id === id ? updatedSales : sale
+            sale.id === id ? data : sale
           )
         );
       }
@@ -168,7 +142,7 @@ export const useSales = () => {
   };
 
   const getSalesByBranch = (branchId: string) => {
-    return sales.filter(sale => sale.branchId === branchId);
+    return sales.filter(sale => sale.branch_id === branchId);
   };
 
   return {

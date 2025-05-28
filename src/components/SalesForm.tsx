@@ -16,7 +16,7 @@ const salesSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email('Email tidak valid').optional().or(z.literal('')),
   password: z.string().min(6, 'Password minimal 6 karakter').optional().or(z.literal('')),
-  branchId: z.string().optional(),
+  branch_id: z.string().optional(),
 });
 
 type SalesFormData = z.infer<typeof salesSchema>;
@@ -38,7 +38,7 @@ const SalesForm: React.FC<SalesFormProps> = ({ sales, onSubmit, onCancel }) => {
       phone: sales?.phone || '',
       email: sales?.email || '',
       password: '',
-      branchId: sales?.branchId || 'no-branch',
+      branch_id: sales?.branch_id || 'no-branch',
     },
   });
 
@@ -123,7 +123,7 @@ const SalesForm: React.FC<SalesFormProps> = ({ sales, onSubmit, onCancel }) => {
 
         <FormField
           control={form.control}
-          name="branchId"
+          name="branch_id"
           render={({ field }) => (
             <FormItem>
               <FormLabel>Cabang</FormLabel>

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -51,8 +52,8 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
   };
 
   const getSalesName = () => {
-    if (!customer.salesId) return null;
-    const salesPerson = sales.find(s => s.id === customer.salesId);
+    if (!customer.sales_id) return null;
+    const salesPerson = sales.find(s => s.id === customer.sales_id);
     return salesPerson?.name;
   };
 
@@ -147,7 +148,7 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
         
         <div className="flex items-center text-sm text-gray-600">
           <Calendar className="h-4 w-4 mr-2" />
-          <span>{formatDate(customer.birthDate)}</span>
+          <span>{formatDate(customer.birth_date)}</span>
         </div>
 
         {getSalesName() && (

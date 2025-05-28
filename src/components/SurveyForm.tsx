@@ -10,17 +10,17 @@ import { Customer, Survey } from '@/types/customer';
 
 interface SurveyFormProps {
   customer: Customer;
-  onSubmit: (surveyData: Omit<Survey, 'id' | 'isCompleted' | 'completedAt' | 'surveyToken'>) => Promise<void>;
+  onSubmit: (surveyData: Omit<Survey, 'id' | 'is_completed' | 'completed_at' | 'survey_token'>) => Promise<void>;
   onCancel: () => void;
 }
 
 const SurveyForm: React.FC<SurveyFormProps> = ({ customer, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
-    serviceTechnician: 5,
-    serviceSales: 5,
-    productQuality: 5,
-    usageClarity: 5,
-    priceApproval: true,
+    service_technician: 5,
+    service_sales: 5,
+    product_quality: 5,
+    usage_clarity: 5,
+    price_approval: true,
     testimonial: '',
     suggestions: ''
   });
@@ -29,8 +29,8 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ customer, onSubmit, onCancel })
     e.preventDefault();
     
     const surveyData = {
-      customerId: customer.id,
-      dealDate: customer.dealDate || new Date().toISOString().split('T')[0],
+      customer_id: customer.id,
+      deal_date: customer.deal_date || new Date().toISOString().split('T')[0],
       ...formData
     };
 
@@ -67,16 +67,16 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ customer, onSubmit, onCancel })
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {renderRatingScale('serviceTechnician', 'Pelayanan Teknisi (1-10)')}
-          {renderRatingScale('serviceSales', 'Pelayanan Sales/CS (1-10)')}
-          {renderRatingScale('productQuality', 'Kualitas Produk (1-10)')}
-          {renderRatingScale('usageClarity', 'Kejelasan Penggunaan (1-10)')}
+          {renderRatingScale('service_technician', 'Pelayanan Teknisi (1-10)')}
+          {renderRatingScale('service_sales', 'Pelayanan Sales/CS (1-10)')}
+          {renderRatingScale('product_quality', 'Kualitas Produk (1-10)')}
+          {renderRatingScale('usage_clarity', 'Kejelasan Penggunaan (1-10)')}
 
           <div className="space-y-3">
             <Label className="text-sm font-medium">Harga Sesuai?</Label>
             <RadioGroup
-              value={formData.priceApproval.toString()}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, priceApproval: value === 'true' }))}
+              value={formData.price_approval.toString()}
+              onValueChange={(value) => setFormData(prev => ({ ...prev, price_approval: value === 'true' }))}
               className="flex gap-4"
             >
               <div className="flex items-center space-x-2">

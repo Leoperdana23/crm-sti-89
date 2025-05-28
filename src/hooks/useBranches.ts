@@ -20,14 +20,7 @@ export const useBranches = () => {
         return;
       }
 
-      const transformedBranches: Branch[] = (data || []).map(branch => ({
-        ...branch,
-        managerName: branch.manager_name,
-        createdAt: branch.created_at,
-        updatedAt: branch.updated_at,
-      }));
-
-      setBranches(transformedBranches);
+      setBranches(data || []);
     } catch (error) {
       console.error('Error in fetchBranches:', error);
     } finally {
@@ -39,7 +32,7 @@ export const useBranches = () => {
     fetchBranches();
   }, []);
 
-  const addBranch = async (branchData: Omit<Branch, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addBranch = async (branchData: Omit<Branch, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       const { data, error } = await supabase
         .from('branches')
@@ -48,7 +41,7 @@ export const useBranches = () => {
           code: branchData.code,
           address: branchData.address,
           phone: branchData.phone,
-          manager_name: branchData.managerName,
+          manager_name: branchData.manager_name,
         })
         .select()
         .single();
@@ -59,15 +52,8 @@ export const useBranches = () => {
       }
 
       if (data) {
-        const newBranch: Branch = {
-          ...data,
-          managerName: data.manager_name,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        };
-        
-        setBranches(prev => [...prev, newBranch]);
-        return newBranch;
+        setBranches(prev => [...prev, data]);
+        return data;
       }
     } catch (error) {
       console.error('Error in addBranch:', error);
@@ -84,7 +70,7 @@ export const useBranches = () => {
           code: updates.code,
           address: updates.address,
           phone: updates.phone,
-          manager_name: updates.managerName,
+          manager_name: updates.manager_name,
         })
         .eq('id', id)
         .select()
@@ -96,16 +82,9 @@ export const useBranches = () => {
       }
 
       if (data) {
-        const updatedBranch: Branch = {
-          ...data,
-          managerName: data.manager_name,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-        };
-
         setBranches(prev => 
           prev.map(branch => 
-            branch.id === id ? updatedBranch : branch
+            branch.id === id ? data : branch
           )
         );
       }

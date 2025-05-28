@@ -14,7 +14,7 @@ const branchSchema = z.object({
   code: z.string().min(1, 'Kode cabang harus diisi'),
   address: z.string().optional(),
   phone: z.string().optional(),
-  managerName: z.string().optional(),
+  manager_name: z.string().optional(),
 });
 
 type BranchFormData = z.infer<typeof branchSchema>;
@@ -33,7 +33,7 @@ const BranchForm: React.FC<BranchFormProps> = ({ branch, onSubmit, onCancel }) =
       code: branch?.code || '',
       address: branch?.address || '',
       phone: branch?.phone || '',
-      managerName: branch?.managerName || '',
+      manager_name: branch?.manager_name || '',
     },
   });
 
@@ -101,7 +101,7 @@ const BranchForm: React.FC<BranchFormProps> = ({ branch, onSubmit, onCancel }) =
 
           <FormField
             control={form.control}
-            name="managerName"
+            name="manager_name"
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Nama Manager</FormLabel>

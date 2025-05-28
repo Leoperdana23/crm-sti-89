@@ -36,18 +36,18 @@ export const usePublicSurvey = (token: string) => {
         if (surveyData) {
           const transformedSurvey: Survey = {
             id: surveyData.id,
-            customerId: surveyData.customer_id,
-            dealDate: surveyData.deal_date,
-            serviceTechnician: surveyData.service_technician,
-            serviceSales: surveyData.service_sales,
-            productQuality: surveyData.product_quality,
-            usageClarity: surveyData.usage_clarity,
-            priceApproval: surveyData.price_approval,
+            customer_id: surveyData.customer_id,
+            deal_date: surveyData.deal_date,
+            service_technician: surveyData.service_technician,
+            service_sales: surveyData.service_sales,
+            product_quality: surveyData.product_quality,
+            usage_clarity: surveyData.usage_clarity,
+            price_approval: surveyData.price_approval,
             testimonial: surveyData.testimonial || '',
             suggestions: surveyData.suggestions || '',
-            isCompleted: surveyData.is_completed,
-            completedAt: surveyData.completed_at,
-            surveyToken: surveyData.survey_token
+            is_completed: surveyData.is_completed,
+            completed_at: surveyData.completed_at,
+            survey_token: surveyData.survey_token
           };
 
           setSurvey(transformedSurvey);
@@ -71,11 +71,11 @@ export const usePublicSurvey = (token: string) => {
       const { error } = await supabase
         .from('surveys')
         .update({
-          service_technician: updatedData.serviceTechnician,
-          service_sales: updatedData.serviceSales,
-          product_quality: updatedData.productQuality,
-          usage_clarity: updatedData.usageClarity,
-          price_approval: updatedData.priceApproval,
+          service_technician: updatedData.service_technician,
+          service_sales: updatedData.service_sales,
+          product_quality: updatedData.product_quality,
+          usage_clarity: updatedData.usage_clarity,
+          price_approval: updatedData.price_approval,
           testimonial: updatedData.testimonial,
           suggestions: updatedData.suggestions,
           is_completed: true,
@@ -92,8 +92,8 @@ export const usePublicSurvey = (token: string) => {
         setSurvey({
           ...survey,
           ...updatedData,
-          isCompleted: true,
-          completedAt: new Date().toISOString()
+          is_completed: true,
+          completed_at: new Date().toISOString()
         });
       }
     } catch (error) {

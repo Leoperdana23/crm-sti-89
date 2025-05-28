@@ -58,15 +58,15 @@ const SalesCard: React.FC<SalesCardProps> = ({ sales, onEdit, onDelete }) => {
             {sales.email}
           </div>
         )}
-        {sales.branchId && (
+        {sales.branch_id && (
           <div className="flex items-center text-sm text-gray-600">
             <Building className="h-4 w-4 mr-2" />
             Cabang terdaftar
           </div>
         )}
         <div className="pt-2">
-          <Badge variant={sales.isActive ? "default" : "secondary"}>
-            {sales.isActive ? "Aktif" : "Tidak Aktif"}
+          <Badge variant={sales.is_active ? "default" : "secondary"}>
+            {sales.is_active ? "Aktif" : "Tidak Aktif"}
           </Badge>
         </div>
       </CardContent>

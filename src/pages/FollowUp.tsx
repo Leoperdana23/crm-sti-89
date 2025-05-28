@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,7 @@ const FollowUp = () => {
     const todayDay = today.getDate();
 
     return customers.filter(customer => {
-      const birthDate = new Date(customer.birthDate);
+      const birthDate = new Date(customer.birth_date);
       const birthMonth = birthDate.getMonth() + 1;
       const birthDay = birthDate.getDate();
       
@@ -72,7 +73,7 @@ const FollowUp = () => {
   const handleStatusUpdate = (customerId: string, newStatus: 'Deal' | 'Tidak Jadi', dealDate?: string) => {
     const updates: any = { status: newStatus };
     if (newStatus === 'Deal' && dealDate) {
-      updates.dealDate = dealDate;
+      updates.deal_date = dealDate;
     }
     
     updateCustomer(customerId, updates);

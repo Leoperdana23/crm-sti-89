@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Customer } from '@/types/customer';
@@ -39,21 +40,7 @@ export const useCustomers = () => {
       // Transform the data to match our Customer interface
       const transformedCustomers: Customer[] = (data || []).map((customer: CustomerWithAssignedEmployees) => ({
         ...customer,
-        birthDate: customer.birth_date,
-        idNumber: customer.id_number,
-        createdAt: customer.created_at,
-        updatedAt: customer.updated_at,
-        dealDate: customer.deal_date,
-        branchId: customer.branch_id,
-        salesId: customer.sales_id,
-        surveyStatus: customer.survey_status as Customer['surveyStatus'],
-        status: customer.status as Customer['status'],
-        workStatus: customer.work_status as Customer['workStatus'],
-        workStartDate: customer.work_start_date,
-        workCompletedDate: customer.work_completed_date,
-        workNotes: customer.work_notes,
-        estimatedDays: customer.estimated_days,
-        assignedEmployees: customer.assigned_employees ? JSON.parse(customer.assigned_employees) : [],
+        assigned_employees: customer.assigned_employees ? JSON.parse(customer.assigned_employees) : [],
         interactions: []
       }));
 
@@ -69,7 +56,7 @@ export const useCustomers = () => {
     fetchCustomers();
   }, []);
 
-  const addCustomer = async (customerData: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'interactions'>) => {
+  const addCustomer = async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'interactions'>) => {
     try {
       const { data, error } = await supabase
         .from('customers')
@@ -77,17 +64,17 @@ export const useCustomers = () => {
           name: customerData.name,
           phone: customerData.phone,
           address: customerData.address,
-          birth_date: customerData.birthDate,
-          id_number: customerData.idNumber,
+          birth_date: customerData.birth_date,
+          id_number: customerData.id_number,
           needs: customerData.needs,
           notes: customerData.notes,
           status: customerData.status,
-          deal_date: customerData.dealDate,
-          branch_id: customerData.branchId,
-          sales_id: customerData.salesId === 'no-sales' ? null : customerData.salesId,
+          deal_date: customerData.deal_date,
+          branch_id: customerData.branch_id,
+          sales_id: customerData.sales_id === 'no-sales' ? null : customerData.sales_id,
           survey_status: customerData.status === 'Deal' ? 'belum_disurvei' : null,
           work_status: customerData.status === 'Deal' ? 'not_started' : null,
-          assigned_employees: customerData.assignedEmployees ? JSON.stringify(customerData.assignedEmployees) : null
+          assigned_employees: customerData.assigned_employees ? JSON.stringify(customerData.assigned_employees) : null
         })
         .select()
         .single();
@@ -101,21 +88,7 @@ export const useCustomers = () => {
         const customerWithAssigned = data as CustomerWithAssignedEmployees;
         const newCustomer: Customer = {
           ...customerWithAssigned,
-          birthDate: customerWithAssigned.birth_date,
-          idNumber: customerWithAssigned.id_number,
-          createdAt: customerWithAssigned.created_at,
-          updatedAt: customerWithAssigned.updated_at,
-          dealDate: customerWithAssigned.deal_date,
-          branchId: customerWithAssigned.branch_id,
-          salesId: customerWithAssigned.sales_id,
-          surveyStatus: customerWithAssigned.survey_status as Customer['surveyStatus'],
-          status: customerWithAssigned.status as Customer['status'],
-          workStatus: customerWithAssigned.work_status as Customer['workStatus'],
-          workStartDate: customerWithAssigned.work_start_date,
-          workCompletedDate: customerWithAssigned.work_completed_date,
-          workNotes: customerWithAssigned.work_notes,
-          estimatedDays: customerWithAssigned.estimated_days,
-          assignedEmployees: customerWithAssigned.assigned_employees ? JSON.parse(customerWithAssigned.assigned_employees) : [],
+          assigned_employees: customerWithAssigned.assigned_employees ? JSON.parse(customerWithAssigned.assigned_employees) : [],
           interactions: []
         };
         
@@ -136,21 +109,21 @@ export const useCustomers = () => {
           name: updates.name,
           phone: updates.phone,
           address: updates.address,
-          birth_date: updates.birthDate,
-          id_number: updates.idNumber,
+          birth_date: updates.birth_date,
+          id_number: updates.id_number,
           needs: updates.needs,
           notes: updates.notes,
           status: updates.status,
-          deal_date: updates.dealDate,
-          branch_id: updates.branchId,
-          sales_id: updates.salesId === 'no-sales' ? null : updates.salesId,
-          survey_status: updates.status === 'Deal' ? 'belum_disurvei' : updates.surveyStatus,
-          work_status: updates.workStatus,
-          work_start_date: updates.workStartDate,
-          work_completed_date: updates.workCompletedDate,
-          work_notes: updates.workNotes,
-          estimated_days: updates.estimatedDays,
-          assigned_employees: updates.assignedEmployees ? JSON.stringify(updates.assignedEmployees) : null
+          deal_date: updates.deal_date,
+          branch_id: updates.branch_id,
+          sales_id: updates.sales_id === 'no-sales' ? null : updates.sales_id,
+          survey_status: updates.status === 'Deal' ? 'belum_disurvei' : updates.survey_status,
+          work_status: updates.work_status,
+          work_start_date: updates.work_start_date,
+          work_completed_date: updates.work_completed_date,
+          work_notes: updates.work_notes,
+          estimated_days: updates.estimated_days,
+          assigned_employees: updates.assigned_employees ? JSON.stringify(updates.assigned_employees) : null
         })
         .eq('id', id)
         .select()
@@ -165,21 +138,7 @@ export const useCustomers = () => {
         const customerWithAssigned = data as CustomerWithAssignedEmployees;
         const updatedCustomer: Customer = {
           ...customerWithAssigned,
-          birthDate: customerWithAssigned.birth_date,
-          idNumber: customerWithAssigned.id_number,
-          createdAt: customerWithAssigned.created_at,
-          updatedAt: customerWithAssigned.updated_at,
-          dealDate: customerWithAssigned.deal_date,
-          branchId: customerWithAssigned.branch_id,
-          salesId: customerWithAssigned.sales_id,
-          surveyStatus: customerWithAssigned.survey_status as Customer['surveyStatus'],
-          status: customerWithAssigned.status as Customer['status'],
-          workStatus: customerWithAssigned.work_status as Customer['workStatus'],
-          workStartDate: customerWithAssigned.work_start_date,
-          workCompletedDate: customerWithAssigned.work_completed_date,
-          workNotes: customerWithAssigned.work_notes,
-          estimatedDays: customerWithAssigned.estimated_days,
-          assignedEmployees: customerWithAssigned.assigned_employees ? JSON.parse(customerWithAssigned.assigned_employees) : [],
+          assigned_employees: customerWithAssigned.assigned_employees ? JSON.parse(customerWithAssigned.assigned_employees) : [],
           interactions: []
         };
 
@@ -219,11 +178,11 @@ export const useCustomers = () => {
   };
 
   const getCustomersByBranch = (branchId: string) => {
-    return customers.filter(customer => customer.branchId === branchId);
+    return customers.filter(customer => customer.branch_id === branchId);
   };
 
   const getCustomersBySales = (salesId: string) => {
-    return customers.filter(customer => customer.salesId === salesId);
+    return customers.filter(customer => customer.sales_id === salesId);
   };
 
   const getStats = () => {
@@ -238,7 +197,7 @@ export const useCustomers = () => {
 
   const getStatsByBranch = (branchId?: string) => {
     const filteredCustomers = branchId 
-      ? customers.filter(c => c.branchId === branchId)
+      ? customers.filter(c => c.branch_id === branchId)
       : customers;
 
     return {
@@ -252,7 +211,7 @@ export const useCustomers = () => {
 
   const getStatsBySales = (salesId?: string) => {
     const filteredCustomers = salesId 
-      ? customers.filter(c => c.salesId === salesId)
+      ? customers.filter(c => c.sales_id === salesId)
       : customers;
 
     return {
@@ -268,20 +227,20 @@ export const useCustomers = () => {
     const salesData: Record<string, { deals: number; prospects: number; followUps: number }> = {};
     
     customers.forEach(customer => {
-      if (customer.salesId) {
-        if (!salesData[customer.salesId]) {
-          salesData[customer.salesId] = { deals: 0, prospects: 0, followUps: 0 };
+      if (customer.sales_id) {
+        if (!salesData[customer.sales_id]) {
+          salesData[customer.sales_id] = { deals: 0, prospects: 0, followUps: 0 };
         }
         
         switch (customer.status) {
           case 'Deal':
-            salesData[customer.salesId].deals++;
+            salesData[customer.sales_id].deals++;
             break;
           case 'Prospek':
-            salesData[customer.salesId].prospects++;
+            salesData[customer.sales_id].prospects++;
             break;
           case 'Follow-up':
-            salesData[customer.salesId].followUps++;
+            salesData[customer.sales_id].followUps++;
             break;
         }
       }

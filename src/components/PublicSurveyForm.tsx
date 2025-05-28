@@ -16,11 +16,11 @@ interface PublicSurveyFormProps {
 }
 
 interface FormData {
-  serviceTechnician: number | null;
-  serviceSales: number | null;
-  productQuality: number | null;
-  usageClarity: number | null;
-  priceApproval: boolean | null;
+  service_technician: number | null;
+  service_sales: number | null;
+  product_quality: number | null;
+  usage_clarity: number | null;
+  price_approval: boolean | null;
   testimonial: string;
   suggestions: string;
 }
@@ -32,11 +32,11 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
   isCompleted = false 
 }) => {
   const [formData, setFormData] = useState<FormData>({
-    serviceTechnician: isCompleted ? survey.serviceTechnician || null : null,
-    serviceSales: isCompleted ? survey.serviceSales || null : null,
-    productQuality: isCompleted ? survey.productQuality || null : null,
-    usageClarity: isCompleted ? survey.usageClarity || null : null,
-    priceApproval: isCompleted ? (survey.priceApproval !== undefined ? survey.priceApproval : null) : null,
+    service_technician: isCompleted ? survey.service_technician || null : null,
+    service_sales: isCompleted ? survey.service_sales || null : null,
+    product_quality: isCompleted ? survey.product_quality || null : null,
+    usage_clarity: isCompleted ? survey.usage_clarity || null : null,
+    price_approval: isCompleted ? (survey.price_approval !== undefined ? survey.price_approval : null) : null,
     testimonial: survey.testimonial || '',
     suggestions: survey.suggestions || ''
   });
@@ -46,20 +46,20 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
   const validateForm = () => {
     const newErrors: Record<string, string> = {};
     
-    if (formData.serviceTechnician === null) {
-      newErrors.serviceTechnician = 'Harap pilih rating untuk Pelayanan Teknisi';
+    if (formData.service_technician === null) {
+      newErrors.service_technician = 'Harap pilih rating untuk Pelayanan Teknisi';
     }
-    if (formData.serviceSales === null) {
-      newErrors.serviceSales = 'Harap pilih rating untuk Pelayanan Sales/CS';
+    if (formData.service_sales === null) {
+      newErrors.service_sales = 'Harap pilih rating untuk Pelayanan Sales/CS';
     }
-    if (formData.productQuality === null) {
-      newErrors.productQuality = 'Harap pilih rating untuk Kualitas Produk';
+    if (formData.product_quality === null) {
+      newErrors.product_quality = 'Harap pilih rating untuk Kualitas Produk';
     }
-    if (formData.usageClarity === null) {
-      newErrors.usageClarity = 'Harap pilih rating untuk Kejelasan Penggunaan';
+    if (formData.usage_clarity === null) {
+      newErrors.usage_clarity = 'Harap pilih rating untuk Kejelasan Penggunaan';
     }
-    if (formData.priceApproval === null) {
-      newErrors.priceApproval = 'Harap pilih apakah harga sesuai';
+    if (formData.price_approval === null) {
+      newErrors.price_approval = 'Harap pilih apakah harga sesuai';
     }
 
     setErrors(newErrors);
@@ -79,11 +79,11 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
       setIsSubmitting(true);
       const submitData = {
         ...formData,
-        serviceTechnician: formData.serviceTechnician!,
-        serviceSales: formData.serviceSales!,
-        productQuality: formData.productQuality!,
-        usageClarity: formData.usageClarity!,
-        priceApproval: formData.priceApproval!,
+        service_technician: formData.service_technician!,
+        service_sales: formData.service_sales!,
+        product_quality: formData.product_quality!,
+        usage_clarity: formData.usage_clarity!,
+        price_approval: formData.price_approval!,
       };
       await onSubmit(submitData);
     } catch (error) {
@@ -128,11 +128,11 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
   };
 
   const isFormValid = () => {
-    return formData.serviceTechnician !== null &&
-           formData.serviceSales !== null &&
-           formData.productQuality !== null &&
-           formData.usageClarity !== null &&
-           formData.priceApproval !== null;
+    return formData.service_technician !== null &&
+           formData.service_sales !== null &&
+           formData.product_quality !== null &&
+           formData.usage_clarity !== null &&
+           formData.price_approval !== null;
   };
 
   if (isCompleted) {
@@ -169,21 +169,21 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
       </CardHeader>
       <CardContent>
         <form onSubmit={handleSubmit} className="space-y-6">
-          {renderRatingScale('serviceTechnician', 'Pelayanan Teknisi (1-10)')}
-          {renderRatingScale('serviceSales', 'Pelayanan Sales/CS (1-10)')}
-          {renderRatingScale('productQuality', 'Kualitas Produk (1-10)')}
-          {renderRatingScale('usageClarity', 'Kejelasan Penggunaan (1-10)')}
+          {renderRatingScale('service_technician', 'Pelayanan Teknisi (1-10)')}
+          {renderRatingScale('service_sales', 'Pelayanan Sales/CS (1-10)')}
+          {renderRatingScale('product_quality', 'Kualitas Produk (1-10)')}
+          {renderRatingScale('usage_clarity', 'Kejelasan Penggunaan (1-10)')}
 
           <div className="space-y-3">
-            <Label className={`text-sm font-medium ${errors.priceApproval ? 'text-red-600' : ''}`}>
+            <Label className={`text-sm font-medium ${errors.price_approval ? 'text-red-600' : ''}`}>
               Harga Sesuai? <span className="text-red-500">*</span>
             </Label>
             <RadioGroup
-              value={formData.priceApproval !== null ? formData.priceApproval.toString() : ''}
+              value={formData.price_approval !== null ? formData.price_approval.toString() : ''}
               onValueChange={(value) => {
-                setFormData(prev => ({ ...prev, priceApproval: value === 'true' }));
-                if (errors.priceApproval) {
-                  setErrors(prev => ({ ...prev, priceApproval: '' }));
+                setFormData(prev => ({ ...prev, price_approval: value === 'true' }));
+                if (errors.price_approval) {
+                  setErrors(prev => ({ ...prev, price_approval: '' }));
                 }
               }}
               className="flex gap-4"
@@ -198,8 +198,8 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
                 <Label htmlFor="price-no">Tidak Sesuai</Label>
               </div>
             </RadioGroup>
-            {errors.priceApproval && (
-              <p className="text-red-600 text-sm mt-1">{errors.priceApproval}</p>
+            {errors.price_approval && (
+              <p className="text-red-600 text-sm mt-1">{errors.price_approval}</p>
             )}
           </div>
 
