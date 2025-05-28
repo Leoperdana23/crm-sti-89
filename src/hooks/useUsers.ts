@@ -40,10 +40,23 @@ export const useUsers = () => {
   const addUser = async (userData: Omit<AppUser, 'id' | 'created_at' | 'updated_at'>) => {
     try {
       console.log('Adding user:', userData);
+      
+      // Pastikan branch_id diset ke null jika kosong
+      const cleanUserData = {
+        ...userData,
+        branch_id: userData.branch_id === '' || userData.branch_id === 'none' ? null : userData.branch_id
+      };
+      
       const { data, error } = await supabase
         .from('app_users')
-        .insert([userData])
-        .select()
+        .insert([cleanUserData])
+        .select(`
+          *,
+          branches (
+            id,
+            name
+          )
+        `)
         .single();
 
       if (error) {
@@ -63,11 +76,24 @@ export const useUsers = () => {
   const updateUser = async (id: string, userData: Partial<AppUser>) => {
     try {
       console.log('Updating user:', { id, userData });
+      
+      // Pastikan branch_id diset ke null jika kosong
+      const cleanUserData = {
+        ...userData,
+        branch_id: userData.branch_id === '' || userData.branch_id === 'none' ? null : userData.branch_id
+      };
+      
       const { data, error } = await supabase
         .from('app_users')
-        .update(userData)
+        .update(cleanUserData)
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          branches (
+            id,
+            name
+          )
+        `)
         .single();
 
       if (error) {

@@ -3,20 +3,14 @@ import React from 'react';
 import { Users, UserCheck, TrendingUp, MessageSquare } from 'lucide-react';
 import StatsCard from '@/components/StatsCard';
 import { useCustomers } from '@/hooks/useCustomers';
+import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const Dashboard = () => {
   const { customers, getStats } = useCustomers();
+  const { monthlyData, loading: statsLoading } = useDashboardStats();
   const stats = getStats();
-
-  const monthlyData = [
-    { month: 'Jan', prospek: 12, deal: 8 },
-    { month: 'Feb', prospek: 15, deal: 10 },
-    { month: 'Mar', prospek: 18, deal: 12 },
-    { month: 'Apr', prospek: 22, deal: 15 },
-    { month: 'May', prospek: 25, deal: 18 },
-  ];
 
   const statusData = [
     { name: 'Prospek', value: stats.prospek, color: '#FbbF24' },
@@ -73,16 +67,22 @@ const Dashboard = () => {
             <CardTitle>Tren Penjualan Bulanan</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
-              <BarChart data={monthlyData}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="month" />
-                <YAxis />
-                <Tooltip />
-                <Bar dataKey="prospek" fill="#3B82F6" name="Prospek" />
-                <Bar dataKey="deal" fill="#10B981" name="Deal" />
-              </BarChart>
-            </ResponsiveContainer>
+            {statsLoading ? (
+              <div className="flex items-center justify-center h-[300px]">
+                <div className="text-gray-500">Memuat data chart...</div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={monthlyData}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis dataKey="month" />
+                  <YAxis />
+                  <Tooltip />
+                  <Bar dataKey="prospek" fill="#3B82F6" name="Prospek" />
+                  <Bar dataKey="deal" fill="#10B981" name="Deal" />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </CardContent>
         </Card>
 
@@ -120,27 +120,33 @@ const Dashboard = () => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {recentCustomers.map((customer) => (
-              <div key={customer.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                <div>
-                  <h3 className="font-medium text-gray-900">{customer.name}</h3>
-                  <p className="text-sm text-gray-600">{customer.phone}</p>
+            {recentCustomers.length > 0 ? (
+              recentCustomers.map((customer) => (
+                <div key={customer.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                  <div>
+                    <h3 className="font-medium text-gray-900">{customer.name}</h3>
+                    <p className="text-sm text-gray-600">{customer.phone}</p>
+                  </div>
+                  <div className="text-right">
+                    <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
+                      customer.status === 'Deal' ? 'bg-green-100 text-green-800' :
+                      customer.status === 'Follow-up' ? 'bg-blue-100 text-blue-800' :
+                      customer.status === 'Prospek' ? 'bg-yellow-100 text-yellow-800' :
+                      'bg-red-100 text-red-800'
+                    }`}>
+                      {customer.status}
+                    </span>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(customer.createdAt).toLocaleDateString('id-ID')}
+                    </p>
+                  </div>
                 </div>
-                <div className="text-right">
-                  <span className={`inline-flex px-2 py-1 rounded-full text-xs font-medium ${
-                    customer.status === 'Deal' ? 'bg-green-100 text-green-800' :
-                    customer.status === 'Follow-up' ? 'bg-blue-100 text-blue-800' :
-                    customer.status === 'Prospek' ? 'bg-yellow-100 text-yellow-800' :
-                    'bg-red-100 text-red-800'
-                  }`}>
-                    {customer.status}
-                  </span>
-                  <p className="text-xs text-gray-500 mt-1">
-                    {new Date(customer.createdAt).toLocaleDateString('id-ID')}
-                  </p>
-                </div>
+              ))
+            ) : (
+              <div className="text-center py-8 text-gray-500">
+                Belum ada data pelanggan
               </div>
-            ))}
+            )}
           </div>
         </CardContent>
       </Card>
