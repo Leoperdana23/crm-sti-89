@@ -23,7 +23,7 @@ export const useEmployees = () => {
         return;
       }
 
-      setEmployees(data || []);
+      setEmployees((data || []) as Employee[]);
     } catch (error) {
       console.error('Error in fetchEmployees:', error);
     } finally {
@@ -52,8 +52,8 @@ export const useEmployees = () => {
       }
 
       if (data) {
-        setEmployees(prev => [data, ...prev]);
-        return data;
+        setEmployees(prev => [data as Employee, ...prev]);
+        return data as Employee;
       }
     } catch (error) {
       console.error('Error in addEmployee:', error);
@@ -79,7 +79,7 @@ export const useEmployees = () => {
       }
 
       if (data) {
-        setEmployees(prev => prev.map(emp => emp.id === id ? data : emp));
+        setEmployees(prev => prev.map(emp => emp.id === id ? data as Employee : emp));
       }
     } catch (error) {
       console.error('Error in updateEmployee:', error);

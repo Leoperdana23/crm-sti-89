@@ -26,7 +26,7 @@ export const useClaims = () => {
         return;
       }
 
-      setClaims(data || []);
+      setClaims((data || []) as Claim[]);
     } catch (error) {
       console.error('Error in fetchClaims:', error);
     } finally {
@@ -58,8 +58,8 @@ export const useClaims = () => {
       }
 
       if (data) {
-        setClaims(prev => [data, ...prev]);
-        return data;
+        setClaims(prev => [data as Claim, ...prev]);
+        return data as Claim;
       }
     } catch (error) {
       console.error('Error in createClaim:', error);
@@ -88,7 +88,7 @@ export const useClaims = () => {
       }
 
       if (data) {
-        setClaims(prev => prev.map(c => c.id === id ? data : c));
+        setClaims(prev => prev.map(c => c.id === id ? data as Claim : c));
       }
     } catch (error) {
       console.error('Error in updateClaim:', error);

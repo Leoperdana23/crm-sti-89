@@ -26,7 +26,7 @@ export const useAttendance = () => {
         return;
       }
 
-      setAttendanceRecords(data || []);
+      setAttendanceRecords((data || []) as Attendance[]);
     } catch (error) {
       console.error('Error in fetchAttendance:', error);
     } finally {
@@ -70,11 +70,11 @@ export const useAttendance = () => {
         setAttendanceRecords(prev => {
           const existing = prev.find(a => a.employee_id === employeeId && a.date === today);
           if (existing) {
-            return prev.map(a => a.id === data.id ? data : a);
+            return prev.map(a => a.id === (data as Attendance).id ? data as Attendance : a);
           }
-          return [data, ...prev];
+          return [data as Attendance, ...prev];
         });
-        return data;
+        return data as Attendance;
       }
     } catch (error) {
       console.error('Error in checkIn:', error);
@@ -108,8 +108,8 @@ export const useAttendance = () => {
       }
 
       if (data) {
-        setAttendanceRecords(prev => prev.map(a => a.id === attendanceId ? data : a));
-        return data;
+        setAttendanceRecords(prev => prev.map(a => a.id === attendanceId ? data as Attendance : a));
+        return data as Attendance;
       }
     } catch (error) {
       console.error('Error in checkOut:', error);

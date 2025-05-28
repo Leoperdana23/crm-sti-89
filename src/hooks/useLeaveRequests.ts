@@ -26,7 +26,7 @@ export const useLeaveRequests = () => {
         return;
       }
 
-      setLeaveRequests(data || []);
+      setLeaveRequests((data || []) as LeaveRequest[]);
     } catch (error) {
       console.error('Error in fetchLeaveRequests:', error);
     } finally {
@@ -58,8 +58,8 @@ export const useLeaveRequests = () => {
       }
 
       if (data) {
-        setLeaveRequests(prev => [data, ...prev]);
-        return data;
+        setLeaveRequests(prev => [data as LeaveRequest, ...prev]);
+        return data as LeaveRequest;
       }
     } catch (error) {
       console.error('Error in createLeaveRequest:', error);
@@ -88,7 +88,7 @@ export const useLeaveRequests = () => {
       }
 
       if (data) {
-        setLeaveRequests(prev => prev.map(lr => lr.id === id ? data : lr));
+        setLeaveRequests(prev => prev.map(lr => lr.id === id ? data as LeaveRequest : lr));
       }
     } catch (error) {
       console.error('Error in updateLeaveRequest:', error);
