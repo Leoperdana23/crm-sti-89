@@ -1,4 +1,5 @@
 
+
 import { supabase } from '@/integrations/supabase/client';
 
 interface SalesAuthResponse {
@@ -25,7 +26,7 @@ export const useSalesAuth = () => {
       }
 
       // Cast the data to our expected type
-      const authResult = data as SalesAuthResponse;
+      const authResult = data as unknown as SalesAuthResponse;
 
       // Check if authentication was successful
       if (!authResult || !authResult.success) {
@@ -55,3 +56,4 @@ export const useSalesAuth = () => {
     authenticateSales
   };
 };
+
