@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageSquare, Phone, Calendar, CheckCircle, XCircle } from 'lucide-react';
+import { MessageSquare, Phone, Calendar, CheckCircle, XCircle, Cake } from 'lucide-react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useToast } from '@/hooks/use-toast';
 
@@ -20,10 +20,35 @@ const FollowUp = () => {
   const prospekCustomers = getCustomersByStatus('Prospek');
   const followUpCustomers = getCustomersByStatus('Follow-up');
 
+  // Get customers having birthday today
+  const getTodayBirthdayCustomers = () => {
+    const today = new Date();
+    const todayMonth = today.getMonth() + 1; // getMonth() returns 0-11
+    const todayDay = today.getDate();
+
+    return customers.filter(customer => {
+      const birthDate = new Date(customer.birthDate);
+      const birthMonth = birthDate.getMonth() + 1;
+      const birthDay = birthDate.getDate();
+      
+      return birthMonth === todayMonth && birthDay === todayDay;
+    });
+  };
+
+  const birthdayCustomers = getTodayBirthdayCustomers();
+
   const handleWhatsApp = (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
     const whatsappPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
     window.open(`https://wa.me/${whatsappPhone}`, '_blank');
+  };
+
+  const handleBirthdayWhatsApp = (phone: string, name: string) => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const whatsappPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
+    const birthdayMessage = `Selamat ulang tahun ${name}! 🎉🎂 Semoga panjang umur, sehat selalu, dan bahagia. Terima kasih sudah menjadi pelanggan setia kami.`;
+    const encodedMessage = encodeURIComponent(birthdayMessage);
+    window.open(`https://wa.me/${whatsappPhone}?text=${encodedMessage}`, '_blank');
   };
 
   const handleStatusUpdate = (customerId: string, newStatus: 'Deal' | 'Tidak Jadi', dealDate?: string) => {
@@ -65,6 +90,57 @@ const FollowUp = () => {
         <h1 className="text-3xl font-bold text-gray-900">Follow-Up Pelanggan</h1>
         <p className="text-gray-600 mt-1">Kelola prospek dan jadwal follow-up</p>
       </div>
+
+      {/* Birthday Customers Section */}
+      {birthdayCustomers.length > 0 && (
+        <Card className="border-pink-200 bg-pink-50">
+          <CardHeader>
+            <CardTitle className="flex items-center">
+              <Cake className="h-5 w-5 mr-2 text-pink-600" />
+              Ulang Tahun Hari Ini ({birthdayCustomers.length})
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {birthdayCustomers.map((customer) => (
+              <div key={customer.id} className="p-4 border border-pink-300 bg-white rounded-lg">
+                <div className="flex justify-between items-start mb-3">
+                  <div>
+                    <h3 className="font-semibold text-gray-900 flex items-center">
+                      {customer.name}
+                      <Cake className="h-4 w-4 ml-2 text-pink-500" />
+                    </h3>
+                    <p className="text-sm text-gray-600">{customer.phone}</p>
+                    <p className="text-sm text-gray-600">{customer.address}</p>
+                  </div>
+                  <Badge className="bg-pink-100 text-pink-800">
+                    {customer.status}
+                  </Badge>
+                </div>
+                
+                <div className="flex space-x-2">
+                  <Button
+                    size="sm"
+                    onClick={() => handleBirthdayWhatsApp(customer.phone, customer.name)}
+                    className="bg-pink-600 hover:bg-pink-700 text-white"
+                  >
+                    <MessageSquare className="h-4 w-4 mr-1" />
+                    Ucapkan Selamat
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => handleWhatsApp(customer.phone)}
+                    className="text-green-600 hover:bg-green-50"
+                  >
+                    <MessageSquare className="h-4 w-4 mr-1" />
+                    WhatsApp Biasa
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Prospek Baru */}
