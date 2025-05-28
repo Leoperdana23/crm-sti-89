@@ -21,7 +21,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
     username: '',
     full_name: '',
     email: '',
-    role: 'staff' as const,
+    role: 'staff' as 'super_admin' | 'admin' | 'manager' | 'staff',
     branch_id: '',
     is_active: true
   });
@@ -92,7 +92,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
 
             <div className="space-y-2">
               <Label htmlFor="role">Role</Label>
-              <Select value={formData.role} onValueChange={(value: any) => setFormData(prev => ({ ...prev, role: value }))}>
+              <Select value={formData.role} onValueChange={(value: 'super_admin' | 'admin' | 'manager' | 'staff') => setFormData(prev => ({ ...prev, role: value }))}>
                 <SelectTrigger>
                   <SelectValue placeholder="Pilih Role" />
                 </SelectTrigger>

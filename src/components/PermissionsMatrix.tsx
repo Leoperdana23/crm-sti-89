@@ -10,17 +10,17 @@ const PermissionsMatrix: React.FC = () => {
   const { permissions, rolePermissions, updateRolePermission } = usePermissions();
   const { toast } = useToast();
 
-  const roles = ['super_admin', 'admin', 'manager', 'staff'];
-  const permissionTypes = ['can_view', 'can_create', 'can_edit', 'can_delete'];
+  const roles = ['super_admin', 'admin', 'manager', 'staff'] as const;
+  const permissionTypes = ['can_view', 'can_create', 'can_edit', 'can_delete'] as const;
 
   const getRolePermission = (role: string, permissionId: string) => {
     return rolePermissions.find(rp => rp.role === role && rp.permission_id === permissionId);
   };
 
   const handlePermissionChange = async (
-    role: string,
+    role: 'super_admin' | 'admin' | 'manager' | 'staff',
     permissionId: string,
-    permissionType: string,
+    permissionType: 'can_view' | 'can_create' | 'can_edit' | 'can_delete',
     value: boolean
   ) => {
     try {
@@ -103,10 +103,12 @@ const PermissionsMatrix: React.FC = () => {
                       <div className="grid grid-cols-2 gap-2">
                         {permissionTypes.map(permType => {
                           const rolePermission = getRolePermission(role, permission.id);
+                          const isChecked = rolePermission ? Boolean(rolePermission[permType]) : false;
+                          
                           return (
                             <div key={permType} className="flex items-center space-x-1">
                               <Switch
-                                checked={rolePermission?.[permType as keyof typeof rolePermission] || false}
+                                checked={isChecked}
                                 onCheckedChange={(value) => 
                                   handlePermissionChange(role, permission.id, permType, value)
                                 }

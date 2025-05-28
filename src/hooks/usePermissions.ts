@@ -48,7 +48,7 @@ export const usePermissions = () => {
   };
 
   const updateRolePermission = async (
-    role: string, 
+    role: 'super_admin' | 'admin' | 'manager' | 'staff', 
     permissionId: string, 
     permissions: {
       can_view: boolean;
