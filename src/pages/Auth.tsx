@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useSalesAuth } from '@/hooks/useSalesAuth';
-import { debugSalesPassword, resetSalesPassword } from '@/utils/salesPasswordUtils';
+import { debugSalesPassword, resetSalesPassword, forcePasswordReset, testPasswordHash } from '@/utils/salesPasswordUtils';
 import { Loader2 } from 'lucide-react';
 
 const Auth = () => {
@@ -110,21 +110,48 @@ const Auth = () => {
 
       console.log('Sales found in database:', salesDebugData.name);
       
-      // Check if password is still plain text (not hashed properly)
-      if (salesDebugData.password_hash && !salesDebugData.password_hash.startsWith('$2')) {
-        console.log('Password appears to be plain text, attempting to fix...');
+      // Check if password needs to be fixed
+      const needsPasswordFix = salesDebugData.password_hash && 
+        (!salesDebugData.password_hash.startsWith('$2') || salesDebugData.password_hash.length < 50);
+      
+      if (needsPasswordFix) {
+        console.log('Password needs fixing, attempting to reset...');
         
-        // If the current password_hash is plain text and matches what user entered,
-        // let's reset it to trigger proper hashing
-        if (salesDebugData.password_hash === password) {
-          console.log('Plain text password matches, resetting to trigger hashing...');
-          await resetSalesPassword(email, password);
-          
-          // Wait a moment for the database trigger to process
-          await new Promise(resolve => setTimeout(resolve, 1000));
+        // Try different methods to fix the password
+        let passwordFixed = false;
+        
+        // Method 1: Standard reset
+        if (!passwordFixed && salesDebugData.password_hash === password) {
+          try {
+            console.log('Attempting standard password reset...');
+            await resetSalesPassword(email, password);
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Wait longer
+            passwordFixed = true;
+          } catch (error) {
+            console.log('Standard reset failed, trying force reset...');
+          }
+        }
+        
+        // Method 2: Force reset if available
+        if (!passwordFixed) {
+          try {
+            console.log('Attempting force password reset...');
+            await forcePasswordReset(email, password);
+            await new Promise(resolve => setTimeout(resolve, 1500));
+            passwordFixed = true;
+          } catch (error) {
+            console.log('Force reset not available, continuing...');
+          }
+        }
+        
+        if (passwordFixed) {
+          // Verify the fix worked
+          const updatedData = await debugSalesPassword(email);
+          console.log('Password fix verification:', updatedData);
         }
       }
       
+      // Attempt authentication
       const result = await authenticateSales(email, password);
       
       if (result.success) {
@@ -141,22 +168,23 @@ const Auth = () => {
     } catch (error: any) {
       console.error('=== SALES LOGIN ERROR ===', error);
       
-      // If password error and we haven't tried fixing the hash yet, try to fix it
-      if (error.message === 'Password salah' && email && password) {
+      // Special handling for password errors
+      if (error.message === 'Password salah') {
+        // Try one more password reset attempt
         try {
-          console.log('Attempting to fix password hash...');
+          console.log('Last attempt: resetting password...');
           await resetSalesPassword(email, password);
           
           toast({
             title: "Info",
-            description: "Password telah diperbaiki. Silakan coba login lagi.",
+            description: "Password telah diperbaiki. Silakan tunggu sebentar lalu coba login lagi.",
             variant: "default",
           });
         } catch (resetError) {
-          console.error('Failed to reset password:', resetError);
+          console.error('Final reset attempt failed:', resetError);
           toast({
             title: "Error", 
-            description: error.message || "Terjadi kesalahan saat login",
+            description: "Terjadi masalah dengan sistem password. Silakan hubungi administrator.",
             variant: "destructive",
           });
         }
@@ -289,6 +317,9 @@ const Auth = () => {
               
               <div className="mt-4 text-center text-sm text-gray-600">
                 <p>Gunakan email dan password yang sudah terdaftar sebagai sales</p>
+                <p className="mt-2 text-xs text-blue-600">
+                  Jika mengalami masalah login, sistem akan mencoba memperbaiki password secara otomatis
+                </p>
               </div>
             </TabsContent>
           </Tabs>
