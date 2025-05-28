@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
 import Layout from '@/components/Layout';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
 import Customers from '@/pages/Customers';
@@ -13,6 +14,7 @@ import Reports from '@/pages/Reports';
 import Users from '@/pages/Users';
 import RolePermissions from '@/pages/RolePermissions';
 import PublicSurvey from '@/pages/PublicSurvey';
+import Auth from '@/pages/Auth';
 import NotFound from '@/pages/NotFound';
 import './App.css';
 
@@ -23,8 +25,13 @@ function App() {
     <QueryClientProvider client={queryClient}>
       <Router>
         <Routes>
+          <Route path="/auth" element={<Auth />} />
           <Route path="/survey/:token" element={<PublicSurvey />} />
-          <Route path="/" element={<Layout />}>
+          <Route path="/" element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }>
             <Route index element={<Dashboard />} />
             <Route path="customers" element={<Customers />} />
             <Route path="follow-up" element={<FollowUp />} />
