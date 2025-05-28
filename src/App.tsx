@@ -11,6 +11,7 @@ import FollowUp from "./pages/FollowUp";
 import Survey from "./pages/Survey";
 import Branches from "./pages/Branches";
 import Reports from "./pages/Reports";
+import Users from "./pages/Users";
 import PublicSurvey from "./pages/PublicSurvey";
 import NotFound from "./pages/NotFound";
 
@@ -30,6 +31,7 @@ const App = () => (
             <Route path="survey" element={<Survey />} />
             <Route path="branches" element={<Branches />} />
             <Route path="reports" element={<Reports />} />
+            <Route path="users" element={<Users />} />
           </Route>
           <Route path="/public-survey/:token" element={<PublicSurvey />} />
           <Route path="*" element={<NotFound />} />
