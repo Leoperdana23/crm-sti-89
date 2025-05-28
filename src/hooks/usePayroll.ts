@@ -19,14 +19,14 @@ export const usePayroll = () => {
             user:app_users(full_name, email)
           )
         `)
-        .order('period_start', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching payroll:', error);
         return;
       }
 
-      setPayrollRecords(data || []);
+      setPayrollRecords((data || []) as Payroll[]);
     } catch (error) {
       console.error('Error in fetchPayroll:', error);
     } finally {
@@ -58,8 +58,8 @@ export const usePayroll = () => {
       }
 
       if (data) {
-        setPayrollRecords(prev => [data, ...prev]);
-        return data;
+        setPayrollRecords(prev => [data as Payroll, ...prev]);
+        return data as Payroll;
       }
     } catch (error) {
       console.error('Error in createPayroll:', error);
@@ -88,7 +88,7 @@ export const usePayroll = () => {
       }
 
       if (data) {
-        setPayrollRecords(prev => prev.map(p => p.id === id ? data : p));
+        setPayrollRecords(prev => prev.map(p => p.id === id ? data as Payroll : p));
       }
     } catch (error) {
       console.error('Error in updatePayroll:', error);

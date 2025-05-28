@@ -6,7 +6,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAttendance } from '@/hooks/useAttendance';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useAuth } from '@/hooks/useAuth';
-import { Clock, ClockIn, ClockOut, Calendar } from 'lucide-react';
+import { Clock, LogIn, LogOut, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Attendance = () => {
@@ -108,7 +108,7 @@ const Attendance = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ClockIn className="h-5 w-5 text-green-600" />
+                <LogIn className="h-5 w-5 text-green-600" />
                 Absen Masuk
               </CardTitle>
             </CardHeader>
@@ -134,7 +134,7 @@ const Attendance = () => {
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
-                <ClockOut className="h-5 w-5 text-red-600" />
+                <LogOut className="h-5 w-5 text-red-600" />
                 Absen Keluar
               </CardTitle>
             </CardHeader>
