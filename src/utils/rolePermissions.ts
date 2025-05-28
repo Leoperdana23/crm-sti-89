@@ -26,15 +26,14 @@ export const createRolePermissionsData = (permissions: Permission[]) => {
         canEdit = permission.name !== 'role_permissions';
         canDelete = permission.name !== 'role_permissions' && permission.name !== 'users';
       } else if (role === 'manager') {
-        // Manager gets access to operational modules
-        const managerModules = ['dashboard', 'customers', 'follow_up', 'survey', 'sales', 'reports'];
-        hasAccess = managerModules.includes(permission.name);
-        canCreate = hasAccess && !['reports'].includes(permission.name);
-        canEdit = hasAccess && !['reports'].includes(permission.name);
-        canDelete = hasAccess && ['customers', 'follow_up', 'survey', 'sales'].includes(permission.name);
+        // Manager gets access to all menus
+        hasAccess = true;
+        canCreate = true;
+        canEdit = true;
+        canDelete = permission.name !== 'users' && permission.name !== 'role_permissions';
       } else if (role === 'staff') {
-        // Staff only gets access to dashboard, customers, follow-up, and survey
-        const staffModules = ['dashboard', 'customers', 'follow_up', 'survey'];
+        // Staff only gets access to dashboard, customers, follow-up, work process, and survey
+        const staffModules = ['dashboard', 'customers', 'follow_up', 'work_process', 'survey'];
         hasAccess = staffModules.includes(permission.name);
         canCreate = hasAccess && ['customers', 'follow_up', 'survey'].includes(permission.name);
         canEdit = hasAccess && ['customers', 'follow_up', 'survey'].includes(permission.name);
