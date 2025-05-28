@@ -14,6 +14,7 @@ const Layout = () => {
     { name: 'Survei', href: '/survey', icon: MessageSquare },
     { name: 'Cabang', href: '/branches', icon: Building },
     { name: 'Laporan', href: '/reports', icon: FileText },
+    { name: 'Master User', href: '/users', icon: User },
   ];
 
   return (

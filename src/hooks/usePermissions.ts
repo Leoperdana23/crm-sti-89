@@ -11,15 +11,22 @@ export const usePermissions = () => {
   const fetchPermissions = async () => {
     try {
       setLoading(true);
+      console.log('Fetching permissions...');
       const { data, error } = await supabase
         .from('permissions')
         .select('*')
         .order('menu_path');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching permissions:', error);
+        throw error;
+      }
+      
+      console.log('Permissions fetched:', data);
       setPermissions(data || []);
     } catch (error) {
       console.error('Error fetching permissions:', error);
+      setPermissions([]);
     } finally {
       setLoading(false);
     }
@@ -27,6 +34,7 @@ export const usePermissions = () => {
 
   const fetchRolePermissions = async () => {
     try {
+      console.log('Fetching role permissions...');
       const { data, error } = await supabase
         .from('role_permissions')
         .select(`
@@ -40,10 +48,16 @@ export const usePermissions = () => {
         `)
         .order('role');
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching role permissions:', error);
+        throw error;
+      }
+      
+      console.log('Role permissions fetched:', data);
       setRolePermissions(data || []);
     } catch (error) {
       console.error('Error fetching role permissions:', error);
+      setRolePermissions([]);
     }
   };
 
@@ -57,14 +71,25 @@ export const usePermissions = () => {
       can_delete: boolean;
     }
   ) => {
-    const { error } = await supabase
-      .from('role_permissions')
-      .update(permissions)
-      .eq('role', role)
-      .eq('permission_id', permissionId);
+    try {
+      console.log('Updating role permission:', { role, permissionId, permissions });
+      const { error } = await supabase
+        .from('role_permissions')
+        .update(permissions)
+        .eq('role', role)
+        .eq('permission_id', permissionId);
 
-    if (error) throw error;
-    await fetchRolePermissions();
+      if (error) {
+        console.error('Error updating role permission:', error);
+        throw error;
+      }
+      
+      console.log('Role permission updated successfully');
+      await fetchRolePermissions();
+    } catch (error) {
+      console.error('Error in updateRolePermission:', error);
+      throw error;
+    }
   };
 
   useEffect(() => {
