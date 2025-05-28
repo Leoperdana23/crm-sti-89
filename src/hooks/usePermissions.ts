@@ -14,7 +14,9 @@ export const usePermissions = () => {
 
   const fetchPermissions = async () => {
     try {
+      console.log('Starting fetchPermissions...');
       const data = await permissionsService.fetchPermissions();
+      console.log('Permissions fetched successfully:', data);
       setPermissions(data);
     } catch (error) {
       console.error('Error fetching permissions:', error);
@@ -25,7 +27,9 @@ export const usePermissions = () => {
 
   const fetchRolePermissions = async () => {
     try {
+      console.log('Starting fetchRolePermissions...');
       const data = await permissionsService.fetchRolePermissions();
+      console.log('Role permissions fetched successfully:', data);
       setRolePermissions(data);
     } catch (error) {
       console.error('Error fetching role permissions:', error);
@@ -45,8 +49,10 @@ export const usePermissions = () => {
     }
   ) => {
     try {
+      console.log('Updating role permission:', { role, permissionId, permissions });
       await permissionsService.updateRolePermission(role, permissionId, permissions);
       await fetchRolePermissions();
+      console.log('Role permission updated successfully');
     } catch (error) {
       console.error('Error in updateRolePermission:', error);
       throw error;
@@ -54,11 +60,13 @@ export const usePermissions = () => {
   };
 
   const refetch = async () => {
+    console.log('Starting refetch...');
     setLoading(true);
     setError(null);
     try {
       await fetchPermissions();
       await fetchRolePermissions();
+      console.log('Refetch completed successfully');
     } catch (error) {
       console.error('Error refetching data:', error);
       setError('Failed to refresh permissions data');
@@ -69,16 +77,21 @@ export const usePermissions = () => {
 
   useEffect(() => {
     const initializeData = async () => {
+      console.log('Starting data initialization...');
       setLoading(true);
       setError(null);
       
       try {
+        console.log('Step 1: Initialize permissions...');
         await initializePermissions();
+        console.log('Step 2: Fetch permissions...');
         await fetchPermissions();
+        console.log('Step 3: Fetch role permissions...');
         await fetchRolePermissions();
+        console.log('Data initialization completed successfully');
       } catch (error) {
         console.error('Error initializing data:', error);
-        setError('Failed to initialize permissions data');
+        setError('Failed to initialize permissions data: ' + (error as Error).message);
       } finally {
         setLoading(false);
       }

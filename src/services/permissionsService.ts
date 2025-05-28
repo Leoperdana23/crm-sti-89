@@ -6,6 +6,7 @@ import { createRolePermissionsData } from '@/utils/rolePermissions';
 
 export const permissionsService = {
   async checkExistingPermissions() {
+    console.log('Checking existing permissions...');
     const { data: existingPermissions, error: checkError } = await supabase
       .from('permissions')
       .select('*');
@@ -15,6 +16,7 @@ export const permissionsService = {
       throw new Error('Error checking permissions: ' + checkError.message);
     }
 
+    console.log('Existing permissions check result:', existingPermissions);
     return existingPermissions;
   },
 
@@ -36,7 +38,9 @@ export const permissionsService = {
 
   async createInitialRolePermissions(permissions: Permission[]) {
     try {
+      console.log('Creating initial role permissions for permissions:', permissions);
       const rolePermissionsData = createRolePermissionsData(permissions);
+      console.log('Role permissions data to insert:', rolePermissionsData);
 
       const { error: rolePermError } = await supabase
         .from('role_permissions')
@@ -55,11 +59,18 @@ export const permissionsService = {
   },
 
   async checkExistingRolePermissions() {
-    const { data: existingRolePerms } = await supabase
+    console.log('Checking existing role permissions...');
+    const { data: existingRolePerms, error } = await supabase
       .from('role_permissions')
       .select('*')
       .limit(1);
 
+    if (error) {
+      console.error('Error checking role permissions:', error);
+      throw new Error('Error checking role permissions: ' + error.message);
+    }
+
+    console.log('Existing role permissions check result:', existingRolePerms);
     return existingRolePerms;
   },
 
