@@ -33,7 +33,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
         full_name: user.full_name,
         email: user.email,
         role: user.role,
-        branch_id: user.branch_id || '',
+        branch_id: user.branch_id || 'none',
         is_active: user.is_active
       });
     }
@@ -41,7 +41,12 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onSubmit(formData);
+    // Convert 'none' back to empty string for submission
+    const submitData = {
+      ...formData,
+      branch_id: formData.branch_id === 'none' ? '' : formData.branch_id
+    };
+    await onSubmit(submitData);
   };
 
   const roleOptions = [
@@ -113,7 +118,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
                   <SelectValue placeholder="Pilih Cabang" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tidak Ada Cabang</SelectItem>
+                  <SelectItem value="none">Tidak Ada Cabang</SelectItem>
                   {branches.map((branch) => (
                     <SelectItem key={branch.id} value={branch.id}>
                       {branch.name}
