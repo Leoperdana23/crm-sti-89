@@ -1,10 +1,11 @@
 import React, { useState } from 'react';
-import { FileText, TrendingUp, Building, Users, Target, Award, Download, Star, MessageSquare } from 'lucide-react';
+import { FileText, TrendingUp, Building, Users, Target, Award, Download, Star, MessageSquare, Eye, Printer } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useSurveys } from '@/hooks/useSurveys';
 import { useBranches } from '@/hooks/useBranches';
@@ -87,6 +88,8 @@ const Reports = () => {
         ...survey,
         customerName: customer?.name || 'Unknown',
         customerPhone: customer?.phone || '-',
+        customerAddress: customer?.address || '-',
+        customerIdNumber: customer?.idNumber || '-',
         branchName: branch?.name || 'Unknown',
         branchCode: branch?.code || '-',
         overallRating: ((survey.serviceTechnician + survey.serviceSales + survey.productQuality + survey.usageClarity) / 4).toFixed(1)
@@ -140,6 +143,203 @@ const Reports = () => {
     link.download = `laporan-crm-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
   };
+
+  const printSurveyDetail = (survey: any) => {
+    const printWindow = window.open('', '_blank');
+    if (!printWindow) return;
+
+    const printContent = `
+      <!DOCTYPE html>
+      <html>
+        <head>
+          <title>Detail Survei - ${survey.customerName}</title>
+          <style>
+            body { font-family: Arial, sans-serif; margin: 20px; line-height: 1.6; }
+            .header { text-align: center; margin-bottom: 30px; border-bottom: 2px solid #333; padding-bottom: 20px; }
+            .info-section { margin-bottom: 25px; }
+            .info-title { font-weight: bold; color: #333; margin-bottom: 10px; font-size: 18px; }
+            .info-row { display: flex; margin-bottom: 8px; }
+            .info-label { font-weight: bold; width: 200px; }
+            .rating-section { margin: 20px 0; }
+            .rating-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 15px 0; }
+            .rating-item { padding: 10px; border: 1px solid #ddd; border-radius: 5px; }
+            .rating-score { font-size: 24px; font-weight: bold; color: #2563eb; }
+            .testimonial-section { margin: 20px 0; padding: 15px; background-color: #f9f9f9; border-left: 4px solid #2563eb; }
+            @media print { body { margin: 0; } }
+          </style>
+        </head>
+        <body>
+          <div class="header">
+            <h1>DETAIL HASIL SURVEI KEPUASAN PELANGGAN</h1>
+            <p>Tanggal Cetak: ${new Date().toLocaleDateString('id-ID')}</p>
+          </div>
+          
+          <div class="info-section">
+            <div class="info-title">INFORMASI PELANGGAN</div>
+            <div class="info-row">
+              <span class="info-label">Nama:</span>
+              <span>${survey.customerName}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">No. Telepon:</span>
+              <span>${survey.customerPhone}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Alamat:</span>
+              <span>${survey.customerAddress}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">No. KTP/Identitas:</span>
+              <span>${survey.customerIdNumber}</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Cabang:</span>
+              <span>${survey.branchName} (${survey.branchCode})</span>
+            </div>
+            <div class="info-row">
+              <span class="info-label">Tanggal Deal:</span>
+              <span>${new Date(survey.dealDate).toLocaleDateString('id-ID')}</span>
+            </div>
+          </div>
+
+          <div class="rating-section">
+            <div class="info-title">HASIL PENILAIAN</div>
+            <div class="info-row">
+              <span class="info-label">Rating Keseluruhan:</span>
+              <span class="rating-score">${survey.overallRating}/10</span>
+            </div>
+            
+            <div class="rating-grid">
+              <div class="rating-item">
+                <strong>Pelayanan Teknisi</strong><br>
+                <span class="rating-score">${survey.serviceTechnician}/10</span>
+              </div>
+              <div class="rating-item">
+                <strong>Pelayanan Sales/CS</strong><br>
+                <span class="rating-score">${survey.serviceSales}/10</span>
+              </div>
+              <div class="rating-item">
+                <strong>Kualitas Produk</strong><br>
+                <span class="rating-score">${survey.productQuality}/10</span>
+              </div>
+              <div class="rating-item">
+                <strong>Kejelasan Penggunaan</strong><br>
+                <span class="rating-score">${survey.usageClarity}/10</span>
+              </div>
+            </div>
+            
+            <div class="info-row">
+              <span class="info-label">Persetujuan Harga:</span>
+              <span style="font-weight: bold; color: ${survey.priceApproval ? '#10b981' : '#ef4444'}">
+                ${survey.priceApproval ? 'Ya' : 'Tidak'}
+              </span>
+            </div>
+          </div>
+
+          ${survey.testimonial ? `
+            <div class="testimonial-section">
+              <div class="info-title">TESTIMONI</div>
+              <p>${survey.testimonial}</p>
+            </div>
+          ` : ''}
+
+          ${survey.suggestions ? `
+            <div class="testimonial-section">
+              <div class="info-title">SARAN & KRITIK</div>
+              <p>${survey.suggestions}</p>
+            </div>
+          ` : ''}
+        </body>
+      </html>
+    `;
+
+    printWindow.document.write(printContent);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+  };
+
+  const SurveyPreviewDialog = ({ survey }: { survey: any }) => (
+    <Dialog>
+      <DialogTrigger asChild>
+        <Button variant="outline" size="sm">
+          <Eye className="h-4 w-4" />
+        </Button>
+      </DialogTrigger>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>Preview Detail Survei - {survey.customerName}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-6">
+          <div>
+            <h3 className="font-semibold text-lg mb-3">Informasi Pelanggan</h3>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div><strong>Nama:</strong> {survey.customerName}</div>
+              <div><strong>No. Telepon:</strong> {survey.customerPhone}</div>
+              <div><strong>Alamat:</strong> {survey.customerAddress}</div>
+              <div><strong>No. KTP:</strong> {survey.customerIdNumber}</div>
+              <div><strong>Cabang:</strong> {survey.branchName} ({survey.branchCode})</div>
+              <div><strong>Tanggal Deal:</strong> {new Date(survey.dealDate).toLocaleDateString('id-ID')}</div>
+            </div>
+          </div>
+
+          <div>
+            <h3 className="font-semibold text-lg mb-3">Hasil Penilaian</h3>
+            <div className="mb-4">
+              <div className="flex items-center space-x-2">
+                <Star className="h-5 w-5 text-yellow-500 fill-current" />
+                <span className="font-semibold">Rating Keseluruhan: {survey.overallRating}/10</span>
+              </div>
+            </div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-3 border rounded">
+                <div className="font-medium">Pelayanan Teknisi</div>
+                <div className="text-2xl font-bold text-blue-600">{survey.serviceTechnician}/10</div>
+              </div>
+              <div className="p-3 border rounded">
+                <div className="font-medium">Pelayanan Sales/CS</div>
+                <div className="text-2xl font-bold text-green-600">{survey.serviceSales}/10</div>
+              </div>
+              <div className="p-3 border rounded">
+                <div className="font-medium">Kualitas Produk</div>
+                <div className="text-2xl font-bold text-purple-600">{survey.productQuality}/10</div>
+              </div>
+              <div className="p-3 border rounded">
+                <div className="font-medium">Kejelasan Penggunaan</div>
+                <div className="text-2xl font-bold text-orange-600">{survey.usageClarity}/10</div>
+              </div>
+            </div>
+            
+            <div className="mt-4">
+              <strong>Persetujuan Harga: </strong>
+              <Badge variant={survey.priceApproval ? "default" : "destructive"}>
+                {survey.priceApproval ? 'Ya' : 'Tidak'}
+              </Badge>
+            </div>
+          </div>
+
+          {survey.testimonial && (
+            <div>
+              <h3 className="font-semibold text-lg mb-3">Testimoni</h3>
+              <div className="p-4 bg-gray-50 rounded border-l-4 border-blue-500">
+                {survey.testimonial}
+              </div>
+            </div>
+          )}
+
+          {survey.suggestions && (
+            <div>
+              <h3 className="font-semibold text-lg mb-3">Saran & Kritik</h3>
+              <div className="p-4 bg-gray-50 rounded border-l-4 border-orange-500">
+                {survey.suggestions}
+              </div>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 
   return (
     <div className="space-y-6">
@@ -403,6 +603,7 @@ const Reports = () => {
                     <TableHead>Harga OK</TableHead>
                     <TableHead>Testimoni</TableHead>
                     <TableHead>Saran & Kritik</TableHead>
+                    <TableHead className="text-center">Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
@@ -479,6 +680,18 @@ const Reports = () => {
                           ) : (
                             <span className="text-gray-400 italic">Tidak ada saran</span>
                           )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex space-x-2">
+                          <SurveyPreviewDialog survey={survey} />
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => printSurveyDetail(survey)}
+                          >
+                            <Printer className="h-4 w-4" />
+                          </Button>
                         </div>
                       </TableCell>
                     </TableRow>
