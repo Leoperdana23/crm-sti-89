@@ -74,7 +74,7 @@ export const useCustomers = () => {
           status: customerData.status,
           deal_date: customerData.dealDate,
           branch_id: customerData.branchId,
-          sales_id: customerData.salesId,
+          sales_id: customerData.salesId === 'no-sales' ? null : customerData.salesId,
           survey_status: customerData.status === 'Deal' ? 'belum_disurvei' : null
         })
         .select()
@@ -124,7 +124,7 @@ export const useCustomers = () => {
           status: updates.status,
           deal_date: updates.dealDate,
           branch_id: updates.branchId,
-          sales_id: updates.salesId,
+          sales_id: updates.salesId === 'no-sales' ? null : updates.salesId,
           survey_status: updates.status === 'Deal' ? 'belum_disurvei' : updates.surveyStatus
         })
         .eq('id', id)

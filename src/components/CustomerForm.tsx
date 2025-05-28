@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -48,7 +49,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
       notes: customer?.notes || '',
       status: customer?.status || 'Prospek',
       branchId: customer?.branchId || '',
-      salesId: customer?.salesId || '',
+      salesId: customer?.salesId || 'no-sales',
     },
   });
 
@@ -190,7 +191,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Tidak ada sales</SelectItem>
+                    <SelectItem value="no-sales">Tidak ada sales</SelectItem>
                     {sales.map((sale) => (
                       <SelectItem key={sale.id} value={sale.id}>
                         {sale.name} ({sale.code})
