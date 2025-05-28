@@ -27,6 +27,7 @@ export const useCustomers = () => {
         createdAt: customer.created_at,
         updatedAt: customer.updated_at,
         dealDate: customer.deal_date,
+        surveyStatus: customer.survey_status as Customer['surveyStatus'],
         status: customer.status as Customer['status'], // Type assertion for status
         interactions: [] // We'll load interactions separately if needed
       }));
@@ -56,7 +57,8 @@ export const useCustomers = () => {
           needs: customerData.needs,
           notes: customerData.notes,
           status: customerData.status,
-          deal_date: customerData.dealDate
+          deal_date: customerData.dealDate,
+          survey_status: customerData.status === 'Deal' ? 'belum_disurvei' : null
         })
         .select()
         .single();
@@ -74,6 +76,7 @@ export const useCustomers = () => {
           createdAt: data.created_at,
           updatedAt: data.updated_at,
           dealDate: data.deal_date,
+          surveyStatus: data.survey_status as Customer['surveyStatus'],
           status: data.status as Customer['status'], // Type assertion for status
           interactions: []
         };
@@ -100,7 +103,8 @@ export const useCustomers = () => {
           needs: updates.needs,
           notes: updates.notes,
           status: updates.status,
-          deal_date: updates.dealDate
+          deal_date: updates.dealDate,
+          survey_status: updates.status === 'Deal' ? 'belum_disurvei' : updates.surveyStatus
         })
         .eq('id', id)
         .select()
@@ -119,6 +123,7 @@ export const useCustomers = () => {
           createdAt: data.created_at,
           updatedAt: data.updated_at,
           dealDate: data.deal_date,
+          surveyStatus: data.survey_status as Customer['surveyStatus'],
           status: data.status as Customer['status'], // Type assertion for status
           interactions: []
         };

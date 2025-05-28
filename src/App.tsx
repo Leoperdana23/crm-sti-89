@@ -8,6 +8,7 @@ import Layout from "./components/Layout";
 import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import FollowUp from "./pages/FollowUp";
+import Survey from "./pages/Survey";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -23,7 +24,8 @@ const App = () => (
             <Route index element={<Dashboard />} />
             <Route path="customers" element={<Customers />} />
             <Route path="follow-up" element={<FollowUp />} />
-            {/* TODO: Add Survey and Reports pages */}
+            <Route path="survey" element={<Survey />} />
+            {/* TODO: Add Reports pages */}
           </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>

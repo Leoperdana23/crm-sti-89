@@ -1,0 +1,305 @@
+
+import React, { useState } from 'react';
+import { Plus, Search, Filter, BarChart, Users, CheckCircle, AlertCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import SurveyForm from '@/components/SurveyForm';
+import { useCustomers } from '@/hooks/useCustomers';
+import { useSurveys } from '@/hooks/useSurveys';
+import { Customer } from '@/types/customer';
+import { useToast } from '@/hooks/use-toast';
+
+const Survey = () => {
+  const { customers, loading: customersLoading } = useCustomers();
+  const { surveys, loading: surveysLoading, addSurvey, getAverageRatings } = useSurveys();
+  const { toast } = useToast();
+  const [isSurveyFormOpen, setIsSurveyFormOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [activeTab, setActiveTab] = useState<'customers' | 'analytics'>('customers');
+
+  // Filter customers who have Deal status
+  const dealCustomers = customers.filter(customer => customer.status === 'Deal');
+  
+  const filteredCustomers = dealCustomers.filter(customer => {
+    const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         customer.phone.includes(searchTerm);
+    
+    let matchesStatus = true;
+    if (statusFilter === 'sudah_disurvei') {
+      matchesStatus = customer.surveyStatus === 'sudah_disurvei';
+    } else if (statusFilter === 'belum_disurvei') {
+      matchesStatus = customer.surveyStatus === 'belum_disurvei' || !customer.surveyStatus;
+    }
+    
+    return matchesSearch && matchesStatus;
+  });
+
+  const handleSurveySubmit = async (surveyData: any) => {
+    try {
+      await addSurvey(surveyData);
+      toast({
+        title: "Berhasil",
+        description: "Survei berhasil disimpan",
+      });
+      setIsSurveyFormOpen(false);
+      setSelectedCustomer(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat menyimpan survei.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const openSurveyForm = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsSurveyFormOpen(true);
+  };
+
+  const averageRatings = getAverageRatings();
+
+  const getSurveyStatusBadge = (status?: string) => {
+    if (status === 'sudah_disurvei') {
+      return <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Sudah Disurvei</Badge>;
+    }
+    return <Badge className="bg-yellow-100 text-yellow-800"><AlertCircle className="h-3 w-3 mr-1" />Belum Disurvei</Badge>;
+  };
+
+  if (customersLoading || surveysLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center space-x-2">
+          <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-blue-600"></div>
+          <span>Memuat data survei...</span>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Survei Kepuasan Pelanggan</h1>
+          <p className="text-gray-600 mt-1">Kelola survei kepuasan untuk pelanggan Deal</p>
+        </div>
+      </div>
+
+      {/* Tab Navigation */}
+      <div className="flex space-x-4 border-b">
+        <button
+          onClick={() => setActiveTab('customers')}
+          className={`pb-2 px-1 ${activeTab === 'customers' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
+        >
+          <Users className="h-4 w-4 inline mr-2" />
+          Daftar Pelanggan
+        </button>
+        <button
+          onClick={() => setActiveTab('analytics')}
+          className={`pb-2 px-1 ${activeTab === 'analytics' ? 'border-b-2 border-blue-500 text-blue-600' : 'text-gray-600'}`}
+        >
+          <BarChart className="h-4 w-4 inline mr-2" />
+          Analitik Survei
+        </button>
+      </div>
+
+      {activeTab === 'customers' && (
+        <>
+          {/* Filters */}
+          <div className="flex space-x-4 bg-white p-4 rounded-lg shadow-sm border">
+            <div className="flex-1">
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                <Input
+                  placeholder="Cari nama atau nomor HP..."
+                  value={searchTerm}
+                  onChange={(e) => setSearchTerm(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            <div className="w-48">
+              <Select value={statusFilter} onValueChange={setStatusFilter}>
+                <SelectTrigger>
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter Status" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Status</SelectItem>
+                  <SelectItem value="sudah_disurvei">Sudah Disurvei</SelectItem>
+                  <SelectItem value="belum_disurvei">Belum Disurvei</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {/* Customers Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Pelanggan Deal ({filteredCustomers.length})</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Nama</TableHead>
+                    <TableHead>No. HP</TableHead>
+                    <TableHead>Tanggal Deal</TableHead>
+                    <TableHead>Status Survei</TableHead>
+                    <TableHead>Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCustomers.map((customer) => (
+                    <TableRow key={customer.id}>
+                      <TableCell className="font-medium">{customer.name}</TableCell>
+                      <TableCell>{customer.phone}</TableCell>
+                      <TableCell>
+                        {customer.dealDate ? new Date(customer.dealDate).toLocaleDateString('id-ID') : '-'}
+                      </TableCell>
+                      <TableCell>
+                        {getSurveyStatusBadge(customer.surveyStatus)}
+                      </TableCell>
+                      <TableCell>
+                        {customer.surveyStatus !== 'sudah_disurvei' && (
+                          <Button
+                            size="sm"
+                            onClick={() => openSurveyForm(customer)}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Buat Survei
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+
+              {filteredCustomers.length === 0 && (
+                <div className="text-center py-8">
+                  <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada pelanggan</h3>
+                  <p className="text-gray-600">
+                    {searchTerm || statusFilter !== 'all' 
+                      ? 'Tidak ada pelanggan yang sesuai dengan filter' 
+                      : 'Belum ada pelanggan dengan status Deal'
+                    }
+                  </p>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </>
+      )}
+
+      {activeTab === 'analytics' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg">Total Survei</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-3xl font-bold text-blue-600">{surveys.length}</div>
+              <p className="text-gray-600">Survei terkumpul</p>
+            </CardContent>
+          </Card>
+
+          {averageRatings && (
+            <>
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Pelayanan Teknisi</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-600">
+                    {averageRatings.serviceTechnician.toFixed(1)}/10
+                  </div>
+                  <p className="text-gray-600">Rata-rata penilaian</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Pelayanan Sales/CS</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-600">
+                    {averageRatings.serviceSales.toFixed(1)}/10
+                  </div>
+                  <p className="text-gray-600">Rata-rata penilaian</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Kualitas Produk</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-600">
+                    {averageRatings.productQuality.toFixed(1)}/10
+                  </div>
+                  <p className="text-gray-600">Rata-rata penilaian</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Kejelasan Penggunaan</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-green-600">
+                    {averageRatings.usageClarity.toFixed(1)}/10
+                  </div>
+                  <p className="text-gray-600">Rata-rata penilaian</p>
+                </CardContent>
+              </Card>
+
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg">Persetujuan Harga</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-3xl font-bold text-purple-600">
+                    {averageRatings.priceApprovalRate.toFixed(1)}%
+                  </div>
+                  <p className="text-gray-600">Menyetujui harga</p>
+                </CardContent>
+              </Card>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Survey Form Dialog */}
+      <Dialog open={isSurveyFormOpen} onOpenChange={setIsSurveyFormOpen}>
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Survei Kepuasan Pelanggan</DialogTitle>
+          </DialogHeader>
+          {selectedCustomer && (
+            <SurveyForm
+              customer={selectedCustomer}
+              onSubmit={handleSurveySubmit}
+              onCancel={() => {
+                setIsSurveyFormOpen(false);
+                setSelectedCustomer(null);
+              }}
+            />
+          )}
+        </DialogContent>
+      </Dialog>
+    </div>
+  );
+};
+
+export default Survey;

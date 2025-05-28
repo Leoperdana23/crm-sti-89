@@ -12,6 +12,7 @@ export interface Customer {
   createdAt: string;
   updatedAt: string;
   dealDate?: string;
+  surveyStatus?: 'sudah_disurvei' | 'belum_disurvei';
   interactions: Interaction[];
 }
 
