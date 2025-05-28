@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, TrendingUp, Building, Users, Target, Award, Download, Star, MessageSquare, Eye, Printer, Calendar } from 'lucide-react';
+import { FileText, TrendingUp, Building, Users, Target, Award, Download, Star, MessageSquare, Eye, Printer, Calendar, Clock, CheckCircle, Play, BarChart3 } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,88 @@ const Reports = () => {
 
   const branchStats = getStatsByBranch(selectedBranch === 'all' ? undefined : selectedBranch);
   const averageRatings = getAverageRatings();
+
+  // Work Process Analytics
+  const getWorkProcessStats = () => {
+    const dealCustomers = filteredCustomers.filter(c => c.status === 'Deal');
+    const notStarted = dealCustomers.filter(c => !c.workStatus || c.workStatus === 'not_started').length;
+    const inProgress = dealCustomers.filter(c => c.workStatus === 'in_progress').length;
+    const completed = dealCustomers.filter(c => c.workStatus === 'completed').length;
+    
+    return {
+      total: dealCustomers.length,
+      notStarted,
+      inProgress,
+      completed,
+      completionRate: dealCustomers.length > 0 ? ((completed / dealCustomers.length) * 100).toFixed(1) : '0'
+    };
+  };
+
+  const workProcessStats = getWorkProcessStats();
+
+  // Work Duration Analysis
+  const getWorkDurationAnalysis = () => {
+    const completedWork = filteredCustomers.filter(c => 
+      c.status === 'Deal' && 
+      c.workStatus === 'completed' && 
+      c.workStartDate && 
+      c.workCompletedDate
+    );
+
+    const durationData = completedWork.map(customer => {
+      const startDate = new Date(customer.workStartDate!);
+      const endDate = new Date(customer.workCompletedDate!);
+      const durationInDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+      
+      return {
+        id: customer.id,
+        name: customer.name,
+        estimatedDays: customer.estimatedDays || 0,
+        actualDays: durationInDays,
+        variance: durationInDays - (customer.estimatedDays || 0),
+        onTime: durationInDays <= (customer.estimatedDays || 0),
+        branchName: branches.find(b => b.id === customer.branchId)?.name || 'Unknown'
+      };
+    });
+
+    const avgDuration = durationData.length > 0 
+      ? (durationData.reduce((sum, item) => sum + item.actualDays, 0) / durationData.length).toFixed(1)
+      : '0';
+    
+    const onTimeCount = durationData.filter(item => item.onTime).length;
+    const onTimeRate = durationData.length > 0 
+      ? ((onTimeCount / durationData.length) * 100).toFixed(1)
+      : '0';
+
+    return {
+      totalCompleted: durationData.length,
+      avgDuration,
+      onTimeRate,
+      durationData
+    };
+  };
+
+  const workDurationAnalysis = getWorkDurationAnalysis();
+
+  // Survey Readiness Analysis
+  const getSurveyReadinessStats = () => {
+    const dealCustomers = filteredCustomers.filter(c => c.status === 'Deal');
+    const readyForSurvey = dealCustomers.filter(c => c.workStatus === 'completed');
+    const completedSurveys = surveys.filter(s => s.isCompleted);
+    const pendingSurveys = readyForSurvey.filter(c => !completedSurveys.find(s => s.customerId === c.id));
+
+    return {
+      totalDeal: dealCustomers.length,
+      readyForSurvey: readyForSurvey.length,
+      completedSurveys: completedSurveys.length,
+      pendingSurveys: pendingSurveys.length,
+      surveyCompletionRate: readyForSurvey.length > 0 
+        ? ((completedSurveys.length / readyForSurvey.length) * 100).toFixed(1)
+        : '0'
+    };
+  };
+
+  const surveyReadinessStats = getSurveyReadinessStats();
 
   // Data untuk sales performance chart
   const getSalesPerformanceData = () => {
@@ -78,7 +160,7 @@ const Reports = () => {
         'Conversion Rate': conversionRate,
         branch: branches.find(b => b.id === salesPerson.branchId)?.name || 'Tidak ada cabang'
       };
-    }).filter(sales => sales.totalCustomers > 0); // Hanya tampilkan sales yang ada customernya
+    }).filter(sales => sales.totalCustomers > 0);
 
     return salesPerformance;
   };
@@ -137,6 +219,22 @@ const Reports = () => {
     return last6Months;
   }, [filteredCustomers]);
 
+  // Work Process Chart Data
+  const workProcessData = branches.map(branch => {
+    const branchCustomers = customers.filter(c => c.branchId === branch.id && c.status === 'Deal');
+    const notStarted = branchCustomers.filter(c => !c.workStatus || c.workStatus === 'not_started').length;
+    const inProgress = branchCustomers.filter(c => c.workStatus === 'in_progress').length;
+    const completed = branchCustomers.filter(c => c.workStatus === 'completed').length;
+    
+    return {
+      branch: branch.code,
+      name: branch.name,
+      'Belum Mulai': notStarted,
+      'Sedang Dikerjakan': inProgress,
+      'Selesai': completed
+    };
+  });
+
   // Data untuk tabel detail survei per pelanggan
   const detailedSurveyData = React.useMemo(() => {
     const completedSurveys = surveys.filter(survey => survey.isCompleted);
@@ -173,9 +271,8 @@ const Reports = () => {
   };
 
   const exportReport = () => {
-    // Simple CSV export implementation
     const csvData = [
-      ['Laporan CRM', ''],
+      ['Laporan CRM Lengkap', ''],
       ['Tanggal Export', new Date().toLocaleDateString('id-ID')],
       ['Cabang', selectedBranch === 'all' ? 'Semua Cabang' : branches.find(b => b.id === selectedBranch)?.name],
       [''],
@@ -186,6 +283,24 @@ const Reports = () => {
       ['Deal', branchStats.deal],
       ['Tidak Jadi', branchStats.tidakJadi],
       ['Conversion Rate', calculateConversionRate() + '%'],
+      [''],
+      ['STATISTIK PROSES PEKERJAAN', ''],
+      ['Total Deal', workProcessStats.total],
+      ['Belum Mulai', workProcessStats.notStarted],
+      ['Sedang Dikerjakan', workProcessStats.inProgress],
+      ['Selesai', workProcessStats.completed],
+      ['Tingkat Penyelesaian', workProcessStats.completionRate + '%'],
+      [''],
+      ['ANALISIS DURASI PEKERJAAN', ''],
+      ['Total Pekerjaan Selesai', workDurationAnalysis.totalCompleted],
+      ['Rata-rata Durasi (hari)', workDurationAnalysis.avgDuration],
+      ['Tingkat Ketepatan Waktu', workDurationAnalysis.onTimeRate + '%'],
+      [''],
+      ['STATISTIK SURVEI', ''],
+      ['Siap Survei', surveyReadinessStats.readyForSurvey],
+      ['Survei Selesai', surveyReadinessStats.completedSurveys],
+      ['Survei Tertunda', surveyReadinessStats.pendingSurveys],
+      ['Tingkat Penyelesaian Survei', surveyReadinessStats.surveyCompletionRate + '%'],
       [''],
       ['RATA-RATA RATING SURVEI', ''],
       ...(averageRatings ? [
@@ -201,7 +316,7 @@ const Reports = () => {
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const link = document.createElement('a');
     link.href = URL.createObjectURL(blob);
-    link.download = `laporan-crm-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.download = `laporan-crm-lengkap-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
   };
 
@@ -406,8 +521,8 @@ const Reports = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Laporan & Analitik</h1>
-          <p className="text-gray-600 mt-1">Analisis komprehensif data pelanggan dan survei</p>
+          <h1 className="text-3xl font-bold text-gray-900">Laporan & Analitik Lengkap</h1>
+          <p className="text-gray-600 mt-1">Analisis komprehensif semua data mulai dari pelanggan, pekerjaan, hingga survei</p>
         </div>
         <div className="flex space-x-4">
           <Select value={selectedBranch} onValueChange={setSelectedBranch}>
@@ -431,8 +546,8 @@ const Reports = () => {
         </div>
       </div>
 
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      {/* Enhanced Summary Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Pelanggan</CardTitle>
@@ -461,13 +576,39 @@ const Reports = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Survei</CardTitle>
-            <FileText className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Tingkat Penyelesaian</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{surveys.length}</div>
+            <div className="text-2xl font-bold text-blue-600">{workProcessStats.completionRate}%</div>
             <p className="text-xs text-muted-foreground">
-              Survei terkumpul
+              {workProcessStats.completed} dari {workProcessStats.total} deal
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Rata-rata Durasi</CardTitle>
+            <Clock className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-purple-600">{workDurationAnalysis.avgDuration}</div>
+            <p className="text-xs text-muted-foreground">
+              hari per pekerjaan
+            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Ketepatan Waktu</CardTitle>
+            <Award className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold text-orange-600">{workDurationAnalysis.onTimeRate}%</div>
+            <p className="text-xs text-muted-foreground">
+              pekerjaan tepat waktu
             </p>
           </CardContent>
         </Card>
@@ -475,20 +616,185 @@ const Reports = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Rating Rata-rata</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
+            <Star className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">
+            <div className="text-2xl font-bold text-yellow-600">
               {averageRatings ? ((averageRatings.serviceTechnician + averageRatings.serviceSales + averageRatings.productQuality + averageRatings.usageClarity) / 4).toFixed(1) : '0'}/10
             </div>
             <p className="text-xs text-muted-foreground">
-              Kepuasan keseluruhan
+              kepuasan pelanggan
             </p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Sales Performance Chart */}
+      {/* Work Process Overview */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Play className="h-5 w-5 text-blue-600" />
+              <span>Siap Mulai</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-600">{workProcessStats.notStarted}</div>
+            <p className="text-sm text-gray-600 mt-2">Deal belum mulai dikerjakan</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <Clock className="h-5 w-5 text-orange-600" />
+              <span>Sedang Dikerjakan</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-orange-600">{workProcessStats.inProgress}</div>
+            <p className="text-sm text-gray-600 mt-2">Pekerjaan dalam progress</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center space-x-2">
+              <CheckCircle className="h-5 w-5 text-green-600" />
+              <span>Selesai</span>
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600">{workProcessStats.completed}</div>
+            <p className="text-sm text-gray-600 mt-2">Pekerjaan sudah selesai</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Work Process Analysis by Branch */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <BarChart3 className="h-5 w-5" />
+            <span>Analisis Proses Pekerjaan per Cabang</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ResponsiveContainer width="100%" height={400}>
+            <BarChart data={workProcessData}>
+              <CartesianGrid strokeDasharray="3 3" />
+              <XAxis dataKey="branch" />
+              <YAxis />
+              <Tooltip 
+                formatter={(value, name) => [value, name]}
+                labelFormatter={(label) => {
+                  const branch = workProcessData.find(b => b.branch === label);
+                  return `${branch?.name} (${label})`;
+                }}
+              />
+              <Legend />
+              <Bar dataKey="Belum Mulai" stackId="a" fill="#3B82F6" />
+              <Bar dataKey="Sedang Dikerjakan" stackId="a" fill="#F59E0B" />
+              <Bar dataKey="Selesai" stackId="a" fill="#10B981" />
+            </BarChart>
+          </ResponsiveContainer>
+        </CardContent>
+      </Card>
+
+      {/* Work Duration Analysis Table */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <Clock className="h-5 w-5" />
+            <span>Analisis Durasi Pekerjaan</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {workDurationAnalysis.durationData.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              Belum ada pekerjaan yang selesai
+            </div>
+          ) : (
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Pelanggan</TableHead>
+                  <TableHead>Cabang</TableHead>
+                  <TableHead>Estimasi (hari)</TableHead>
+                  <TableHead>Aktual (hari)</TableHead>
+                  <TableHead>Selisih</TableHead>
+                  <TableHead>Status</TableHead>
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {workDurationAnalysis.durationData.map((item) => (
+                  <TableRow key={item.id}>
+                    <TableCell className="font-medium">{item.name}</TableCell>
+                    <TableCell>{item.branchName}</TableCell>
+                    <TableCell>{item.estimatedDays || '-'}</TableCell>
+                    <TableCell>{item.actualDays}</TableCell>
+                    <TableCell>
+                      <span className={item.variance <= 0 ? 'text-green-600' : 'text-red-600'}>
+                        {item.variance > 0 ? '+' : ''}{item.variance} hari
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant={item.onTime ? "default" : "destructive"}>
+                        {item.onTime ? 'Tepat Waktu' : 'Terlambat'}
+                      </Badge>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Survey Readiness Analysis */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Siap Survei</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-blue-600">{surveyReadinessStats.readyForSurvey}</div>
+            <p className="text-sm text-gray-600">Pekerjaan selesai</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Survei Selesai</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-green-600">{surveyReadinessStats.completedSurveys}</div>
+            <p className="text-sm text-gray-600">Sudah mengisi survei</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Survei Tertunda</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-orange-600">{surveyReadinessStats.pendingSurveys}</div>
+            <p className="text-sm text-gray-600">Belum mengisi survei</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Tingkat Partisipasi</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="text-3xl font-bold text-purple-600">{surveyReadinessStats.surveyCompletionRate}%</div>
+            <p className="text-sm text-gray-600">Rate penyelesaian survei</p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Sales Performance Chart with Time Filter */}
       <Card>
         <CardHeader>
           <div className="flex justify-between items-center">
@@ -540,9 +846,7 @@ const Reports = () => {
         </CardContent>
       </Card>
 
-      {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Status Distribution Pie Chart */}
         <Card>
           <CardHeader>
             <CardTitle>Distribusi Status Pelanggan</CardTitle>
@@ -570,7 +874,6 @@ const Reports = () => {
           </CardContent>
         </Card>
 
-        {/* Monthly Trend */}
         <Card>
           <CardHeader>
             <CardTitle>Trend Pelanggan 6 Bulan Terakhir</CardTitle>
@@ -592,7 +895,6 @@ const Reports = () => {
         </Card>
       </div>
 
-      {/* Branch Comparison */}
       <Card>
         <CardHeader>
           <CardTitle>Perbandingan Performa Cabang</CardTitle>
@@ -614,7 +916,6 @@ const Reports = () => {
         </CardContent>
       </Card>
 
-      {/* Survey Analytics */}
       {averageRatings && (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <Card>
@@ -687,7 +988,6 @@ const Reports = () => {
         </div>
       )}
 
-      {/* Detail Survei Per Pelanggan */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center space-x-2">
