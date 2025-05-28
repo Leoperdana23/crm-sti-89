@@ -20,7 +20,7 @@ interface FormData {
   serviceSales: number | null;
   productQuality: number | null;
   usageClarity: number | null;
-  priceApproval: boolean;
+  priceApproval: boolean | null;
   testimonial: string;
   suggestions: string;
 }
@@ -32,11 +32,11 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
   isCompleted = false 
 }) => {
   const [formData, setFormData] = useState<FormData>({
-    serviceTechnician: survey.serviceTechnician || null,
-    serviceSales: survey.serviceSales || null,
-    productQuality: survey.productQuality || null,
-    usageClarity: survey.usageClarity || null,
-    priceApproval: survey.priceApproval !== undefined ? survey.priceApproval : true,
+    serviceTechnician: isCompleted ? survey.serviceTechnician || null : null,
+    serviceSales: isCompleted ? survey.serviceSales || null : null,
+    productQuality: isCompleted ? survey.productQuality || null : null,
+    usageClarity: isCompleted ? survey.usageClarity || null : null,
+    priceApproval: isCompleted ? (survey.priceApproval !== undefined ? survey.priceApproval : null) : null,
     testimonial: survey.testimonial || '',
     suggestions: survey.suggestions || ''
   });
@@ -57,6 +57,9 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
     }
     if (formData.usageClarity === null) {
       newErrors.usageClarity = 'Harap pilih rating untuk Kejelasan Penggunaan';
+    }
+    if (formData.priceApproval === null) {
+      newErrors.priceApproval = 'Harap pilih apakah harga sesuai';
     }
 
     setErrors(newErrors);
@@ -80,6 +83,7 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
         serviceSales: formData.serviceSales!,
         productQuality: formData.productQuality!,
         usageClarity: formData.usageClarity!,
+        priceApproval: formData.priceApproval!,
       };
       await onSubmit(submitData);
     } catch (error) {
@@ -127,7 +131,8 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
     return formData.serviceTechnician !== null &&
            formData.serviceSales !== null &&
            formData.productQuality !== null &&
-           formData.usageClarity !== null;
+           formData.usageClarity !== null &&
+           formData.priceApproval !== null;
   };
 
   if (isCompleted) {
@@ -170,11 +175,19 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
           {renderRatingScale('usageClarity', 'Kejelasan Penggunaan (1-10)')}
 
           <div className="space-y-3">
-            <Label className="text-sm font-medium">Harga Sesuai?</Label>
+            <Label className={`text-sm font-medium ${errors.priceApproval ? 'text-red-600' : ''}`}>
+              Harga Sesuai? <span className="text-red-500">*</span>
+            </Label>
             <RadioGroup
-              value={formData.priceApproval.toString()}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, priceApproval: value === 'true' }))}
+              value={formData.priceApproval !== null ? formData.priceApproval.toString() : ''}
+              onValueChange={(value) => {
+                setFormData(prev => ({ ...prev, priceApproval: value === 'true' }));
+                if (errors.priceApproval) {
+                  setErrors(prev => ({ ...prev, priceApproval: '' }));
+                }
+              }}
               className="flex gap-4"
+              disabled={isCompleted}
             >
               <div className="flex items-center space-x-2">
                 <RadioGroupItem value="true" id="price-yes" />
@@ -185,6 +198,9 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
                 <Label htmlFor="price-no">Tidak Sesuai</Label>
               </div>
             </RadioGroup>
+            {errors.priceApproval && (
+              <p className="text-red-600 text-sm mt-1">{errors.priceApproval}</p>
+            )}
           </div>
 
           <div className="space-y-2">
@@ -195,6 +211,7 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
               onChange={(e) => setFormData(prev => ({ ...prev, testimonial: e.target.value }))}
               placeholder="Bagikan pengalaman Anda dengan produk/layanan kami..."
               rows={4}
+              disabled={isCompleted}
             />
           </div>
 
@@ -206,6 +223,7 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
               onChange={(e) => setFormData(prev => ({ ...prev, suggestions: e.target.value }))}
               placeholder="Berikan saran atau kritik untuk perbaikan layanan kami..."
               rows={4}
+              disabled={isCompleted}
             />
           </div>
 
