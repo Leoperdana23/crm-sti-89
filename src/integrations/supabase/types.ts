@@ -96,6 +96,7 @@ export type Database = {
           branch_id: string | null
           created_at: string
           deal_date: string | null
+          estimated_days: number | null
           id: string
           id_number: string
           name: string
@@ -106,6 +107,10 @@ export type Database = {
           status: string
           survey_status: string | null
           updated_at: string
+          work_completed_date: string | null
+          work_notes: string | null
+          work_start_date: string | null
+          work_status: string | null
         }
         Insert: {
           address: string
@@ -113,6 +118,7 @@ export type Database = {
           branch_id?: string | null
           created_at?: string
           deal_date?: string | null
+          estimated_days?: number | null
           id?: string
           id_number: string
           name: string
@@ -123,6 +129,10 @@ export type Database = {
           status: string
           survey_status?: string | null
           updated_at?: string
+          work_completed_date?: string | null
+          work_notes?: string | null
+          work_start_date?: string | null
+          work_status?: string | null
         }
         Update: {
           address?: string
@@ -130,6 +140,7 @@ export type Database = {
           branch_id?: string | null
           created_at?: string
           deal_date?: string | null
+          estimated_days?: number | null
           id?: string
           id_number?: string
           name?: string
@@ -140,6 +151,10 @@ export type Database = {
           status?: string
           survey_status?: string | null
           updated_at?: string
+          work_completed_date?: string | null
+          work_notes?: string | null
+          work_start_date?: string | null
+          work_status?: string | null
         }
         Relationships: [
           {

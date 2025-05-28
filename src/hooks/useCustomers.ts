@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Customer } from '@/types/customer';
@@ -44,6 +43,11 @@ export const useCustomers = () => {
         salesId: customer.sales_id,
         surveyStatus: customer.survey_status as Customer['surveyStatus'],
         status: customer.status as Customer['status'],
+        workStatus: customer.work_status as Customer['workStatus'],
+        workStartDate: customer.work_start_date,
+        workCompletedDate: customer.work_completed_date,
+        workNotes: customer.work_notes,
+        estimatedDays: customer.estimated_days,
         interactions: []
       }));
 
@@ -75,7 +79,8 @@ export const useCustomers = () => {
           deal_date: customerData.dealDate,
           branch_id: customerData.branchId,
           sales_id: customerData.salesId === 'no-sales' ? null : customerData.salesId,
-          survey_status: customerData.status === 'Deal' ? 'belum_disurvei' : null
+          survey_status: customerData.status === 'Deal' ? 'belum_disurvei' : null,
+          work_status: customerData.status === 'Deal' ? 'not_started' : null
         })
         .select()
         .single();
@@ -97,6 +102,11 @@ export const useCustomers = () => {
           salesId: data.sales_id,
           surveyStatus: data.survey_status as Customer['surveyStatus'],
           status: data.status as Customer['status'],
+          workStatus: data.work_status as Customer['workStatus'],
+          workStartDate: data.work_start_date,
+          workCompletedDate: data.work_completed_date,
+          workNotes: data.work_notes,
+          estimatedDays: data.estimated_days,
           interactions: []
         };
         
@@ -125,7 +135,12 @@ export const useCustomers = () => {
           deal_date: updates.dealDate,
           branch_id: updates.branchId,
           sales_id: updates.salesId === 'no-sales' ? null : updates.salesId,
-          survey_status: updates.status === 'Deal' ? 'belum_disurvei' : updates.surveyStatus
+          survey_status: updates.status === 'Deal' ? 'belum_disurvei' : updates.surveyStatus,
+          work_status: updates.workStatus,
+          work_start_date: updates.workStartDate,
+          work_completed_date: updates.workCompletedDate,
+          work_notes: updates.workNotes,
+          estimated_days: updates.estimatedDays
         })
         .eq('id', id)
         .select()
@@ -148,6 +163,11 @@ export const useCustomers = () => {
           salesId: data.sales_id,
           surveyStatus: data.survey_status as Customer['surveyStatus'],
           status: data.status as Customer['status'],
+          workStatus: data.work_status as Customer['workStatus'],
+          workStartDate: data.work_start_date,
+          workCompletedDate: data.work_completed_date,
+          workNotes: data.work_notes,
+          estimatedDays: data.estimated_days,
           interactions: []
         };
 
