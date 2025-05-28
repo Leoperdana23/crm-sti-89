@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Plus, Search, Filter, BarChart, Users, CheckCircle, AlertCircle, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -28,7 +29,7 @@ const Survey = () => {
 
   // Filter customers who have Deal status AND completed work
   const readyForSurveyCustomers = customers.filter(customer => 
-    customer.status === 'Deal' && customer.workStatus === 'completed'
+    customer.status === 'Deal' && customer.work_status === 'completed'
   );
   
   const filteredCustomers = readyForSurveyCustomers.filter(customer => {
@@ -37,14 +38,14 @@ const Survey = () => {
     
     let matchesStatus = true;
     if (statusFilter === 'sudah_disurvei') {
-      matchesStatus = customer.surveyStatus === 'sudah_disurvei';
+      matchesStatus = customer.survey_status === 'sudah_disurvei';
     } else if (statusFilter === 'belum_disurvei') {
-      matchesStatus = customer.surveyStatus === 'belum_disurvei' || !customer.surveyStatus;
+      matchesStatus = customer.survey_status === 'belum_disurvei' || !customer.survey_status;
     }
 
     let matchesBranch = true;
     if (branchFilter !== 'all') {
-      matchesBranch = customer.branchId === branchFilter;
+      matchesBranch = customer.branch_id === branchFilter;
     }
     
     return matchesSearch && matchesStatus && matchesBranch;
@@ -72,7 +73,7 @@ const Survey = () => {
     try {
       const survey = await createSurveyLink(customer.id);
       if (survey) {
-        const surveyUrl = `${window.location.origin}/public-survey/${survey.surveyToken}`;
+        const surveyUrl = `${window.location.origin}/public-survey/${survey.survey_token}`;
         navigator.clipboard.writeText(surveyUrl);
         toast({
           title: "Link Survei Dibuat",
@@ -92,8 +93,8 @@ const Survey = () => {
     try {
       const survey = await createSurveyLink(customer.id);
       if (survey) {
-        const surveyUrl = `${window.location.origin}/public-survey/${survey.surveyToken}`;
-        const branch = branches.find(b => b.id === customer.branchId);
+        const surveyUrl = `${window.location.origin}/public-survey/${survey.survey_token}`;
+        const branch = branches.find(b => b.id === customer.branch_id);
         const branchName = branch?.name || 'Tim Kami';
         
         const message = `Assalamualaikum Bapak/Ibu ${customer.name},
@@ -243,20 +244,20 @@ Terima kasih atas kerjasamanya.`;
                 </TableHeader>
                 <TableBody>
                   {filteredCustomers.map((customer) => {
-                    const branch = branches.find(b => b.id === customer.branchId);
+                    const branch = branches.find(b => b.id === customer.branch_id);
                     return (
                       <TableRow key={customer.id}>
                         <TableCell className="font-medium">{customer.name}</TableCell>
                         <TableCell>{customer.phone}</TableCell>
                         <TableCell>{branch?.name || '-'}</TableCell>
                         <TableCell>
-                          {customer.dealDate ? new Date(customer.dealDate).toLocaleDateString('id-ID') : '-'}
+                          {customer.deal_date ? new Date(customer.deal_date).toLocaleDateString('id-ID') : '-'}
                         </TableCell>
                         <TableCell>
-                          {getSurveyStatusBadge(customer.surveyStatus)}
+                          {getSurveyStatusBadge(customer.survey_status)}
                         </TableCell>
                         <TableCell>
-                          {customer.surveyStatus !== 'sudah_disurvei' && (
+                          {customer.survey_status !== 'sudah_disurvei' && (
                             <div className="flex space-x-2">
                               <Button
                                 size="sm"

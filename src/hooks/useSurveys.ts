@@ -26,23 +26,8 @@ export const useSurveys = () => {
         return;
       }
 
-      const transformedSurveys: Survey[] = (data || []).map(survey => ({
-        id: survey.id,
-        customerId: survey.customer_id,
-        dealDate: survey.deal_date,
-        serviceTechnician: survey.service_technician,
-        serviceSales: survey.service_sales,
-        productQuality: survey.product_quality,
-        usageClarity: survey.usage_clarity,
-        priceApproval: survey.price_approval,
-        testimonial: survey.testimonial || '',
-        suggestions: survey.suggestions || '',
-        isCompleted: survey.is_completed,
-        completedAt: survey.completed_at,
-        surveyToken: survey.survey_token
-      }));
-
-      setSurveys(transformedSurveys);
+      // Use the data directly as it already matches the Survey interface with snake_case
+      setSurveys(data || []);
     } catch (error) {
       console.error('Error in fetchSurveys:', error);
     } finally {
@@ -79,24 +64,8 @@ export const useSurveys = () => {
       }
 
       if (data) {
-        const newSurvey: Survey = {
-          id: data.id,
-          customerId: data.customer_id,
-          dealDate: data.deal_date,
-          serviceTechnician: data.service_technician,
-          serviceSales: data.service_sales,
-          productQuality: data.product_quality,
-          usageClarity: data.usage_clarity,
-          priceApproval: data.price_approval,
-          testimonial: data.testimonial || '',
-          suggestions: data.suggestions || '',
-          isCompleted: data.is_completed,
-          completedAt: data.completed_at,
-          surveyToken: data.survey_token
-        };
-        
-        setSurveys(prev => [newSurvey, ...prev]);
-        return newSurvey;
+        setSurveys(prev => [data, ...prev]);
+        return data;
       }
     } catch (error) {
       console.error('Error in createSurveyLink:', error);
@@ -104,18 +73,18 @@ export const useSurveys = () => {
     }
   };
 
-  const addSurvey = async (surveyData: Omit<Survey, 'id' | 'isCompleted' | 'completedAt' | 'surveyToken'>) => {
+  const addSurvey = async (surveyData: Omit<Survey, 'id' | 'is_completed' | 'completed_at' | 'survey_token'>) => {
     try {
       const { data, error } = await supabase
         .from('surveys')
         .insert({
-          customer_id: surveyData.customerId,
-          deal_date: surveyData.dealDate,
-          service_technician: surveyData.serviceTechnician,
-          service_sales: surveyData.serviceSales,
-          product_quality: surveyData.productQuality,
-          usage_clarity: surveyData.usageClarity,
-          price_approval: surveyData.priceApproval,
+          customer_id: surveyData.customer_id,
+          deal_date: surveyData.deal_date,
+          service_technician: surveyData.service_technician,
+          service_sales: surveyData.service_sales,
+          product_quality: surveyData.product_quality,
+          usage_clarity: surveyData.usage_clarity,
+          price_approval: surveyData.price_approval,
           testimonial: surveyData.testimonial,
           suggestions: surveyData.suggestions,
           is_completed: true,
@@ -130,24 +99,8 @@ export const useSurveys = () => {
       }
 
       if (data) {
-        const newSurvey: Survey = {
-          id: data.id,
-          customerId: data.customer_id,
-          dealDate: data.deal_date,
-          serviceTechnician: data.service_technician,
-          serviceSales: data.service_sales,
-          productQuality: data.product_quality,
-          usageClarity: data.usage_clarity,
-          priceApproval: data.price_approval,
-          testimonial: data.testimonial || '',
-          suggestions: data.suggestions || '',
-          isCompleted: data.is_completed,
-          completedAt: data.completed_at,
-          surveyToken: data.survey_token
-        };
-        
-        setSurveys(prev => [newSurvey, ...prev]);
-        return newSurvey;
+        setSurveys(prev => [data, ...prev]);
+        return data;
       }
     } catch (error) {
       console.error('Error in addSurvey:', error);
@@ -158,15 +111,15 @@ export const useSurveys = () => {
   const getAverageRatings = () => {
     if (surveys.length === 0) return null;
 
-    const completedSurveys = surveys.filter(s => s.isCompleted);
+    const completedSurveys = surveys.filter(s => s.is_completed);
     if (completedSurveys.length === 0) return null;
 
     return {
-      serviceTechnician: completedSurveys.reduce((sum, s) => sum + s.serviceTechnician, 0) / completedSurveys.length,
-      serviceSales: completedSurveys.reduce((sum, s) => sum + s.serviceSales, 0) / completedSurveys.length,
-      productQuality: completedSurveys.reduce((sum, s) => sum + s.productQuality, 0) / completedSurveys.length,
-      usageClarity: completedSurveys.reduce((sum, s) => sum + s.usageClarity, 0) / completedSurveys.length,
-      priceApprovalRate: (completedSurveys.filter(s => s.priceApproval).length / completedSurveys.length) * 100
+      serviceTechnician: completedSurveys.reduce((sum, s) => sum + s.service_technician, 0) / completedSurveys.length,
+      serviceSales: completedSurveys.reduce((sum, s) => sum + s.service_sales, 0) / completedSurveys.length,
+      productQuality: completedSurveys.reduce((sum, s) => sum + s.product_quality, 0) / completedSurveys.length,
+      usageClarity: completedSurveys.reduce((sum, s) => sum + s.usage_clarity, 0) / completedSurveys.length,
+      priceApprovalRate: (completedSurveys.filter(s => s.price_approval).length / completedSurveys.length) * 100
     };
   };
 

@@ -64,7 +64,7 @@ const PublicSurvey = () => {
           survey={survey}
           customerName={customer.name}
           onSubmit={handleSurveySubmit}
-          isCompleted={survey.isCompleted}
+          isCompleted={survey.is_completed}
         />
       </div>
     </div>

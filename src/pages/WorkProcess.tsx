@@ -1,614 +1,303 @@
+
 import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Plus, Search, Filter, Clock, PlayCircle, CheckCircle, AlertCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
-import { Calendar } from '@/components/ui/calendar';
-import { Play, CheckCircle, Clock, MapPin, Phone, User, Calendar as CalendarIcon, Search, UserPlus, Users, Filter } from 'lucide-react';
-import { useCustomers } from '@/hooks/useCustomers';
-import { useToast } from '@/hooks/use-toast';
-import { useSales } from '@/hooks/useSales';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import WorkAssignmentDialog from '@/components/WorkAssignmentDialog';
-import { format } from 'date-fns';
-import { cn } from '@/lib/utils';
-
-type DateFilter = 'all' | 'today' | 'this_week' | 'this_month' | 'custom';
+import { useCustomers } from '@/hooks/useCustomers';
+import { useBranches } from '@/hooks/useBranches';
+import { Customer } from '@/types/customer';
+import { useToast } from '@/hooks/use-toast';
 
 const WorkProcess = () => {
-  const { customers, updateCustomer, getCustomersByStatus } = useCustomers();
-  const { sales } = useSales();
+  const { customers, loading, updateCustomer } = useCustomers();
+  const { branches } = useBranches();
   const { toast } = useToast();
-  const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
-  const [workNotes, setWorkNotes] = useState('');
-  const [estimatedDays, setEstimatedDays] = useState('');
-  const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
-  const [customerForAssignment, setCustomerForAssignment] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [branchFilter, setBranchFilter] = useState<string>('all');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isAssignmentOpen, setIsAssignmentOpen] = useState(false);
+
+  // Filter customers who have Deal status
+  const dealCustomers = customers.filter(customer => customer.status === 'Deal');
   
-  // Search states for each column
-  const [searchReady, setSearchReady] = useState('');
-  const [searchOngoing, setSearchOngoing] = useState('');
-  const [searchCompleted, setSearchCompleted] = useState('');
-
-  // Date filter states
-  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
-  const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
-  const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
-
-  // Filter customers by date
-  const filterByDate = (customers: any[], dateField: string) => {
-    if (dateFilter === 'all') return customers;
-
-    const now = new Date();
-    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const filteredCustomers = dealCustomers.filter(customer => {
+    const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         customer.phone.includes(searchTerm);
     
-    return customers.filter(customer => {
-      const customerDate = customer[dateField] ? new Date(customer[dateField]) : null;
-      if (!customerDate) return false;
+    let matchesStatus = true;
+    if (statusFilter === 'not_started') {
+      matchesStatus = !customer.work_status || customer.work_status === 'not_started';
+    } else if (statusFilter === 'in_progress') {
+      matchesStatus = customer.work_status === 'in_progress';
+    } else if (statusFilter === 'completed') {
+      matchesStatus = customer.work_status === 'completed';
+    }
 
-      const customerDateOnly = new Date(customerDate.getFullYear(), customerDate.getMonth(), customerDate.getDate());
+    let matchesBranch = true;
+    if (branchFilter !== 'all') {
+      matchesBranch = customer.branch_id === branchFilter;
+    }
+    
+    return matchesSearch && matchesStatus && matchesBranch;
+  });
 
-      switch (dateFilter) {
-        case 'today':
-          return customerDateOnly.getTime() === today.getTime();
-        
-        case 'this_week':
-          const startOfWeek = new Date(today);
-          startOfWeek.setDate(today.getDate() - today.getDay());
-          const endOfWeek = new Date(startOfWeek);
-          endOfWeek.setDate(startOfWeek.getDate() + 6);
-          return customerDateOnly >= startOfWeek && customerDateOnly <= endOfWeek;
-        
-        case 'this_month':
-          const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
-          const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
-          return customerDateOnly >= startOfMonth && customerDateOnly <= endOfMonth;
-        
-        case 'custom':
-          if (!customDateFrom || !customDateTo) return true;
-          const fromDate = new Date(customDateFrom.getFullYear(), customDateFrom.getMonth(), customDateFrom.getDate());
-          const toDate = new Date(customDateTo.getFullYear(), customDateTo.getMonth(), customDateTo.getDate());
-          return customerDateOnly >= fromDate && customerDateOnly <= toDate;
-        
-        default:
-          return true;
-      }
-    });
+  const getWorkStatusBadge = (status?: string) => {
+    switch (status) {
+      case 'in_progress':
+        return <Badge className="bg-blue-100 text-blue-800"><PlayCircle className="h-3 w-3 mr-1" />Sedang Dikerjakan</Badge>;
+      case 'completed':
+        return <Badge className="bg-green-100 text-green-800"><CheckCircle className="h-3 w-3 mr-1" />Selesai</Badge>;
+      default:
+        return <Badge className="bg-gray-100 text-gray-800"><Clock className="h-3 w-3 mr-1" />Belum Dimulai</Badge>;
+    }
   };
 
-  const dealCustomers = getCustomersByStatus('Deal').filter(customer => 
-    !customer.workStatus || customer.workStatus === 'not_started'
-  );
-  
-  const ongoingWork = customers.filter(customer => 
-    customer.status === 'Deal' && customer.workStatus === 'in_progress'
-  );
+  const handleStartWork = async (customer: Customer) => {
+    try {
+      await updateCustomer(customer.id, {
+        work_status: 'in_progress',
+        work_start_date: new Date().toISOString()
+      });
+      toast({
+        title: "Berhasil",
+        description: "Pekerjaan telah dimulai",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat memulai pekerjaan.",
+        variant: "destructive"
+      });
+    }
+  };
 
-  const completedWork = customers.filter(customer => 
-    customer.status === 'Deal' && customer.workStatus === 'completed'
-  );
+  const handleCompleteWork = async (customer: Customer) => {
+    try {
+      await updateCustomer(customer.id, {
+        work_status: 'completed',
+        work_completed_date: new Date().toISOString()
+      });
+      toast({
+        title: "Berhasil",
+        description: "Pekerjaan telah selesai",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat menyelesaikan pekerjaan.",
+        variant: "destructive"
+      });
+    }
+  };
 
-  // Apply date filtering
-  const filteredDealCustomers = filterByDate(dealCustomers, 'dealDate');
-  const filteredOngoingWork = filterByDate(ongoingWork, 'workStartDate');
-  const filteredCompletedWork = filterByDate(completedWork, 'workCompletedDate');
+  const handleAssignWork = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsAssignmentOpen(true);
+  };
 
-  // Filter functions for search
-  const filterCustomers = (customers: any[], searchTerm: string) => {
-    if (!searchTerm.trim()) return customers;
+  const handleAssignmentSave = async (assignmentData: any) => {
+    if (!selectedCustomer) return;
     
-    return customers.filter(customer => 
-      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      customer.address.toLowerCase().includes(searchTerm.toLowerCase())
+    try {
+      const employeesList = Array.isArray(assignmentData.assigned_employees) 
+        ? assignmentData.assigned_employees 
+        : [];
+      
+      await updateCustomer(selectedCustomer.id, {
+        assigned_employees: employeesList,
+        estimated_days: assignmentData.estimated_days,
+        work_notes: assignmentData.work_notes
+      });
+      
+      toast({
+        title: "Berhasil",
+        description: "Pekerjaan berhasil ditugaskan",
+      });
+      setIsAssignmentOpen(false);
+      setSelectedCustomer(null);
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat menugaskan pekerjaan.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center space-x-2">
+          <div className="h-6 w-6 animate-spin rounded-full border-b-2 border-blue-600"></div>
+          <span>Memuat data proses kerja...</span>
+        </div>
+      </div>
     );
-  };
-
-  const filteredReadyCustomers = filterCustomers(filteredDealCustomers, searchReady);
-  const filteredOngoingWorkWithSearch = filterCustomers(filteredOngoingWork, searchOngoing);
-  const filteredCompletedWorkWithSearch = filterCustomers(filteredCompletedWork, searchCompleted);
-
-  const getSalesName = (salesId?: string) => {
-    if (!salesId) return 'Tidak ada sales';
-    const salesPerson = sales.find(s => s.id === salesId);
-    return salesPerson?.name || 'Sales tidak ditemukan';
-  };
-
-  const getAssignedEmployeesNames = (employeeIds?: string[]) => {
-    if (!employeeIds || employeeIds.length === 0) return 'Belum ada karyawan';
-    
-    return employeeIds.map(id => {
-      const employee = sales.find(s => s.id === id);
-      return employee?.name || 'Unknown';
-    }).join(', ');
-  };
-
-  const handleStartWork = (customerId: string) => {
-    if (!workNotes.trim()) {
-      toast({
-        title: "Error",
-        description: "Catatan pekerjaan harus diisi",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    // Validate that employees are assigned
-    const customer = dealCustomers.find(c => c.id === customerId);
-    if (!customer?.assignedEmployees || customer.assignedEmployees.length === 0) {
-      toast({
-        title: "Error",
-        description: "Karyawan pelaksana harus dipilih sebelum memulai pekerjaan",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    updateCustomer(customerId, {
-      workStatus: 'in_progress',
-      workStartDate: new Date().toISOString(),
-      workNotes: workNotes,
-      estimatedDays: estimatedDays ? parseInt(estimatedDays) : undefined
-    });
-
-    toast({
-      title: "Berhasil",
-      description: "Pekerjaan berhasil dimulai",
-    });
-
-    setSelectedCustomer(null);
-    setWorkNotes('');
-    setEstimatedDays('');
-  };
-
-  const handleAssignEmployees = (customer: any) => {
-    setCustomerForAssignment(customer);
-    setAssignmentDialogOpen(true);
-  };
-
-  const handleAssignmentSubmit = (data: {
-    employeeIds: string[];
-    workNotes: string;
-    estimatedDays: string;
-  }) => {
-    if (!customerForAssignment) return;
-
-    updateCustomer(customerForAssignment.id, {
-      workStatus: 'in_progress',
-      workStartDate: new Date().toISOString(),
-      workNotes: data.workNotes,
-      estimatedDays: data.estimatedDays ? parseInt(data.estimatedDays) : undefined,
-      assignedEmployees: data.employeeIds
-    });
-
-    toast({
-      title: "Berhasil",
-      description: `Pekerjaan berhasil dimulai dengan ${data.employeeIds.length} karyawan`,
-    });
-
-    setAssignmentDialogOpen(false);
-    setCustomerForAssignment(null);
-  };
-
-  const handleCompleteWork = (customerId: string) => {
-    updateCustomer(customerId, {
-      workStatus: 'completed',
-      workCompletedDate: new Date().toISOString()
-    });
-
-    toast({
-      title: "Berhasil",
-      description: "Pekerjaan berhasil diselesaikan",
-    });
-  };
-
-  const formatDateTime = (dateString: string) => {
-    return new Date(dateString).toLocaleString('id-ID', {
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric',
-      hour: '2-digit',
-      minute: '2-digit'
-    });
-  };
-
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('id-ID');
-  };
-
-  const calculateWorkDuration = (startDate: string, endDate?: string) => {
-    const start = new Date(startDate);
-    const end = endDate ? new Date(endDate) : new Date();
-    const diffInMs = end.getTime() - start.getTime();
-    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
-    const diffInHours = Math.floor((diffInMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
-    
-    if (diffInDays > 0) {
-      return `${diffInDays} hari ${diffInHours} jam`;
-    } else {
-      return `${diffInHours} jam`;
-    }
-  };
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Proses Pekerjaan</h1>
-        <p className="text-gray-600 mt-1">Kelola pekerjaan untuk pelanggan yang sudah deal</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Proses Kerja</h1>
+          <p className="text-gray-600 mt-1">Kelola proses pekerjaan untuk pelanggan yang sudah deal</p>
+        </div>
       </div>
 
-      {/* Date Filter */}
+      {/* Filters */}
+      <div className="flex space-x-4 bg-white p-4 rounded-lg shadow-sm border">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+            <Input
+              placeholder="Cari nama atau nomor HP..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+        </div>
+        <div className="w-48">
+          <Select value={statusFilter} onValueChange={setStatusFilter}>
+            <SelectTrigger>
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Filter Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Status</SelectItem>
+              <SelectItem value="not_started">Belum Dimulai</SelectItem>
+              <SelectItem value="in_progress">Sedang Dikerjakan</SelectItem>
+              <SelectItem value="completed">Selesai</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="w-48">
+          <Select value={branchFilter} onValueChange={setBranchFilter}>
+            <SelectTrigger>
+              <Filter className="h-4 w-4 mr-2" />
+              <SelectValue placeholder="Filter Cabang" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Cabang</SelectItem>
+              {branches.map((branch) => (
+                <SelectItem key={branch.id} value={branch.id}>
+                  {branch.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+      </div>
+
+      {/* Work Process Table */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Filter className="h-5 w-5 mr-2" />
-            Filter Berdasarkan Waktu
-          </CardTitle>
+          <CardTitle>Daftar Pekerjaan ({filteredCustomers.length})</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-wrap items-center gap-4">
-            <div className="flex items-center space-x-2">
-              <label className="text-sm font-medium">Filter:</label>
-              <Select value={dateFilter} onValueChange={(value: DateFilter) => setDateFilter(value)}>
-                <SelectTrigger className="w-40">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Semua Waktu</SelectItem>
-                  <SelectItem value="today">Hari Ini</SelectItem>
-                  <SelectItem value="this_week">Minggu Ini</SelectItem>
-                  <SelectItem value="this_month">Bulan Ini</SelectItem>
-                  <SelectItem value="custom">Periode Kustom</SelectItem>
-                </SelectContent>
-              </Select>
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead>Nama Pelanggan</TableHead>
+                <TableHead>No. HP</TableHead>
+                <TableHead>Cabang</TableHead>
+                <TableHead>Status Pekerjaan</TableHead>
+                <TableHead>Estimasi Hari</TableHead>
+                <TableHead>Pekerja Ditugaskan</TableHead>
+                <TableHead>Aksi</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {filteredCustomers.map((customer) => {
+                const branch = branches.find(b => b.id === customer.branch_id);
+                const assignedCount = customer.assigned_employees ? customer.assigned_employees.length : 0;
+                
+                return (
+                  <TableRow key={customer.id}>
+                    <TableCell className="font-medium">{customer.name}</TableCell>
+                    <TableCell>{customer.phone}</TableCell>
+                    <TableCell>{branch?.name || '-'}</TableCell>
+                    <TableCell>
+                      {getWorkStatusBadge(customer.work_status)}
+                    </TableCell>
+                    <TableCell>
+                      {customer.estimated_days ? `${customer.estimated_days} hari` : '-'}
+                    </TableCell>
+                    <TableCell>
+                      {assignedCount > 0 ? `${assignedCount} orang` : 'Belum ditugaskan'}
+                    </TableCell>
+                    <TableCell>
+                      <div className="flex space-x-2">
+                        {(!customer.work_status || customer.work_status === 'not_started') && (
+                          <>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleAssignWork(customer)}
+                              className="border-blue-600 text-blue-600 hover:bg-blue-50"
+                            >
+                              <Plus className="h-4 w-4 mr-1" />
+                              Tugaskan
+                            </Button>
+                            <Button
+                              size="sm"
+                              onClick={() => handleStartWork(customer)}
+                              className="bg-green-600 hover:bg-green-700"
+                            >
+                              <PlayCircle className="h-4 w-4 mr-1" />
+                              Mulai
+                            </Button>
+                          </>
+                        )}
+                        {customer.work_status === 'in_progress' && (
+                          <Button
+                            size="sm"
+                            onClick={() => handleCompleteWork(customer)}
+                            className="bg-blue-600 hover:bg-blue-700"
+                          >
+                            <CheckCircle className="h-4 w-4 mr-1" />
+                            Selesai
+                          </Button>
+                        )}
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                );
+              })}
+            </TableBody>
+          </Table>
+
+          {filteredCustomers.length === 0 && (
+            <div className="text-center py-8">
+              <Clock className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+              <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada pekerjaan</h3>
+              <p className="text-gray-600">
+                {searchTerm || statusFilter !== 'all' || branchFilter !== 'all'
+                  ? 'Tidak ada pekerjaan yang sesuai dengan filter' 
+                  : 'Belum ada pelanggan dengan status Deal yang perlu dikerjakan'
+                }
+              </p>
             </div>
-
-            {dateFilter === 'custom' && (
-              <div className="flex items-center space-x-2">
-                <span className="text-sm">Dari:</span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-40 justify-start text-left font-normal", !customDateFrom && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customDateFrom ? format(customDateFrom, "dd/MM/yyyy") : "Pilih tanggal"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={customDateFrom}
-                      onSelect={setCustomDateFrom}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-
-                <span className="text-sm">Sampai:</span>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="outline" className={cn("w-40 justify-start text-left font-normal", !customDateTo && "text-muted-foreground")}>
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {customDateTo ? format(customDateTo, "dd/MM/yyyy") : "Pilih tanggal"}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="start">
-                    <Calendar
-                      mode="single"
-                      selected={customDateTo}
-                      onSelect={setCustomDateTo}
-                      initialFocus
-                      className="pointer-events-auto"
-                    />
-                  </PopoverContent>
-                </Popover>
-              </div>
-            )}
-          </div>
+          )}
         </CardContent>
       </Card>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        {/* Siap Mulai Pekerjaan */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Play className="h-5 w-5 mr-2 text-blue-600" />
-              Siap Mulai ({filteredReadyCustomers.length})
-            </CardTitle>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Cari nama, telepon, atau alamat..."
-                value={searchReady}
-                onChange={(e) => setSearchReady(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {filteredReadyCustomers.map((customer) => (
-              <div key={customer.id} className="p-4 border border-blue-200 bg-blue-50 rounded-lg">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{customer.name}</h3>
-                    <div className="flex items-center text-sm text-gray-600 mt-1">
-                      <Phone className="h-4 w-4 mr-1" />
-                      {customer.phone}
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600 mt-1">
-                      <MapPin className="h-4 w-4 mr-1" />
-                      {customer.address}
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600 mt-1">
-                      <User className="h-4 w-4 mr-1" />
-                      {getSalesName(customer.salesId)}
-                    </div>
-                    {customer.dealDate && (
-                      <div className="flex items-center text-sm text-gray-600 mt-1">
-                        <CalendarIcon className="h-4 w-4 mr-1" />
-                        <strong>Deal:</strong> {formatDate(customer.dealDate)}
-                      </div>
-                    )}
-                    {customer.assignedEmployees && customer.assignedEmployees.length > 0 && (
-                      <div className="flex items-center text-sm text-green-600 mt-1">
-                        <Users className="h-4 w-4 mr-1" />
-                        <strong>Karyawan:</strong> {getAssignedEmployeesNames(customer.assignedEmployees)}
-                      </div>
-                    )}
-                  </div>
-                  <Badge className="bg-blue-100 text-blue-800">
-                    Deal
-                  </Badge>
-                </div>
-
-                {selectedCustomer === customer.id ? (
-                  <div className="space-y-3">
-                    <Textarea
-                      placeholder="Catatan pekerjaan yang akan dilakukan..."
-                      value={workNotes}
-                      onChange={(e) => setWorkNotes(e.target.value)}
-                      className="text-sm"
-                    />
-                    <Input
-                      type="number"
-                      placeholder="Estimasi hari pengerjaan"
-                      value={estimatedDays}
-                      onChange={(e) => setEstimatedDays(e.target.value)}
-                      className="text-sm"
-                    />
-                    <div className="flex space-x-2">
-                      <Button
-                        size="sm"
-                        onClick={() => handleStartWork(customer.id)}
-                        className="bg-green-600 hover:bg-green-700"
-                        disabled={!customer.assignedEmployees || customer.assignedEmployees.length === 0}
-                      >
-                        <Play className="h-4 w-4 mr-1" />
-                        Mulai Pekerjaan
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => setSelectedCustomer(null)}
-                      >
-                        Batal
-                      </Button>
-                    </div>
-                    {(!customer.assignedEmployees || customer.assignedEmployees.length === 0) && (
-                      <p className="text-sm text-red-600">
-                        * Karyawan pelaksana harus dipilih terlebih dahulu
-                      </p>
-                    )}
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <Button
-                      size="sm"
-                      onClick={() => setSelectedCustomer(customer.id)}
-                      className="bg-blue-600 hover:bg-blue-700 w-full"
-                      disabled={!customer.assignedEmployees || customer.assignedEmployees.length === 0}
-                    >
-                      <Play className="h-4 w-4 mr-1" />
-                      Mulai Pekerjaan
-                    </Button>
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => handleAssignEmployees(customer)}
-                      className="w-full"
-                    >
-                      <UserPlus className="h-4 w-4 mr-1" />
-                      {customer.assignedEmployees && customer.assignedEmployees.length > 0 ? 'Ubah Karyawan' : 'Assign Karyawan'}
-                    </Button>
-                    {(!customer.assignedEmployees || customer.assignedEmployees.length === 0) && (
-                      <p className="text-sm text-orange-600 text-center">
-                        Pilih karyawan terlebih dahulu
-                      </p>
-                    )}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {filteredReadyCustomers.length === 0 && (
-              <p className="text-gray-500 text-center py-8">
-                {searchReady ? 'Tidak ada data yang cocok dengan pencarian' : 'Tidak ada pekerjaan siap mulai'}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Sedang Dikerjakan */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <Clock className="h-5 w-5 mr-2 text-orange-600" />
-              Sedang Dikerjakan ({filteredOngoingWorkWithSearch.length})
-            </CardTitle>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Cari nama, telepon, atau alamat..."
-                value={searchOngoing}
-                onChange={(e) => setSearchOngoing(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {filteredOngoingWorkWithSearch.map((customer) => (
-              <div key={customer.id} className="p-4 border border-orange-200 bg-orange-50 rounded-lg">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{customer.name}</h3>
-                    <div className="flex items-center text-sm text-gray-600 mt-1">
-                      <Phone className="h-4 w-4 mr-1" />
-                      {customer.phone}
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600 mt-1">
-                      <User className="h-4 w-4 mr-1" />
-                      {getSalesName(customer.salesId)}
-                    </div>
-                    {customer.assignedEmployees && customer.assignedEmployees.length > 0 && (
-                      <div className="flex items-center text-sm text-gray-600 mt-1">
-                        <Users className="h-4 w-4 mr-1" />
-                        <strong>Karyawan:</strong> {getAssignedEmployeesNames(customer.assignedEmployees)}
-                      </div>
-                    )}
-                    {customer.workStartDate && (
-                      <div className="flex items-center text-sm text-gray-600 mt-1">
-                        <CalendarIcon className="h-4 w-4 mr-1" />
-                        <strong>Mulai:</strong> {formatDateTime(customer.workStartDate)}
-                      </div>
-                    )}
-                    {customer.estimatedDays && (
-                      <p className="text-sm text-gray-600">
-                        <strong>Estimasi:</strong> {customer.estimatedDays} hari
-                      </p>
-                    )}
-                    {customer.workStartDate && (
-                      <p className="text-sm text-blue-600 font-medium">
-                        <strong>Durasi:</strong> {calculateWorkDuration(customer.workStartDate)}
-                      </p>
-                    )}
-                  </div>
-                  <Badge className="bg-orange-100 text-orange-800">
-                    Dikerjakan
-                  </Badge>
-                </div>
-
-                {customer.workNotes && (
-                  <div className="mb-3">
-                    <p className="text-sm text-gray-600">
-                      <strong>Catatan:</strong> {customer.workNotes}
-                    </p>
-                  </div>
-                )}
-
-                <Button
-                  size="sm"
-                  onClick={() => handleCompleteWork(customer.id)}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  <CheckCircle className="h-4 w-4 mr-1" />
-                  Selesai
-                </Button>
-              </div>
-            ))}
-
-            {filteredOngoingWorkWithSearch.length === 0 && (
-              <p className="text-gray-500 text-center py-8">
-                {searchOngoing ? 'Tidak ada data yang cocok dengan pencarian' : 'Tidak ada pekerjaan yang sedang dikerjakan'}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-
-        {/* Pekerjaan Selesai */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center">
-              <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
-              Selesai ({filteredCompletedWorkWithSearch.length})
-            </CardTitle>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Cari nama, telepon, atau alamat..."
-                value={searchCompleted}
-                onChange={(e) => setSearchCompleted(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {filteredCompletedWorkWithSearch.map((customer) => (
-              <div key={customer.id} className="p-4 border border-green-200 bg-green-50 rounded-lg">
-                <div className="flex justify-between items-start mb-3">
-                  <div>
-                    <h3 className="font-semibold text-gray-900">{customer.name}</h3>
-                    <div className="flex items-center text-sm text-gray-600 mt-1">
-                      <Phone className="h-4 w-4 mr-1" />
-                      {customer.phone}
-                    </div>
-                    <div className="flex items-center text-sm text-gray-600 mt-1">
-                      <User className="h-4 w-4 mr-1" />
-                      {getSalesName(customer.salesId)}
-                    </div>
-                    {customer.assignedEmployees && customer.assignedEmployees.length > 0 && (
-                      <div className="flex items-center text-sm text-gray-600 mt-1">
-                        <Users className="h-4 w-4 mr-1" />
-                        <strong>Karyawan:</strong> {getAssignedEmployeesNames(customer.assignedEmployees)}
-                      </div>
-                    )}
-                    {customer.workStartDate && (
-                      <div className="flex items-center text-sm text-gray-600 mt-1">
-                        <CalendarIcon className="h-4 w-4 mr-1" />
-                        <strong>Mulai:</strong> {formatDateTime(customer.workStartDate)}
-                      </div>
-                    )}
-                    {customer.workCompletedDate && (
-                      <div className="flex items-center text-sm text-gray-600 mt-1">
-                        <CalendarIcon className="h-4 w-4 mr-1" />
-                        <strong>Selesai:</strong> {formatDateTime(customer.workCompletedDate)}
-                      </div>
-                    )}
-                    {customer.workStartDate && customer.workCompletedDate && (
-                      <p className="text-sm text-green-600 font-medium">
-                        <strong>Total Durasi:</strong> {calculateWorkDuration(customer.workStartDate, customer.workCompletedDate)}
-                      </p>
-                    )}
-                  </div>
-                  <Badge className="bg-green-100 text-green-800">
-                    Selesai
-                  </Badge>
-                </div>
-
-                {customer.workNotes && (
-                  <div className="text-sm text-gray-600">
-                    <strong>Catatan:</strong> {customer.workNotes}
-                  </div>
-                )}
-              </div>
-            ))}
-
-            {filteredCompletedWorkWithSearch.length === 0 && (
-              <p className="text-gray-500 text-center py-8">
-                {searchCompleted ? 'Tidak ada data yang cocok dengan pencarian' : 'Belum ada pekerjaan yang selesai'}
-              </p>
-            )}
-          </CardContent>
-        </Card>
-      </div>
-
+      {/* Work Assignment Dialog */}
       <WorkAssignmentDialog
-        isOpen={assignmentDialogOpen}
-        onClose={() => setAssignmentDialogOpen(false)}
-        onAssign={handleAssignmentSubmit}
-        customerName={customerForAssignment?.name || ''}
+        customer={selectedCustomer}
+        isOpen={isAssignmentOpen}
+        onClose={() => {
+          setIsAssignmentOpen(false);
+          setSelectedCustomer(null);
+        }}
+        onSave={handleAssignmentSave}
       />
     </div>
   );
