@@ -1,16 +1,20 @@
-import React, { useState } from 'react';
-import { FileText, TrendingUp, Building, Users, Target, Award, Download, Star, MessageSquare, Eye, Printer, Calendar, Clock, CheckCircle, Play, BarChart3 } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { FileText, TrendingUp, Building, Users, Target, Award, Download, Star, MessageSquare, Eye, Printer, Calendar, Clock, CheckCircle, Play, BarChart3, CalendarDays } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useSurveys } from '@/hooks/useSurveys';
 import { useBranches } from '@/hooks/useBranches';
 import { useSales } from '@/hooks/useSales';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
+import { format, isAfter, isBefore, startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
+import { cn } from '@/lib/utils';
 
 const Reports = () => {
   const { customers, getStatsByBranch } = useCustomers();
@@ -19,10 +23,78 @@ const Reports = () => {
   const { sales } = useSales();
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
   const [timeFilter, setTimeFilter] = useState<string>('6months');
+  
+  // New date filtering states
+  const [dateFilterType, setDateFilterType] = useState<string>('preset'); // 'preset', 'month', 'custom'
+  const [selectedMonth, setSelectedMonth] = useState<Date>(new Date());
+  const [startDate, setStartDate] = useState<Date | undefined>();
+  const [endDate, setEndDate] = useState<Date | undefined>();
 
-  const filteredCustomers = selectedBranch === 'all' 
-    ? customers 
-    : customers.filter(c => c.branchId === selectedBranch);
+  // Function to filter data based on date criteria
+  const filterDataByDate = (items: any[]) => {
+    if (dateFilterType === 'preset') {
+      // Use existing time filter logic
+      const now = new Date();
+      let filterStartDate = new Date();
+      
+      switch (timeFilter) {
+        case '1month':
+          filterStartDate.setMonth(now.getMonth() - 1);
+          break;
+        case '3months':
+          filterStartDate.setMonth(now.getMonth() - 3);
+          break;
+        case '6months':
+          filterStartDate.setMonth(now.getMonth() - 6);
+          break;
+        case '1year':
+          filterStartDate.setFullYear(now.getFullYear() - 1);
+          break;
+        case 'all':
+        default:
+          return items;
+      }
+
+      return items.filter(item => {
+        const itemDate = new Date(item.createdAt || item.created_at || item.dealDate || item.deal_date);
+        return itemDate >= filterStartDate;
+      });
+    } else if (dateFilterType === 'month') {
+      // Filter by selected month
+      const monthStart = startOfMonth(selectedMonth);
+      const monthEnd = endOfMonth(selectedMonth);
+      
+      return items.filter(item => {
+        const itemDate = new Date(item.createdAt || item.created_at || item.dealDate || item.deal_date);
+        return itemDate >= monthStart && itemDate <= monthEnd;
+      });
+    } else if (dateFilterType === 'custom' && startDate && endDate) {
+      // Filter by custom date range
+      const rangeStart = startOfDay(startDate);
+      const rangeEnd = endOfDay(endDate);
+      
+      return items.filter(item => {
+        const itemDate = new Date(item.createdAt || item.created_at || item.dealDate || item.deal_date);
+        return itemDate >= rangeStart && itemDate <= rangeEnd;
+      });
+    }
+    
+    return items;
+  };
+
+  // Apply date filtering to customers
+  const filteredCustomers = useMemo(() => {
+    let filtered = selectedBranch === 'all' 
+      ? customers 
+      : customers.filter(c => c.branchId === selectedBranch);
+    
+    return filterDataByDate(filtered);
+  }, [customers, selectedBranch, dateFilterType, timeFilter, selectedMonth, startDate, endDate]);
+
+  // Apply date filtering to surveys
+  const filteredSurveys = useMemo(() => {
+    return filterDataByDate(surveys);
+  }, [surveys, dateFilterType, timeFilter, selectedMonth, startDate, endDate]);
 
   const branchStats = getStatsByBranch(selectedBranch === 'all' ? undefined : selectedBranch);
   const averageRatings = getAverageRatings();
@@ -93,7 +165,7 @@ const Reports = () => {
   const getSurveyReadinessStats = () => {
     const dealCustomers = filteredCustomers.filter(c => c.status === 'Deal');
     const readyForSurvey = dealCustomers.filter(c => c.workStatus === 'completed');
-    const completedSurveys = surveys.filter(s => s.isCompleted);
+    const completedSurveys = filteredSurveys.filter(s => s.isCompleted);
     const pendingSurveys = readyForSurvey.filter(c => !completedSurveys.find(s => s.customerId === c.id));
 
     return {
@@ -112,35 +184,7 @@ const Reports = () => {
   // Data untuk sales performance chart
   const getSalesPerformanceData = () => {
     const salesPerformance = sales.map(salesPerson => {
-      let salesCustomers = customers.filter(c => c.salesId === salesPerson.id);
-      
-      // Filter berdasarkan waktu
-      const now = new Date();
-      let startDate = new Date();
-      
-      switch (timeFilter) {
-        case '1month':
-          startDate.setMonth(now.getMonth() - 1);
-          break;
-        case '3months':
-          startDate.setMonth(now.getMonth() - 3);
-          break;
-        case '6months':
-          startDate.setMonth(now.getMonth() - 6);
-          break;
-        case '1year':
-          startDate.setFullYear(now.getFullYear() - 1);
-          break;
-        case 'all':
-        default:
-          startDate = new Date('2000-01-01');
-          break;
-      }
-
-      salesCustomers = salesCustomers.filter(customer => {
-        const customerDate = new Date(customer.createdAt);
-        return customerDate >= startDate;
-      });
+      let salesCustomers = filteredCustomers.filter(c => c.salesId === salesPerson.id);
 
       const totalCustomers = salesCustomers.length;
       const prospek = salesCustomers.filter(c => c.status === 'Prospek').length;
@@ -169,7 +213,7 @@ const Reports = () => {
 
   // Data untuk chart konversi pelanggan
   const conversionData = branches.map(branch => {
-    const branchCustomers = customers.filter(c => c.branchId === branch.id);
+    const branchCustomers = filteredCustomers.filter(c => c.branchId === branch.id);
     const total = branchCustomers.length;
     const prospek = branchCustomers.filter(c => c.status === 'Prospek').length;
     const followUp = branchCustomers.filter(c => c.status === 'Follow-up').length;
@@ -189,10 +233,10 @@ const Reports = () => {
 
   // Data untuk pie chart status pelanggan
   const statusData = [
-    { name: 'Prospek', value: branchStats.prospek, color: '#3B82F6' },
-    { name: 'Follow-up', value: branchStats.followUp, color: '#F59E0B' },
-    { name: 'Deal', value: branchStats.deal, color: '#10B981' },
-    { name: 'Tidak Jadi', value: branchStats.tidakJadi, color: '#EF4444' },
+    { name: 'Prospek', value: filteredCustomers.filter(c => c.status === 'Prospek').length, color: '#3B82F6' },
+    { name: 'Follow-up', value: filteredCustomers.filter(c => c.status === 'Follow-up').length, color: '#F59E0B' },
+    { name: 'Deal', value: filteredCustomers.filter(c => c.status === 'Deal').length, color: '#10B981' },
+    { name: 'Tidak Jadi', value: filteredCustomers.filter(c => c.status === 'Tidak Jadi').length, color: '#EF4444' },
   ];
 
   // Data untuk trend pelanggan bulanan
@@ -221,7 +265,7 @@ const Reports = () => {
 
   // Work Process Chart Data
   const workProcessData = branches.map(branch => {
-    const branchCustomers = customers.filter(c => c.branchId === branch.id && c.status === 'Deal');
+    const branchCustomers = filteredCustomers.filter(c => c.branchId === branch.id && c.status === 'Deal');
     const notStarted = branchCustomers.filter(c => !c.workStatus || c.workStatus === 'not_started').length;
     const inProgress = branchCustomers.filter(c => c.workStatus === 'in_progress').length;
     const completed = branchCustomers.filter(c => c.workStatus === 'completed').length;
@@ -237,7 +281,7 @@ const Reports = () => {
 
   // Data untuk tabel detail survei per pelanggan
   const detailedSurveyData = React.useMemo(() => {
-    const completedSurveys = surveys.filter(survey => survey.isCompleted);
+    const completedSurveys = filteredSurveys.filter(survey => survey.isCompleted);
     
     return completedSurveys.map(survey => {
       const customer = customers.find(c => c.id === survey.customerId);
@@ -258,7 +302,7 @@ const Reports = () => {
       const customer = customers.find(c => c.id === survey.customerId);
       return customer?.branchId === selectedBranch;
     });
-  }, [surveys, customers, branches, selectedBranch]);
+  }, [filteredSurveys, customers, branches, selectedBranch]);
 
   const calculateConversionRate = (branch?: string) => {
     const customers = branch 
@@ -275,13 +319,14 @@ const Reports = () => {
       ['Laporan CRM Lengkap', ''],
       ['Tanggal Export', new Date().toLocaleDateString('id-ID')],
       ['Cabang', selectedBranch === 'all' ? 'Semua Cabang' : branches.find(b => b.id === selectedBranch)?.name],
+      ['Filter Periode', getFilterDescription()],
       [''],
       ['STATISTIK PELANGGAN', ''],
-      ['Total Pelanggan', branchStats.total],
-      ['Prospek', branchStats.prospek],
-      ['Follow-up', branchStats.followUp],
-      ['Deal', branchStats.deal],
-      ['Tidak Jadi', branchStats.tidakJadi],
+      ['Total Pelanggan', filteredCustomers.length],
+      ['Prospek', filteredCustomers.filter(c => c.status === 'Prospek').length],
+      ['Follow-up', filteredCustomers.filter(c => c.status === 'Follow-up').length],
+      ['Deal', filteredCustomers.filter(c => c.status === 'Deal').length],
+      ['Tidak Jadi', filteredCustomers.filter(c => c.status === 'Tidak Jadi').length],
       ['Conversion Rate', calculateConversionRate() + '%'],
       [''],
       ['STATISTIK PROSES PEKERJAAN', ''],
@@ -318,6 +363,24 @@ const Reports = () => {
     link.href = URL.createObjectURL(blob);
     link.download = `laporan-crm-lengkap-${new Date().toISOString().slice(0, 10)}.csv`;
     link.click();
+  };
+
+  const getFilterDescription = () => {
+    if (dateFilterType === 'preset') {
+      const filterLabels = {
+        '1month': '1 Bulan Terakhir',
+        '3months': '3 Bulan Terakhir',
+        '6months': '6 Bulan Terakhir',
+        '1year': '1 Tahun Terakhir',
+        'all': 'Semua Waktu'
+      };
+      return filterLabels[timeFilter as keyof typeof filterLabels] || 'Semua Waktu';
+    } else if (dateFilterType === 'month') {
+      return `Bulan ${format(selectedMonth, 'MMMM yyyy')}`;
+    } else if (dateFilterType === 'custom' && startDate && endDate) {
+      return `${format(startDate, 'dd/MM/yyyy')} - ${format(endDate, 'dd/MM/yyyy')}`;
+    }
+    return 'Semua Waktu';
   };
 
   const printSurveyDetail = (survey: any) => {
@@ -546,6 +609,143 @@ const Reports = () => {
         </div>
       </div>
 
+      {/* Date Filter Controls */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <CalendarDays className="h-5 w-5" />
+            <span>Filter Periode Data</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Tipe Filter</label>
+              <Select value={dateFilterType} onValueChange={setDateFilterType}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih Tipe Filter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="preset">Filter Preset</SelectItem>
+                  <SelectItem value="month">Filter per Bulan</SelectItem>
+                  <SelectItem value="custom">Periode Kustom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {dateFilterType === 'preset' && (
+              <div>
+                <label className="block text-sm font-medium mb-2">Periode Preset</label>
+                <Select value={timeFilter} onValueChange={setTimeFilter}>
+                  <SelectTrigger>
+                    <Calendar className="h-4 w-4 mr-2" />
+                    <SelectValue placeholder="Filter Waktu" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="1month">1 Bulan Terakhir</SelectItem>
+                    <SelectItem value="3months">3 Bulan Terakhir</SelectItem>
+                    <SelectItem value="6months">6 Bulan Terakhir</SelectItem>
+                    <SelectItem value="1year">1 Tahun Terakhir</SelectItem>
+                    <SelectItem value="all">Semua Waktu</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+
+            {dateFilterType === 'month' && (
+              <div>
+                <label className="block text-sm font-medium mb-2">Pilih Bulan</label>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button
+                      variant="outline"
+                      className={cn(
+                        "w-full justify-start text-left font-normal",
+                        !selectedMonth && "text-muted-foreground"
+                      )}
+                    >
+                      <Calendar className="mr-2 h-4 w-4" />
+                      {selectedMonth ? format(selectedMonth, "MMMM yyyy") : "Pilih bulan"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <CalendarComponent
+                      mode="single"
+                      selected={selectedMonth}
+                      onSelect={(date) => date && setSelectedMonth(date)}
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+
+            {dateFilterType === 'custom' && (
+              <>
+                <div>
+                  <label className="block text-sm font-medium mb-2">Tanggal Mulai</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !startDate && "text-muted-foreground"
+                        )}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {startDate ? format(startDate, "dd/MM/yyyy") : "Pilih tanggal"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={startDate}
+                        onSelect={setStartDate}
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+
+                <div>
+                  <label className="block text-sm font-medium mb-2">Tanggal Selesai</label>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant="outline"
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !endDate && "text-muted-foreground"
+                        )}
+                      >
+                        <Calendar className="mr-2 h-4 w-4" />
+                        {endDate ? format(endDate, "dd/MM/yyyy") : "Pilih tanggal"}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="start">
+                      <CalendarComponent
+                        mode="single"
+                        selected={endDate}
+                        onSelect={setEndDate}
+                        className="pointer-events-auto"
+                      />
+                    </PopoverContent>
+                  </Popover>
+                </div>
+              </>
+            )}
+          </div>
+          
+          <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+            <p className="text-sm text-blue-800">
+              <strong>Filter aktif:</strong> {getFilterDescription()} | 
+              <strong> Total data:</strong> {filteredCustomers.length} pelanggan, {filteredSurveys.filter(s => s.isCompleted).length} survei
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Enhanced Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-6">
         <Card>
@@ -554,7 +754,7 @@ const Reports = () => {
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{branchStats.total}</div>
+            <div className="text-2xl font-bold">{filteredCustomers.length}</div>
             <Badge variant="secondary" className="mt-2">
               {selectedBranch === 'all' ? 'Semua Cabang' : branches.find(b => b.id === selectedBranch)?.code}
             </Badge>
@@ -569,7 +769,7 @@ const Reports = () => {
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{calculateConversionRate()}%</div>
             <p className="text-xs text-muted-foreground">
-              {branchStats.deal} dari {branchStats.total} pelanggan
+              {filteredCustomers.filter(c => c.status === 'Deal').length} dari {filteredCustomers.length} pelanggan
             </p>
           </CardContent>
         </Card>
@@ -712,7 +912,7 @@ const Reports = () => {
         <CardContent>
           {workDurationAnalysis.durationData.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              Belum ada pekerjaan yang selesai
+              Belum ada pekerjaan yang selesai pada periode yang dipilih
             </div>
           ) : (
             <Table>
@@ -802,19 +1002,6 @@ const Reports = () => {
               <TrendingUp className="h-5 w-5" />
               <span>Performa Sales</span>
             </CardTitle>
-            <Select value={timeFilter} onValueChange={setTimeFilter}>
-              <SelectTrigger className="w-48">
-                <Calendar className="h-4 w-4 mr-2" />
-                <SelectValue placeholder="Filter Waktu" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1month">1 Bulan Terakhir</SelectItem>
-                <SelectItem value="3months">3 Bulan Terakhir</SelectItem>
-                <SelectItem value="6months">6 Bulan Terakhir</SelectItem>
-                <SelectItem value="1year">1 Tahun Terakhir</SelectItem>
-                <SelectItem value="all">Semua Waktu</SelectItem>
-              </SelectContent>
-            </Select>
           </div>
         </CardHeader>
         <CardContent>
@@ -998,7 +1185,7 @@ const Reports = () => {
         <CardContent>
           {detailedSurveyData.length === 0 ? (
             <div className="text-center py-8 text-gray-500">
-              Belum ada survei yang diselesaikan
+              Belum ada survei yang diselesaikan pada periode yang dipilih
             </div>
           ) : (
             <div className="overflow-x-auto">
