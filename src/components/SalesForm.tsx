@@ -36,7 +36,7 @@ const SalesForm: React.FC<SalesFormProps> = ({ sales, onSubmit, onCancel }) => {
       code: sales?.code || '',
       phone: sales?.phone || '',
       email: sales?.email || '',
-      branchId: sales?.branchId || '',
+      branchId: sales?.branchId || 'no-branch',
     },
   });
 
@@ -114,7 +114,7 @@ const SalesForm: React.FC<SalesFormProps> = ({ sales, onSubmit, onCancel }) => {
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  <SelectItem value="">Tidak ada cabang</SelectItem>
+                  <SelectItem value="no-branch">Tidak ada cabang</SelectItem>
                   {branches.map((branch) => (
                     <SelectItem key={branch.id} value={branch.id}>
                       {branch.name} ({branch.code})

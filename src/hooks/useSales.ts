@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Sales } from '@/types/sales';
@@ -57,7 +56,7 @@ export const useSales = () => {
           code: salesData.code,
           phone: salesData.phone,
           email: salesData.email,
-          branch_id: salesData.branchId,
+          branch_id: salesData.branchId === 'no-branch' ? null : salesData.branchId,
           is_active: salesData.isActive
         })
         .select()
@@ -95,7 +94,7 @@ export const useSales = () => {
           code: updates.code,
           phone: updates.phone,
           email: updates.email,
-          branch_id: updates.branchId,
+          branch_id: updates.branchId === 'no-branch' ? null : updates.branchId,
           is_active: updates.isActive
         })
         .eq('id', id)
