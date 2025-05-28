@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Phone, MapPin, Calendar, Edit, Trash2, RotateCcw, User } from 'lucide-react';
 import { Customer } from '@/types/customer';
+import { useSales } from '@/hooks/useSales';
 
 interface CustomerCardProps {
   customer: Customer;
@@ -23,6 +23,7 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
   onStatusUpdate 
 }) => {
   const [isEditingStatus, setIsEditingStatus] = useState(false);
+  const { sales } = useSales();
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -47,6 +48,12 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
       onStatusUpdate(customer.id, newStatus as Customer['status']);
     }
     setIsEditingStatus(false);
+  };
+
+  const getSalesName = () => {
+    if (!customer.salesId) return null;
+    const salesPerson = sales.find(s => s.id === customer.salesId);
+    return salesPerson?.name;
   };
 
   return (
@@ -143,10 +150,10 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
           <span>{formatDate(customer.birthDate)}</span>
         </div>
 
-        {customer.salesName && (
+        {getSalesName() && (
           <div className="flex items-center text-sm text-gray-600">
             <User className="h-4 w-4 mr-2" />
-            <span><strong>Sales:</strong> {customer.salesName}</span>
+            <span><strong>Sales:</strong> {getSalesName()}</span>
           </div>
         )}
         

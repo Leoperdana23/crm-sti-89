@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Customer } from '@/types/customer';
@@ -14,6 +15,11 @@ export const useCustomers = () => {
         .select(`
           *,
           branches (
+            id,
+            name,
+            code
+          ),
+          sales (
             id,
             name,
             code
@@ -35,7 +41,7 @@ export const useCustomers = () => {
         updatedAt: customer.updated_at,
         dealDate: customer.deal_date,
         branchId: customer.branch_id,
-        salesName: customer.sales_name,
+        salesId: customer.sales_id,
         surveyStatus: customer.survey_status as Customer['surveyStatus'],
         status: customer.status as Customer['status'],
         interactions: []
@@ -68,7 +74,7 @@ export const useCustomers = () => {
           status: customerData.status,
           deal_date: customerData.dealDate,
           branch_id: customerData.branchId,
-          sales_name: customerData.salesName,
+          sales_id: customerData.salesId,
           survey_status: customerData.status === 'Deal' ? 'belum_disurvei' : null
         })
         .select()
@@ -88,7 +94,7 @@ export const useCustomers = () => {
           updatedAt: data.updated_at,
           dealDate: data.deal_date,
           branchId: data.branch_id,
-          salesName: data.sales_name,
+          salesId: data.sales_id,
           surveyStatus: data.survey_status as Customer['surveyStatus'],
           status: data.status as Customer['status'],
           interactions: []
@@ -118,7 +124,7 @@ export const useCustomers = () => {
           status: updates.status,
           deal_date: updates.dealDate,
           branch_id: updates.branchId,
-          sales_name: updates.salesName,
+          sales_id: updates.salesId,
           survey_status: updates.status === 'Deal' ? 'belum_disurvei' : updates.surveyStatus
         })
         .eq('id', id)
@@ -139,7 +145,7 @@ export const useCustomers = () => {
           updatedAt: data.updated_at,
           dealDate: data.deal_date,
           branchId: data.branch_id,
-          salesName: data.sales_name,
+          salesId: data.sales_id,
           surveyStatus: data.survey_status as Customer['surveyStatus'],
           status: data.status as Customer['status'],
           interactions: []
@@ -184,8 +190,8 @@ export const useCustomers = () => {
     return customers.filter(customer => customer.branchId === branchId);
   };
 
-  const getCustomersBySales = (salesName: string) => {
-    return customers.filter(customer => customer.salesName === salesName);
+  const getCustomersBySales = (salesId: string) => {
+    return customers.filter(customer => customer.salesId === salesId);
   };
 
   const getStats = () => {
@@ -212,9 +218,9 @@ export const useCustomers = () => {
     };
   };
 
-  const getStatsBySales = (salesName?: string) => {
-    const filteredCustomers = salesName 
-      ? customers.filter(c => c.salesName === salesName)
+  const getStatsBySales = (salesId?: string) => {
+    const filteredCustomers = salesId 
+      ? customers.filter(c => c.salesId === salesId)
       : customers;
 
     return {
@@ -230,20 +236,20 @@ export const useCustomers = () => {
     const salesData: Record<string, { deals: number; prospects: number; followUps: number }> = {};
     
     customers.forEach(customer => {
-      if (customer.salesName) {
-        if (!salesData[customer.salesName]) {
-          salesData[customer.salesName] = { deals: 0, prospects: 0, followUps: 0 };
+      if (customer.salesId) {
+        if (!salesData[customer.salesId]) {
+          salesData[customer.salesId] = { deals: 0, prospects: 0, followUps: 0 };
         }
         
         switch (customer.status) {
           case 'Deal':
-            salesData[customer.salesName].deals++;
+            salesData[customer.salesId].deals++;
             break;
           case 'Prospek':
-            salesData[customer.salesName].prospects++;
+            salesData[customer.salesId].prospects++;
             break;
           case 'Follow-up':
-            salesData[customer.salesName].followUps++;
+            salesData[customer.salesId].followUps++;
             break;
         }
       }

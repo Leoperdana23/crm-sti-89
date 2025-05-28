@@ -1,3 +1,4 @@
+
 export interface Customer {
   id: string;
   name: string;
@@ -13,7 +14,7 @@ export interface Customer {
   dealDate?: string;
   surveyStatus?: 'sudah_disurvei' | 'belum_disurvei';
   branchId?: string;
-  salesName?: string;
+  salesId?: string;
   interactions: Interaction[];
 }
 

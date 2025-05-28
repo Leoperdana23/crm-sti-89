@@ -102,7 +102,7 @@ export type Database = {
           needs: string | null
           notes: string | null
           phone: string
-          sales_name: string | null
+          sales_id: string | null
           status: string
           survey_status: string | null
           updated_at: string
@@ -119,7 +119,7 @@ export type Database = {
           needs?: string | null
           notes?: string | null
           phone: string
-          sales_name?: string | null
+          sales_id?: string | null
           status: string
           survey_status?: string | null
           updated_at?: string
@@ -136,7 +136,7 @@ export type Database = {
           needs?: string | null
           notes?: string | null
           phone?: string
-          sales_name?: string | null
+          sales_id?: string | null
           status?: string
           survey_status?: string | null
           updated_at?: string
@@ -147,6 +147,13 @@ export type Database = {
             columns: ["branch_id"]
             isOneToOne: false
             referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "customers_sales_id_fkey"
+            columns: ["sales_id"]
+            isOneToOne: false
+            referencedRelation: "sales"
             referencedColumns: ["id"]
           },
         ]
@@ -247,6 +254,50 @@ export type Database = {
             columns: ["permission_id"]
             isOneToOne: false
             referencedRelation: "permissions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      sales: {
+        Row: {
+          branch_id: string | null
+          code: string
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          branch_id?: string | null
+          code: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          branch_id?: string | null
+          code?: string
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "sales_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
             referencedColumns: ["id"]
           },
         ]

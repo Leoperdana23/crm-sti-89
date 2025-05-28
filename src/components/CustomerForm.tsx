@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -10,6 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Customer } from '@/types/customer';
 import { useBranches } from '@/hooks/useBranches';
+import { useSales } from '@/hooks/useSales';
 
 const customerSchema = z.object({
   name: z.string().min(1, 'Nama harus diisi'),
@@ -21,7 +21,7 @@ const customerSchema = z.object({
   notes: z.string().optional(),
   status: z.enum(['Prospek', 'Follow-up', 'Deal', 'Tidak Jadi']),
   branchId: z.string().min(1, 'Cabang harus dipilih'),
-  salesName: z.string().optional(),
+  salesId: z.string().optional(),
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
@@ -34,6 +34,7 @@ interface CustomerFormProps {
 
 const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCancel }) => {
   const { branches } = useBranches();
+  const { sales } = useSales();
   
   const form = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
@@ -47,7 +48,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
       notes: customer?.notes || '',
       status: customer?.status || 'Prospek',
       branchId: customer?.branchId || '',
-      salesName: customer?.salesName || '',
+      salesId: customer?.salesId || '',
     },
   });
 
@@ -178,13 +179,25 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
 
           <FormField
             control={form.control}
-            name="salesName"
+            name="salesId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nama Sales</FormLabel>
-                <FormControl>
-                  <Input placeholder="Nama sales yang menangani" {...field} />
-                </FormControl>
+                <FormLabel>Sales</FormLabel>
+                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih sales" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="">Tidak ada sales</SelectItem>
+                    {sales.map((sale) => (
+                      <SelectItem key={sale.id} value={sale.id}>
+                        {sale.name} ({sale.code})
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
                 <FormMessage />
               </FormItem>
             )}
