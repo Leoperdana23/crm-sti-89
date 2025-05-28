@@ -16,10 +16,10 @@ interface PublicSurveyFormProps {
 }
 
 interface FormData {
-  serviceTechnician: number;
-  serviceSales: number;
-  productQuality: number;
-  usageClarity: number;
+  serviceTechnician: number | null;
+  serviceSales: number | null;
+  productQuality: number | null;
+  usageClarity: number | null;
   priceApproval: boolean;
   testimonial: string;
   suggestions: string;
@@ -32,24 +32,56 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
   isCompleted = false 
 }) => {
   const [formData, setFormData] = useState<FormData>({
-    serviceTechnician: survey.serviceTechnician || 5,
-    serviceSales: survey.serviceSales || 5,
-    productQuality: survey.productQuality || 5,
-    usageClarity: survey.usageClarity || 5,
+    serviceTechnician: survey.serviceTechnician || null,
+    serviceSales: survey.serviceSales || null,
+    productQuality: survey.productQuality || null,
+    usageClarity: survey.usageClarity || null,
     priceApproval: survey.priceApproval !== undefined ? survey.priceApproval : true,
     testimonial: survey.testimonial || '',
     suggestions: survey.suggestions || ''
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    
+    if (formData.serviceTechnician === null) {
+      newErrors.serviceTechnician = 'Harap pilih rating untuk Pelayanan Teknisi';
+    }
+    if (formData.serviceSales === null) {
+      newErrors.serviceSales = 'Harap pilih rating untuk Pelayanan Sales/CS';
+    }
+    if (formData.productQuality === null) {
+      newErrors.productQuality = 'Harap pilih rating untuk Kualitas Produk';
+    }
+    if (formData.usageClarity === null) {
+      newErrors.usageClarity = 'Harap pilih rating untuk Kejelasan Penggunaan';
+    }
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
     if (isCompleted) return;
+
+    if (!validateForm()) {
+      return;
+    }
     
     try {
       setIsSubmitting(true);
-      await onSubmit(formData);
+      const submitData = {
+        ...formData,
+        serviceTechnician: formData.serviceTechnician!,
+        serviceSales: formData.serviceSales!,
+        productQuality: formData.productQuality!,
+        usageClarity: formData.usageClarity!,
+      };
+      await onSubmit(submitData);
     } catch (error) {
       console.error('Error submitting survey:', error);
     } finally {
@@ -58,14 +90,22 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
   };
 
   const renderRatingScale = (field: keyof FormData, label: string) => {
-    if (typeof formData[field] !== 'number') return null;
+    const fieldValue = formData[field];
+    const hasError = errors[field];
     
     return (
       <div className="space-y-3">
-        <Label className="text-sm font-medium">{label}</Label>
+        <Label className={`text-sm font-medium ${hasError ? 'text-red-600' : ''}`}>
+          {label} <span className="text-red-500">*</span>
+        </Label>
         <RadioGroup
-          value={formData[field].toString()}
-          onValueChange={(value) => setFormData(prev => ({ ...prev, [field]: parseInt(value) }))}
+          value={fieldValue?.toString() || ''}
+          onValueChange={(value) => {
+            setFormData(prev => ({ ...prev, [field]: parseInt(value) }));
+            if (errors[field]) {
+              setErrors(prev => ({ ...prev, [field]: '' }));
+            }
+          }}
           className="flex flex-wrap gap-2"
           disabled={isCompleted}
         >
@@ -76,8 +116,18 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
             </div>
           ))}
         </RadioGroup>
+        {hasError && (
+          <p className="text-red-600 text-sm mt-1">{hasError}</p>
+        )}
       </div>
     );
+  };
+
+  const isFormValid = () => {
+    return formData.serviceTechnician !== null &&
+           formData.serviceSales !== null &&
+           formData.productQuality !== null &&
+           formData.usageClarity !== null;
   };
 
   if (isCompleted) {
@@ -107,6 +157,9 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
         <p className="text-gray-600">Pelanggan: {customerName}</p>
         <p className="text-sm text-gray-500">
           Mohon berikan penilaian Anda terhadap layanan kami. Skala 1 (sangat buruk) hingga 10 (sangat baik).
+        </p>
+        <p className="text-sm text-red-600">
+          * Wajib diisi
         </p>
       </CardHeader>
       <CardContent>
@@ -158,11 +211,17 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
 
           <Button 
             type="submit" 
-            className="w-full" 
-            disabled={isSubmitting}
+            className={`w-full ${!isFormValid() ? 'opacity-50 cursor-not-allowed' : ''}`}
+            disabled={isSubmitting || !isFormValid()}
           >
             {isSubmitting ? 'Mengirim...' : 'Kirim Survei'}
           </Button>
+          
+          {!isFormValid() && (
+            <p className="text-red-600 text-sm text-center mt-2">
+              Harap isi semua rating yang wajib diisi sebelum mengirim survei
+            </p>
+          )}
         </form>
       </CardContent>
     </Card>
