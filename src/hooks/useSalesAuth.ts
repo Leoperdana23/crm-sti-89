@@ -14,11 +14,15 @@ interface SalesAuthResponse {
 export const useSalesAuth = () => {
   const authenticateSales = async (email: string, password: string) => {
     try {
+      console.log('Attempting sales authentication for email:', email);
+      
       // Call the Supabase function to authenticate sales user
       const { data, error } = await supabase.rpc('authenticate_sales_user', {
         email_input: email,
         password_input: password
       });
+
+      console.log('Authentication response:', { data, error });
 
       if (error) {
         console.error('Error calling authenticate_sales_user:', error);
@@ -27,6 +31,8 @@ export const useSalesAuth = () => {
 
       // Cast the data to our expected type
       const authResult = data as unknown as SalesAuthResponse;
+
+      console.log('Auth result:', authResult);
 
       // Check if authentication was successful
       if (!authResult || !authResult.success) {

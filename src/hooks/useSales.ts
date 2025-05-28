@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Sales } from '@/types/sales';
@@ -60,10 +59,12 @@ export const useSales = () => {
         is_active: salesData.isActive
       };
 
-      // Add password if provided
+      // Add password if provided - let the database trigger handle the hashing
       if (salesData.password && salesData.password.trim() !== '') {
         insertData.password_hash = salesData.password;
       }
+
+      console.log('Adding sales with data:', insertData);
 
       const { data, error } = await supabase
         .from('sales')
@@ -106,10 +107,12 @@ export const useSales = () => {
         is_active: updates.isActive
       };
 
-      // Only update password if provided
+      // Only update password if provided - let the database trigger handle the hashing
       if (updates.password && updates.password.trim() !== '') {
         updateData.password_hash = updates.password;
       }
+
+      console.log('Updating sales with data:', updateData);
 
       const { data, error } = await supabase
         .from('sales')
