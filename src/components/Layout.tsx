@@ -40,31 +40,9 @@ const Layout = () => {
     { name: 'Hak Akses Role', href: '/role-permissions', icon: Shield, permission: 'role_permissions' },
   ];
 
-  // Filter navigation based on user permissions
-  const getVisibleNavigation = () => {
-    if (!permissions.length || !rolePermissions.length) {
-      // If permissions are still loading, show basic navigation for staff
-      if (userRole === 'staff') {
-        return allNavigation.filter(item => 
-          ['dashboard', 'customers', 'follow_up', 'work_process', 'survey'].includes(item.permission)
-        );
-      }
-      return allNavigation;
-    }
-
-    return allNavigation.filter(navItem => {
-      const permission = permissions.find(p => p.name === navItem.permission);
-      if (!permission) return false;
-
-      const rolePermission = rolePermissions.find(rp => 
-        rp.role === userRole && rp.permission_id === permission.id
-      );
-      
-      return rolePermission?.can_view || false;
-    });
-  };
-
-  const navigation = getVisibleNavigation();
+  // Show all navigation items regardless of permissions for now
+  // You can implement permission filtering later if needed
+  const navigation = allNavigation;
 
   const handleLogout = async () => {
     await signOut();
