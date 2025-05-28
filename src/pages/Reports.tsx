@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { FileText, TrendingUp, Building, Users, Target, Award, Download, Star, MessageSquare, Eye, Printer } from 'lucide-react';
+import { FileText, TrendingUp, Building, Users, Target, Award, Download, Star, MessageSquare, Eye, Printer, Calendar } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -9,13 +9,16 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { useCustomers } from '@/hooks/useCustomers';
 import { useSurveys } from '@/hooks/useSurveys';
 import { useBranches } from '@/hooks/useBranches';
+import { useSales } from '@/hooks/useSales';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 
 const Reports = () => {
   const { customers, getStatsByBranch } = useCustomers();
   const { surveys, getAverageRatings } = useSurveys();
   const { branches } = useBranches();
+  const { sales } = useSales();
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const [timeFilter, setTimeFilter] = useState<string>('6months');
 
   const filteredCustomers = selectedBranch === 'all' 
     ? customers 
@@ -23,6 +26,64 @@ const Reports = () => {
 
   const branchStats = getStatsByBranch(selectedBranch === 'all' ? undefined : selectedBranch);
   const averageRatings = getAverageRatings();
+
+  // Data untuk sales performance chart
+  const getSalesPerformanceData = () => {
+    const salesPerformance = sales.map(salesPerson => {
+      let salesCustomers = customers.filter(c => c.salesId === salesPerson.id);
+      
+      // Filter berdasarkan waktu
+      const now = new Date();
+      let startDate = new Date();
+      
+      switch (timeFilter) {
+        case '1month':
+          startDate.setMonth(now.getMonth() - 1);
+          break;
+        case '3months':
+          startDate.setMonth(now.getMonth() - 3);
+          break;
+        case '6months':
+          startDate.setMonth(now.getMonth() - 6);
+          break;
+        case '1year':
+          startDate.setFullYear(now.getFullYear() - 1);
+          break;
+        case 'all':
+        default:
+          startDate = new Date('2000-01-01');
+          break;
+      }
+
+      salesCustomers = salesCustomers.filter(customer => {
+        const customerDate = new Date(customer.createdAt);
+        return customerDate >= startDate;
+      });
+
+      const totalCustomers = salesCustomers.length;
+      const prospek = salesCustomers.filter(c => c.status === 'Prospek').length;
+      const followUp = salesCustomers.filter(c => c.status === 'Follow-up').length;
+      const deal = salesCustomers.filter(c => c.status === 'Deal').length;
+      const tidakJadi = salesCustomers.filter(c => c.status === 'Tidak Jadi').length;
+      const conversionRate = totalCustomers > 0 ? ((deal / totalCustomers) * 100) : 0;
+
+      return {
+        name: salesPerson.name,
+        code: salesPerson.code,
+        totalCustomers,
+        Prospek: prospek,
+        'Follow-up': followUp,
+        Deal: deal,
+        'Tidak Jadi': tidakJadi,
+        'Conversion Rate': conversionRate,
+        branch: branches.find(b => b.id === salesPerson.branchId)?.name || 'Tidak ada cabang'
+      };
+    }).filter(sales => sales.totalCustomers > 0); // Hanya tampilkan sales yang ada customernya
+
+    return salesPerformance;
+  };
+
+  const salesPerformanceData = getSalesPerformanceData();
 
   // Data untuk chart konversi pelanggan
   const conversionData = branches.map(branch => {
@@ -426,6 +487,58 @@ const Reports = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Sales Performance Chart */}
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle className="flex items-center space-x-2">
+              <TrendingUp className="h-5 w-5" />
+              <span>Performa Sales</span>
+            </CardTitle>
+            <Select value={timeFilter} onValueChange={setTimeFilter}>
+              <SelectTrigger className="w-48">
+                <Calendar className="h-4 w-4 mr-2" />
+                <SelectValue placeholder="Filter Waktu" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="1month">1 Bulan Terakhir</SelectItem>
+                <SelectItem value="3months">3 Bulan Terakhir</SelectItem>
+                <SelectItem value="6months">6 Bulan Terakhir</SelectItem>
+                <SelectItem value="1year">1 Tahun Terakhir</SelectItem>
+                <SelectItem value="all">Semua Waktu</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {salesPerformanceData.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              Tidak ada data performa sales untuk periode yang dipilih
+            </div>
+          ) : (
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={salesPerformanceData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="code" />
+                <YAxis />
+                <Tooltip 
+                  formatter={(value, name) => [value, name]}
+                  labelFormatter={(label) => {
+                    const sales = salesPerformanceData.find(s => s.code === label);
+                    return `${sales?.name} (${label}) - ${sales?.branch}`;
+                  }}
+                />
+                <Legend />
+                <Bar dataKey="Prospek" stackId="a" fill="#3B82F6" />
+                <Bar dataKey="Follow-up" stackId="a" fill="#F59E0B" />
+                <Bar dataKey="Deal" stackId="a" fill="#10B981" />
+                <Bar dataKey="Tidak Jadi" stackId="a" fill="#EF4444" />
+              </BarChart>
+            </ResponsiveContainer>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
