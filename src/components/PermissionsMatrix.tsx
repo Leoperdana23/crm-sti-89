@@ -3,12 +3,13 @@ import React from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
-import { Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
 
 const PermissionsMatrix: React.FC = () => {
-  const { permissions, rolePermissions, loading, updateRolePermission } = usePermissions();
+  const { permissions, rolePermissions, loading, error, updateRolePermission, refetch } = usePermissions();
   const { toast } = useToast();
 
   const roles = ['super_admin', 'admin', 'manager', 'staff'] as const;
@@ -71,6 +72,22 @@ const PermissionsMatrix: React.FC = () => {
     }
   };
 
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+      toast({
+        title: "Berhasil",
+        description: "Data hak akses berhasil dimuat ulang",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal memuat ulang data hak akses",
+        variant: "destructive"
+      });
+    }
+  };
+
   if (loading) {
     return (
       <Card>
@@ -89,15 +106,47 @@ const PermissionsMatrix: React.FC = () => {
     );
   }
 
-  if (permissions.length === 0) {
+  if (error) {
     return (
       <Card>
         <CardHeader>
           <CardTitle>Matrix Hak Akses Role</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="text-center py-8">
-            <p className="text-gray-600">Tidak ada data permissions. Silakan refresh halaman untuk menginisialisasi data.</p>
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <div className="flex items-center space-x-2 text-red-600">
+              <AlertCircle className="h-6 w-6" />
+              <span>Terjadi kesalahan: {error}</span>
+            </div>
+            <Button onClick={handleRefresh} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Coba Lagi
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (permissions.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <div className="flex justify-between items-center">
+            <CardTitle>Matrix Hak Akses Role</CardTitle>
+            <Button onClick={handleRefresh} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Refresh
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-col items-center justify-center py-8 space-y-4">
+            <p className="text-gray-600">Tidak ada data permissions. Sistem sedang menginisialisasi data...</p>
+            <Button onClick={handleRefresh} variant="outline">
+              <RefreshCw className="h-4 w-4 mr-2" />
+              Muat Ulang Data
+            </Button>
           </div>
         </CardContent>
       </Card>
@@ -107,8 +156,16 @@ const PermissionsMatrix: React.FC = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Matrix Hak Akses Role</CardTitle>
-        <p className="text-sm text-gray-600">Atur hak akses untuk setiap role dan menu</p>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>Matrix Hak Akses Role</CardTitle>
+            <p className="text-sm text-gray-600">Atur hak akses untuk setiap role dan menu</p>
+          </div>
+          <Button onClick={handleRefresh} variant="outline" size="sm">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+        </div>
       </CardHeader>
       <CardContent>
         <div className="overflow-x-auto">

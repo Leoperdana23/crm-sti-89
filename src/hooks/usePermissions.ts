@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Permission, RolePermission } from '@/types/user';
@@ -18,10 +19,12 @@ export const usePermissions = () => {
   const [permissions, setPermissions] = useState<Permission[]>([]);
   const [rolePermissions, setRolePermissions] = useState<RolePermission[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const initializePermissions = async () => {
     try {
       console.log('Initializing permissions...');
+      setError(null);
       
       // Check if permissions already exist
       const { data: existingPermissions, error: checkError } = await supabase
@@ -30,6 +33,7 @@ export const usePermissions = () => {
 
       if (checkError) {
         console.error('Error checking permissions:', checkError);
+        setError('Error checking permissions: ' + checkError.message);
         return;
       }
 
@@ -43,75 +47,95 @@ export const usePermissions = () => {
 
         if (insertError) {
           console.error('Error creating permissions:', insertError);
+          setError('Error creating permissions: ' + insertError.message);
           return;
         }
 
         console.log('Initial permissions created:', newPermissions);
-        
-        // Create initial role permissions for all roles
-        if (newPermissions) {
-          const roles = ['super_admin', 'admin', 'manager', 'staff'];
-          const rolePermissionsData = [];
+        await createInitialRolePermissions(newPermissions || []);
+      } else {
+        console.log('Permissions already exist:', existingPermissions);
+        // Check if role permissions exist
+        const { data: existingRolePerms } = await supabase
+          .from('role_permissions')
+          .select('*')
+          .limit(1);
 
-          for (const role of roles) {
-            for (const permission of newPermissions) {
-              let hasAccess = false;
-              let canCreate = false;
-              let canEdit = false;
-              let canDelete = false;
-
-              if (role === 'super_admin') {
-                // Super admin gets full access to everything
-                hasAccess = true;
-                canCreate = true;
-                canEdit = true;
-                canDelete = true;
-              } else if (role === 'admin') {
-                // Admin gets access to all except role permissions management
-                hasAccess = true;
-                canCreate = permission.name !== 'role_permissions';
-                canEdit = permission.name !== 'role_permissions';
-                canDelete = permission.name !== 'role_permissions' && permission.name !== 'users';
-              } else if (role === 'manager') {
-                // Manager gets access to operational modules
-                const managerModules = ['dashboard', 'customers', 'follow_up', 'survey', 'sales', 'reports'];
-                hasAccess = managerModules.includes(permission.name);
-                canCreate = hasAccess && !['reports'].includes(permission.name);
-                canEdit = hasAccess && !['reports'].includes(permission.name);
-                canDelete = hasAccess && ['customers', 'follow_up', 'survey', 'sales'].includes(permission.name);
-              } else if (role === 'staff') {
-                // Staff only gets access to dashboard, customers, follow-up, and survey
-                const staffModules = ['dashboard', 'customers', 'follow_up', 'survey'];
-                hasAccess = staffModules.includes(permission.name);
-                canCreate = hasAccess && ['customers', 'follow_up', 'survey'].includes(permission.name);
-                canEdit = hasAccess && ['customers', 'follow_up', 'survey'].includes(permission.name);
-                canDelete = false; // Staff cannot delete anything
-              }
-
-              rolePermissionsData.push({
-                role: role as 'super_admin' | 'admin' | 'manager' | 'staff',
-                permission_id: permission.id,
-                can_view: hasAccess,
-                can_create: canCreate,
-                can_edit: canEdit,
-                can_delete: canDelete
-              });
-            }
-          }
-
-          const { error: rolePermError } = await supabase
-            .from('role_permissions')
-            .insert(rolePermissionsData);
-
-          if (rolePermError) {
-            console.error('Error creating role permissions:', rolePermError);
-          } else {
-            console.log('Initial role permissions created');
-          }
+        if (!existingRolePerms || existingRolePerms.length === 0) {
+          console.log('Creating role permissions for existing permissions...');
+          await createInitialRolePermissions(existingPermissions);
         }
       }
     } catch (error) {
       console.error('Error in initializePermissions:', error);
+      setError('Initialization error: ' + (error as Error).message);
+    }
+  };
+
+  const createInitialRolePermissions = async (permissions: Permission[]) => {
+    try {
+      const roles = ['super_admin', 'admin', 'manager', 'staff'];
+      const rolePermissionsData = [];
+
+      for (const role of roles) {
+        for (const permission of permissions) {
+          let hasAccess = false;
+          let canCreate = false;
+          let canEdit = false;
+          let canDelete = false;
+
+          if (role === 'super_admin') {
+            // Super admin gets full access to everything
+            hasAccess = true;
+            canCreate = true;
+            canEdit = true;
+            canDelete = true;
+          } else if (role === 'admin') {
+            // Admin gets access to all except role permissions management
+            hasAccess = true;
+            canCreate = permission.name !== 'role_permissions';
+            canEdit = permission.name !== 'role_permissions';
+            canDelete = permission.name !== 'role_permissions' && permission.name !== 'users';
+          } else if (role === 'manager') {
+            // Manager gets access to operational modules
+            const managerModules = ['dashboard', 'customers', 'follow_up', 'survey', 'sales', 'reports'];
+            hasAccess = managerModules.includes(permission.name);
+            canCreate = hasAccess && !['reports'].includes(permission.name);
+            canEdit = hasAccess && !['reports'].includes(permission.name);
+            canDelete = hasAccess && ['customers', 'follow_up', 'survey', 'sales'].includes(permission.name);
+          } else if (role === 'staff') {
+            // Staff only gets access to dashboard, customers, follow-up, and survey
+            const staffModules = ['dashboard', 'customers', 'follow_up', 'survey'];
+            hasAccess = staffModules.includes(permission.name);
+            canCreate = hasAccess && ['customers', 'follow_up', 'survey'].includes(permission.name);
+            canEdit = hasAccess && ['customers', 'follow_up', 'survey'].includes(permission.name);
+            canDelete = false; // Staff cannot delete anything
+          }
+
+          rolePermissionsData.push({
+            role: role as 'super_admin' | 'admin' | 'manager' | 'staff',
+            permission_id: permission.id,
+            can_view: hasAccess,
+            can_create: canCreate,
+            can_edit: canEdit,
+            can_delete: canDelete
+          });
+        }
+      }
+
+      const { error: rolePermError } = await supabase
+        .from('role_permissions')
+        .insert(rolePermissionsData);
+
+      if (rolePermError) {
+        console.error('Error creating role permissions:', rolePermError);
+        setError('Error creating role permissions: ' + rolePermError.message);
+      } else {
+        console.log('Initial role permissions created successfully');
+      }
+    } catch (error) {
+      console.error('Error in createInitialRolePermissions:', error);
+      setError('Error creating role permissions: ' + (error as Error).message);
     }
   };
 
@@ -125,13 +149,15 @@ export const usePermissions = () => {
 
       if (error) {
         console.error('Error fetching permissions:', error);
-        throw error;
+        setError('Error fetching permissions: ' + error.message);
+        return;
       }
       
       console.log('Permissions fetched:', data);
       setPermissions(data || []);
     } catch (error) {
       console.error('Error fetching permissions:', error);
+      setError('Error fetching permissions: ' + (error as Error).message);
       setPermissions([]);
     }
   };
@@ -154,13 +180,15 @@ export const usePermissions = () => {
 
       if (error) {
         console.error('Error fetching role permissions:', error);
-        throw error;
+        setError('Error fetching role permissions: ' + error.message);
+        return;
       }
       
       console.log('Role permissions fetched:', data);
       setRolePermissions(data || []);
     } catch (error) {
       console.error('Error fetching role permissions:', error);
+      setError('Error fetching role permissions: ' + (error as Error).message);
       setRolePermissions([]);
     }
   };
@@ -199,10 +227,18 @@ export const usePermissions = () => {
   useEffect(() => {
     const initializeData = async () => {
       setLoading(true);
-      await initializePermissions();
-      await fetchPermissions();
-      await fetchRolePermissions();
-      setLoading(false);
+      setError(null);
+      
+      try {
+        await initializePermissions();
+        await fetchPermissions();
+        await fetchRolePermissions();
+      } catch (error) {
+        console.error('Error initializing data:', error);
+        setError('Failed to initialize permissions data');
+      } finally {
+        setLoading(false);
+      }
     };
 
     initializeData();
@@ -212,10 +248,20 @@ export const usePermissions = () => {
     permissions,
     rolePermissions,
     loading,
+    error,
     updateRolePermission,
-    refetch: () => {
-      fetchPermissions();
-      fetchRolePermissions();
+    refetch: async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        await fetchPermissions();
+        await fetchRolePermissions();
+      } catch (error) {
+        console.error('Error refetching data:', error);
+        setError('Failed to refresh permissions data');
+      } finally {
+        setLoading(false);
+      }
     }
   };
 };
