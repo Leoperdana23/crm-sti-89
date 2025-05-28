@@ -10,11 +10,10 @@ const Layout = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
 
-  // Get user role from metadata or default to staff for sales users
+  // Get user role from metadata or default to staff
   const userRole = user?.user_metadata?.role || 'staff';
-  const isSalesUser = user?.user_metadata?.sales_id;
 
-  // Define navigation based on user role
+  // Define navigation based on user role - removed sales-specific logic
   const allNavigation = [
     { name: 'Dashboard', href: '/', icon: BarChart3, roles: ['super_admin', 'admin', 'manager', 'staff'] },
     { name: 'Pelanggan', href: '/customers', icon: Users, roles: ['super_admin', 'admin', 'manager', 'staff'] },
@@ -46,9 +45,6 @@ const Layout = () => {
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 CRM Dashboard
               </h1>
-              {isSalesUser && (
-                <p className="text-xs text-gray-500 mt-1">Sales Portal</p>
-              )}
             </div>
             
             <nav className="flex-1 p-4 space-y-2">
@@ -84,9 +80,6 @@ const Layout = () => {
                     {user?.user_metadata?.full_name || user?.email || 'User'}
                   </p>
                   <p className="text-xs text-gray-500">{user?.email}</p>
-                  {isSalesUser && (
-                    <p className="text-xs text-blue-600">Sales</p>
-                  )}
                 </div>
               </div>
               <Button

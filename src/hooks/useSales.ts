@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Sales } from '@/types/sales';
@@ -48,7 +49,7 @@ export const useSales = () => {
     fetchSales();
   }, []);
 
-  const addSales = async (salesData: Omit<Sales, 'id' | 'createdAt' | 'updatedAt'> & { password?: string }) => {
+  const addSales = async (salesData: Omit<Sales, 'id' | 'createdAt' | 'updatedAt'>) => {
     try {
       const insertData: any = {
         name: salesData.name,
@@ -58,11 +59,6 @@ export const useSales = () => {
         branch_id: salesData.branchId === 'no-branch' ? null : salesData.branchId,
         is_active: salesData.isActive
       };
-
-      // Add password if provided
-      if (salesData.password) {
-        insertData.password_hash = salesData.password; // Will be hashed by trigger
-      }
 
       const { data, error } = await supabase
         .from('sales')
@@ -94,7 +90,7 @@ export const useSales = () => {
     }
   };
 
-  const updateSales = async (id: string, updates: Partial<Sales> & { password?: string }) => {
+  const updateSales = async (id: string, updates: Partial<Sales>) => {
     try {
       const updateData: any = {
         name: updates.name,
@@ -104,11 +100,6 @@ export const useSales = () => {
         branch_id: updates.branchId === 'no-branch' ? null : updates.branchId,
         is_active: updates.isActive
       };
-
-      // Add password if provided
-      if (updates.password) {
-        updateData.password_hash = updates.password; // Will be hashed by trigger
-      }
 
       const { data, error } = await supabase
         .from('sales')

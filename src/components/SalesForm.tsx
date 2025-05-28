@@ -16,7 +16,6 @@ const salesSchema = z.object({
   phone: z.string().optional(),
   email: z.string().email('Email tidak valid').optional().or(z.literal('')),
   branchId: z.string().optional(),
-  password: z.string().min(6, 'Password minimal 6 karakter').optional(),
 });
 
 type SalesFormData = z.infer<typeof salesSchema>;
@@ -38,7 +37,6 @@ const SalesForm: React.FC<SalesFormProps> = ({ sales, onSubmit, onCancel }) => {
       phone: sales?.phone || '',
       email: sales?.email || '',
       branchId: sales?.branchId || 'no-branch',
-      password: '',
     },
   });
 
@@ -124,26 +122,6 @@ const SalesForm: React.FC<SalesFormProps> = ({ sales, onSubmit, onCancel }) => {
                   ))}
                 </SelectContent>
               </Select>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
-
-        <FormField
-          control={form.control}
-          name="password"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>
-                {sales ? 'Password Baru (kosongkan jika tidak ingin mengubah)' : 'Password'}
-              </FormLabel>
-              <FormControl>
-                <Input
-                  type="password"
-                  placeholder={sales ? "Masukkan password baru" : "Masukkan password"}
-                  {...field}
-                />
-              </FormControl>
               <FormMessage />
             </FormItem>
           )}
