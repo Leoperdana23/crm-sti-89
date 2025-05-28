@@ -135,6 +135,17 @@ const WorkProcess = () => {
       return;
     }
 
+    // Validate that employees are assigned
+    const customer = dealCustomers.find(c => c.id === customerId);
+    if (!customer?.assignedEmployees || customer.assignedEmployees.length === 0) {
+      toast({
+        title: "Error",
+        description: "Karyawan pelaksana harus dipilih sebelum memulai pekerjaan",
+        variant: "destructive",
+      });
+      return;
+    }
+
     updateCustomer(customerId, {
       workStatus: 'in_progress',
       workStartDate: new Date().toISOString(),
@@ -341,6 +352,12 @@ const WorkProcess = () => {
                         <strong>Deal:</strong> {formatDate(customer.dealDate)}
                       </div>
                     )}
+                    {customer.assignedEmployees && customer.assignedEmployees.length > 0 && (
+                      <div className="flex items-center text-sm text-green-600 mt-1">
+                        <Users className="h-4 w-4 mr-1" />
+                        <strong>Karyawan:</strong> {getAssignedEmployeesNames(customer.assignedEmployees)}
+                      </div>
+                    )}
                   </div>
                   <Badge className="bg-blue-100 text-blue-800">
                     Deal
@@ -367,6 +384,7 @@ const WorkProcess = () => {
                         size="sm"
                         onClick={() => handleStartWork(customer.id)}
                         className="bg-green-600 hover:bg-green-700"
+                        disabled={!customer.assignedEmployees || customer.assignedEmployees.length === 0}
                       >
                         <Play className="h-4 w-4 mr-1" />
                         Mulai Pekerjaan
@@ -379,6 +397,11 @@ const WorkProcess = () => {
                         Batal
                       </Button>
                     </div>
+                    {(!customer.assignedEmployees || customer.assignedEmployees.length === 0) && (
+                      <p className="text-sm text-red-600">
+                        * Karyawan pelaksana harus dipilih terlebih dahulu
+                      </p>
+                    )}
                   </div>
                 ) : (
                   <div className="space-y-2">
@@ -386,6 +409,7 @@ const WorkProcess = () => {
                       size="sm"
                       onClick={() => setSelectedCustomer(customer.id)}
                       className="bg-blue-600 hover:bg-blue-700 w-full"
+                      disabled={!customer.assignedEmployees || customer.assignedEmployees.length === 0}
                     >
                       <Play className="h-4 w-4 mr-1" />
                       Mulai Pekerjaan
@@ -397,8 +421,13 @@ const WorkProcess = () => {
                       className="w-full"
                     >
                       <UserPlus className="h-4 w-4 mr-1" />
-                      Assign Karyawan
+                      {customer.assignedEmployees && customer.assignedEmployees.length > 0 ? 'Ubah Karyawan' : 'Assign Karyawan'}
                     </Button>
+                    {(!customer.assignedEmployees || customer.assignedEmployees.length === 0) && (
+                      <p className="text-sm text-orange-600 text-center">
+                        Pilih karyawan terlebih dahulu
+                      </p>
+                    )}
                   </div>
                 )}
               </div>

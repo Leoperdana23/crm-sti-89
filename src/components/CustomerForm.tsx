@@ -13,16 +13,16 @@ import { useBranches } from '@/hooks/useBranches';
 import { useSales } from '@/hooks/useSales';
 
 const customerSchema = z.object({
-  name: z.string().min(1, 'Nama harus diisi'),
-  phone: z.string().min(1, 'Nomor HP harus diisi'),
+  name: z.string().min(1, 'Nama lengkap harus diisi'),
+  phone: z.string().min(1, 'Nomor HP/WA harus diisi'),
   address: z.string().min(1, 'Alamat harus diisi'),
-  birthDate: z.string().min(1, 'Tanggal lahir harus diisi'),
-  idNumber: z.string().min(1, 'Nomor identitas harus diisi'),
-  needs: z.string().optional(),
+  birthDate: z.string().optional(),
+  idNumber: z.string().optional(),
+  needs: z.string().min(1, 'Kebutuhan harus diisi'),
   notes: z.string().optional(),
   status: z.enum(['Prospek', 'Follow-up', 'Deal', 'Tidak Jadi']),
   branchId: z.string().min(1, 'Cabang harus dipilih'),
-  salesId: z.string().optional(),
+  salesId: z.string().min(1, 'Sales harus dipilih').refine(val => val !== 'no-sales', 'Sales harus dipilih'),
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
@@ -49,7 +49,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
       notes: customer?.notes || '',
       status: customer?.status || 'Prospek',
       branchId: customer?.branchId || '',
-      salesId: customer?.salesId || 'no-sales',
+      salesId: customer?.salesId || '',
     },
   });
 
@@ -62,7 +62,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nama Lengkap</FormLabel>
+                <FormLabel>Nama Lengkap *</FormLabel>
                 <FormControl>
                   <Input placeholder="Masukkan nama lengkap" {...field} />
                 </FormControl>
@@ -76,7 +76,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
             name="phone"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nomor HP/WA</FormLabel>
+                <FormLabel>Nomor HP/WA *</FormLabel>
                 <FormControl>
                   <Input placeholder="08xxxxxxxxxx" {...field} />
                 </FormControl>
@@ -119,7 +119,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
           name="address"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Alamat</FormLabel>
+              <FormLabel>Alamat *</FormLabel>
               <FormControl>
                 <Textarea placeholder="Masukkan alamat lengkap" {...field} />
               </FormControl>
@@ -134,7 +134,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
             name="branchId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Cabang</FormLabel>
+                <FormLabel>Cabang *</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -159,7 +159,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
             name="status"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Status</FormLabel>
+                <FormLabel>Status *</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -183,7 +183,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
             name="salesId"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Sales</FormLabel>
+                <FormLabel>Sales *</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
@@ -191,7 +191,6 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="no-sales">Tidak ada sales</SelectItem>
                     {sales.map((sale) => (
                       <SelectItem key={sale.id} value={sale.id}>
                         {sale.name} ({sale.code})
@@ -210,7 +209,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
           name="needs"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Kebutuhan</FormLabel>
+              <FormLabel>Kebutuhan *</FormLabel>
               <FormControl>
                 <Textarea placeholder="Deskripsi singkat kebutuhan pelanggan" {...field} />
               </FormControl>
