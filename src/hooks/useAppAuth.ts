@@ -18,7 +18,8 @@ export const useAppAuth = () => {
       console.log('Attempting app user authentication for email:', email);
       
       // Call the Supabase function to authenticate app user
-      const { data, error } = await supabase.rpc('authenticate_app_user', {
+      // Using any type cast to bypass TypeScript error until types are regenerated
+      const { data, error } = await (supabase as any).rpc('authenticate_app_user', {
         email_input: email,
         password_input: password
       });
