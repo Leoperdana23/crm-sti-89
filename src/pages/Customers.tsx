@@ -76,6 +76,35 @@ const Customers = () => {
     }
   };
 
+  const handleWhatsApp = (phone: string) => {
+    const cleanPhone = phone.replace(/\D/g, '');
+    const whatsappPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
+    window.open(`https://wa.me/${whatsappPhone}`, '_blank');
+  };
+
+  const handleStatusUpdate = async (customerId: string, status: Customer['status']) => {
+    try {
+      const updateData: any = { status };
+      if (status === 'Deal') {
+        updateData.deal_date = new Date().toISOString().split('T')[0];
+        updateData.survey_status = 'belum_disurvei';
+        updateData.work_status = 'not_started';
+      }
+      
+      await updateCustomer(customerId, updateData);
+      toast({
+        title: "Berhasil",
+        description: "Status pelanggan berhasil diperbarui",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat memperbarui status.",
+        variant: "destructive"
+      });
+    }
+  };
+
   const filteredCustomers = customers.filter(customer => {
     const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          customer.phone.includes(searchTerm) ||
@@ -296,6 +325,8 @@ const Customers = () => {
             customer={customer}
             onEdit={handleEdit}
             onDelete={handleDelete}
+            onWhatsApp={handleWhatsApp}
+            onStatusUpdate={handleStatusUpdate}
           />
         ))}
       </div>

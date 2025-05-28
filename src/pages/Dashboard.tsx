@@ -9,7 +9,6 @@ import { useCustomers } from '@/hooks/useCustomers';
 import { useBranches } from '@/hooks/useBranches';
 import { useSales } from '@/hooks/useSales';
 import { useSurveys } from '@/hooks/useSurveys';
-import { useDashboardStats } from '@/hooks/useDashboardStats';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const Dashboard = () => {
@@ -17,12 +16,12 @@ const Dashboard = () => {
   const { branches } = useBranches();
   const { sales } = useSales();
   const { surveys } = useSurveys();
-  const { 
-    totalCustomers, 
-    totalDeals, 
-    conversionRate, 
-    monthlyGrowth 
-  } = useDashboardStats();
+
+  // Calculate statistics directly
+  const totalCustomers = customers.length;
+  const totalDeals = customers.filter(c => c.status === 'Deal').length;
+  const conversionRate = totalCustomers > 0 ? Math.round((totalDeals / totalCustomers) * 100) : 0;
+  const monthlyGrowth = 5.2; // Mock data for now
 
   // Data untuk chart
   const statusData = [
@@ -79,7 +78,6 @@ const Dashboard = () => {
           value={totalCustomers}
           icon={Users}
           trend={monthlyGrowth}
-          trendLabel="vs bulan lalu"
           color="blue"
         />
         <StatsCard
@@ -87,7 +85,6 @@ const Dashboard = () => {
           value={totalDeals}
           icon={CheckCircle}
           trend={conversionRate}
-          trendLabel="conversion rate"
           color="green"
         />
         <StatsCard

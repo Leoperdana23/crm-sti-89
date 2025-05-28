@@ -220,6 +220,15 @@ const WorkProcess = () => {
     }
   };
 
+  const handleAssignmentSubmit = (data: { employeeIds: string[]; workNotes: string; estimatedDays: string }) => {
+    const assignmentData = {
+      assigned_employees: data.employeeIds,
+      work_notes: data.workNotes,
+      estimated_days: data.estimatedDays ? parseInt(data.estimatedDays) : null
+    };
+    handleSaveAssignment(assignmentData);
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -386,13 +395,13 @@ const WorkProcess = () => {
       {/* Work Assignment Dialog */}
       {selectedCustomer && (
         <WorkAssignmentDialog
-          customer={selectedCustomer}
+          customerName={selectedCustomer.name}
           isOpen={assignmentDialogOpen}
           onClose={() => {
             setAssignmentDialogOpen(false);
             setSelectedCustomer(null);
           }}
-          onSave={handleSaveAssignment}
+          onAssign={handleAssignmentSubmit}
         />
       )}
     </div>
