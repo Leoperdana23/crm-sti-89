@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, LogOut, UserCog, Settings, Shield, Wrench } from 'lucide-react';
@@ -55,8 +54,8 @@ const Layout = () => {
         <div className="w-64 bg-white shadow-xl border-r border-gray-200">
           <div className="flex flex-col h-screen">
             <div className="p-6 border-b border-gray-200">
-              <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                CRM Dashboard
+              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
+                CRM PT SLASH TEKNOLOGI INDONESIA
               </h1>
             </div>
             
