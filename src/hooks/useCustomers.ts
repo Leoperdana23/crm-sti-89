@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Customer } from '@/types/customer';
@@ -48,6 +49,7 @@ export const useCustomers = () => {
         workCompletedDate: customer.work_completed_date,
         workNotes: customer.work_notes,
         estimatedDays: customer.estimated_days,
+        assignedEmployees: customer.assigned_employees ? JSON.parse(customer.assigned_employees) : [],
         interactions: []
       }));
 
@@ -80,7 +82,8 @@ export const useCustomers = () => {
           branch_id: customerData.branchId,
           sales_id: customerData.salesId === 'no-sales' ? null : customerData.salesId,
           survey_status: customerData.status === 'Deal' ? 'belum_disurvei' : null,
-          work_status: customerData.status === 'Deal' ? 'not_started' : null
+          work_status: customerData.status === 'Deal' ? 'not_started' : null,
+          assigned_employees: customerData.assignedEmployees ? JSON.stringify(customerData.assignedEmployees) : null
         })
         .select()
         .single();
@@ -107,6 +110,7 @@ export const useCustomers = () => {
           workCompletedDate: data.work_completed_date,
           workNotes: data.work_notes,
           estimatedDays: data.estimated_days,
+          assignedEmployees: data.assigned_employees ? JSON.parse(data.assigned_employees) : [],
           interactions: []
         };
         
@@ -140,7 +144,8 @@ export const useCustomers = () => {
           work_start_date: updates.workStartDate,
           work_completed_date: updates.workCompletedDate,
           work_notes: updates.workNotes,
-          estimated_days: updates.estimatedDays
+          estimated_days: updates.estimatedDays,
+          assigned_employees: updates.assignedEmployees ? JSON.stringify(updates.assignedEmployees) : null
         })
         .eq('id', id)
         .select()
@@ -168,6 +173,7 @@ export const useCustomers = () => {
           workCompletedDate: data.work_completed_date,
           workNotes: data.work_notes,
           estimatedDays: data.estimated_days,
+          assignedEmployees: data.assigned_employees ? JSON.parse(data.assigned_employees) : [],
           interactions: []
         };
 

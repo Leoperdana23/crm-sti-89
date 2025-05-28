@@ -20,6 +20,7 @@ export interface Customer {
   workCompletedDate?: string;
   workNotes?: string;
   estimatedDays?: number;
+  assignedEmployees?: string[];
 }
 
 export interface Interaction {
