@@ -1,10 +1,10 @@
-
 import React, { useState } from 'react';
-import { FileText, TrendingUp, Building, Users, Target, Award, Download } from 'lucide-react';
+import { FileText, TrendingUp, Building, Users, Target, Award, Download, Star, MessageSquare } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useSurveys } from '@/hooks/useSurveys';
 import { useBranches } from '@/hooks/useBranches';
@@ -74,6 +74,29 @@ const Reports = () => {
     }
     return last6Months;
   }, [filteredCustomers]);
+
+  // Data untuk tabel detail survei per pelanggan
+  const detailedSurveyData = React.useMemo(() => {
+    const completedSurveys = surveys.filter(survey => survey.isCompleted);
+    
+    return completedSurveys.map(survey => {
+      const customer = customers.find(c => c.id === survey.customerId);
+      const branch = branches.find(b => b.id === customer?.branchId);
+      
+      return {
+        ...survey,
+        customerName: customer?.name || 'Unknown',
+        customerPhone: customer?.phone || '-',
+        branchName: branch?.name || 'Unknown',
+        branchCode: branch?.code || '-',
+        overallRating: ((survey.serviceTechnician + survey.serviceSales + survey.productQuality + survey.usageClarity) / 4).toFixed(1)
+      };
+    }).filter(survey => {
+      if (selectedBranch === 'all') return true;
+      const customer = customers.find(c => c.id === survey.customerId);
+      return customer?.branchId === selectedBranch;
+    });
+  }, [surveys, customers, branches, selectedBranch]);
 
   const calculateConversionRate = (branch?: string) => {
     const customers = branch 
@@ -350,6 +373,122 @@ const Reports = () => {
           </Card>
         </div>
       )}
+
+      {/* Detail Survei Per Pelanggan */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center space-x-2">
+            <MessageSquare className="h-5 w-5" />
+            <span>Detail Hasil Survei Per Pelanggan</span>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {detailedSurveyData.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              Belum ada survei yang diselesaikan
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Pelanggan</TableHead>
+                    <TableHead>Cabang</TableHead>
+                    <TableHead>Tanggal Deal</TableHead>
+                    <TableHead>Rating Keseluruhan</TableHead>
+                    <TableHead>Teknisi</TableHead>
+                    <TableHead>Sales/CS</TableHead>
+                    <TableHead>Produk</TableHead>
+                    <TableHead>Penggunaan</TableHead>
+                    <TableHead>Harga OK</TableHead>
+                    <TableHead>Testimoni</TableHead>
+                    <TableHead>Saran & Kritik</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {detailedSurveyData.map((survey) => (
+                    <TableRow key={survey.id}>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{survey.customerName}</div>
+                          <div className="text-sm text-gray-500">{survey.customerPhone}</div>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="outline">{survey.branchCode}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(survey.dealDate).toLocaleDateString('id-ID')}
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center space-x-1">
+                          <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                          <span className="font-medium">{survey.overallRating}/10</span>
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={survey.serviceTechnician >= 8 ? "default" : survey.serviceTechnician >= 6 ? "secondary" : "destructive"}
+                        >
+                          {survey.serviceTechnician}/10
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={survey.serviceSales >= 8 ? "default" : survey.serviceSales >= 6 ? "secondary" : "destructive"}
+                        >
+                          {survey.serviceSales}/10
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={survey.productQuality >= 8 ? "default" : survey.productQuality >= 6 ? "secondary" : "destructive"}
+                        >
+                          {survey.productQuality}/10
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge 
+                          variant={survey.usageClarity >= 8 ? "default" : survey.usageClarity >= 6 ? "secondary" : "destructive"}
+                        >
+                          {survey.usageClarity}/10
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={survey.priceApproval ? "default" : "destructive"}>
+                          {survey.priceApproval ? 'Ya' : 'Tidak'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell className="max-w-xs">
+                        <div className="text-sm">
+                          {survey.testimonial ? (
+                            <div className="truncate" title={survey.testimonial}>
+                              {survey.testimonial}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 italic">Tidak ada testimoni</span>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell className="max-w-xs">
+                        <div className="text-sm">
+                          {survey.suggestions ? (
+                            <div className="truncate" title={survey.suggestions}>
+                              {survey.suggestions}
+                            </div>
+                          ) : (
+                            <span className="text-gray-400 italic">Tidak ada saran</span>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };
