@@ -22,7 +22,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
     full_name: '',
     email: '',
     role: 'staff' as 'super_admin' | 'admin' | 'manager' | 'staff',
-    branch_id: '',
+    branch_id: 'none',
     is_active: true
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -34,7 +34,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
         full_name: user.full_name,
         email: user.email,
         role: user.role,
-        branch_id: user.branch_id || '',
+        branch_id: user.branch_id || 'none',
         is_active: user.is_active
       });
     } else {
@@ -44,7 +44,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
         full_name: '',
         email: '',
         role: 'staff',
-        branch_id: '',
+        branch_id: 'none',
         is_active: true
       });
     }
@@ -63,7 +63,13 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
         throw new Error('Username, nama lengkap, dan email wajib diisi');
       }
       
-      await onSubmit(formData);
+      // Convert 'none' back to null for database
+      const submitData = {
+        ...formData,
+        branch_id: formData.branch_id === 'none' ? null : formData.branch_id
+      };
+      
+      await onSubmit(submitData);
     } catch (error) {
       console.error('Form submission error:', error);
       throw error;
@@ -154,7 +160,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
                   <SelectValue placeholder="Pilih Cabang" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Tidak Ada Cabang</SelectItem>
+                  <SelectItem value="none">Tidak Ada Cabang</SelectItem>
                   {branches.map((branch) => (
                     <SelectItem key={branch.id} value={branch.id}>
                       {branch.name}

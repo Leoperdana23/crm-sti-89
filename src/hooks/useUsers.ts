@@ -41,10 +41,10 @@ export const useUsers = () => {
     try {
       console.log('Adding user:', userData);
       
-      // Pastikan branch_id diset ke null jika kosong
+      // Pastikan branch_id diset ke null jika 'none'
       const cleanUserData = {
         ...userData,
-        branch_id: userData.branch_id === '' || userData.branch_id === 'none' ? null : userData.branch_id
+        branch_id: userData.branch_id === 'none' || userData.branch_id === '' ? null : userData.branch_id
       };
       
       const { data, error } = await supabase
@@ -77,10 +77,10 @@ export const useUsers = () => {
     try {
       console.log('Updating user:', { id, userData });
       
-      // Pastikan branch_id diset ke null jika kosong
+      // Pastikan branch_id diset ke null jika 'none'
       const cleanUserData = {
         ...userData,
-        branch_id: userData.branch_id === '' || userData.branch_id === 'none' ? null : userData.branch_id
+        branch_id: userData.branch_id === 'none' || userData.branch_id === '' ? null : userData.branch_id
       };
       
       const { data, error } = await supabase
