@@ -17,8 +17,8 @@ const Resellers = () => {
   const [editingReseller, setEditingReseller] = useState<Reseller | null>(null);
   const [deleteResellerId, setDeleteResellerId] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterBranch, setFilterBranch] = useState('');
-  const [filterStatus, setFilterStatus] = useState('');
+  const [filterBranch, setFilterBranch] = useState('all');
+  const [filterStatus, setFilterStatus] = useState('all');
 
   const { data: resellers = [], isLoading } = useResellers();
   const { branches } = useBranches();
@@ -31,8 +31,8 @@ const Resellers = () => {
                          reseller.phone.includes(searchTerm) ||
                          (reseller.email && reseller.email.toLowerCase().includes(searchTerm.toLowerCase()));
     
-    const matchesBranch = !filterBranch || reseller.branch_id === filterBranch;
-    const matchesStatus = !filterStatus || 
+    const matchesBranch = filterBranch === 'all' || reseller.branch_id === filterBranch;
+    const matchesStatus = filterStatus === 'all' || 
                          (filterStatus === 'active' && reseller.is_active) ||
                          (filterStatus === 'inactive' && !reseller.is_active);
     
@@ -118,7 +118,7 @@ const Resellers = () => {
             <SelectValue placeholder="Semua Cabang" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Semua Cabang</SelectItem>
+            <SelectItem value="all">Semua Cabang</SelectItem>
             {branches.map((branch) => (
               <SelectItem key={branch.id} value={branch.id}>
                 {branch.name}
@@ -132,7 +132,7 @@ const Resellers = () => {
             <SelectValue placeholder="Semua Status" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">Semua Status</SelectItem>
+            <SelectItem value="all">Semua Status</SelectItem>
             <SelectItem value="active">Aktif</SelectItem>
             <SelectItem value="inactive">Tidak Aktif</SelectItem>
           </SelectContent>
@@ -163,7 +163,7 @@ const Resellers = () => {
       {filteredResellers.length === 0 ? (
         <div className="text-center py-12">
           <p className="text-gray-500">
-            {searchTerm || filterBranch || filterStatus 
+            {searchTerm || filterBranch !== 'all' || filterStatus !== 'all'
               ? 'Tidak ada reseller yang sesuai dengan filter'
               : 'Belum ada data reseller'
             }
