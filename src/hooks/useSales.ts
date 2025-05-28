@@ -49,7 +49,7 @@ export const useSales = () => {
     fetchSales();
   }, []);
 
-  const addSales = async (salesData: Omit<Sales, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addSales = async (salesData: Omit<Sales, 'id' | 'createdAt' | 'updatedAt'> & { password?: string }) => {
     try {
       const insertData: any = {
         name: salesData.name,
@@ -59,6 +59,11 @@ export const useSales = () => {
         branch_id: salesData.branchId === 'no-branch' ? null : salesData.branchId,
         is_active: salesData.isActive
       };
+
+      // Add password if provided
+      if (salesData.password && salesData.password.trim() !== '') {
+        insertData.password_hash = salesData.password;
+      }
 
       const { data, error } = await supabase
         .from('sales')
@@ -90,7 +95,7 @@ export const useSales = () => {
     }
   };
 
-  const updateSales = async (id: string, updates: Partial<Sales>) => {
+  const updateSales = async (id: string, updates: Partial<Sales> & { password?: string }) => {
     try {
       const updateData: any = {
         name: updates.name,
@@ -100,6 +105,11 @@ export const useSales = () => {
         branch_id: updates.branchId === 'no-branch' ? null : updates.branchId,
         is_active: updates.isActive
       };
+
+      // Only update password if provided
+      if (updates.password && updates.password.trim() !== '') {
+        updateData.password_hash = updates.password;
+      }
 
       const { data, error } = await supabase
         .from('sales')

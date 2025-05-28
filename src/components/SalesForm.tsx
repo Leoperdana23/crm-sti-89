@@ -15,6 +15,7 @@ const salesSchema = z.object({
   code: z.string().min(1, 'Kode harus diisi'),
   phone: z.string().optional(),
   email: z.string().email('Email tidak valid').optional().or(z.literal('')),
+  password: z.string().min(6, 'Password minimal 6 karakter').optional().or(z.literal('')),
   branchId: z.string().optional(),
 });
 
@@ -36,6 +37,7 @@ const SalesForm: React.FC<SalesFormProps> = ({ sales, onSubmit, onCancel }) => {
       code: sales?.code || '',
       phone: sales?.phone || '',
       email: sales?.email || '',
+      password: '',
       branchId: sales?.branchId || 'no-branch',
     },
   });
@@ -94,6 +96,24 @@ const SalesForm: React.FC<SalesFormProps> = ({ sales, onSubmit, onCancel }) => {
                 <FormLabel>Email</FormLabel>
                 <FormControl>
                   <Input placeholder="email@example.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="password"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Password {sales ? '(Kosongkan jika tidak ingin mengubah)' : ''}</FormLabel>
+                <FormControl>
+                  <Input 
+                    type="password" 
+                    placeholder={sales ? "Masukkan password baru" : "Masukkan password"} 
+                    {...field} 
+                  />
                 </FormControl>
                 <FormMessage />
               </FormItem>
