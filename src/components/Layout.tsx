@@ -10,26 +10,18 @@ const Layout = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
 
-  // Get user role from metadata or default to staff
-  const userRole = user?.user_metadata?.role || 'staff';
-
-  // Define navigation based on user role - removed sales-specific logic
-  const allNavigation = [
-    { name: 'Dashboard', href: '/', icon: BarChart3, roles: ['super_admin', 'admin', 'manager', 'staff'] },
-    { name: 'Pelanggan', href: '/customers', icon: Users, roles: ['super_admin', 'admin', 'manager', 'staff'] },
-    { name: 'Follow-Up', href: '/follow-up', icon: UserCheck, roles: ['super_admin', 'admin', 'manager', 'staff'] },
-    { name: 'Survei', href: '/survey', icon: MessageSquare, roles: ['super_admin', 'admin', 'manager', 'staff'] },
-    { name: 'Sales', href: '/sales', icon: UserCog, roles: ['super_admin', 'admin', 'manager'] },
-    { name: 'Cabang', href: '/branches', icon: Building, roles: ['super_admin', 'admin', 'manager'] },
-    { name: 'Laporan', href: '/reports', icon: FileText, roles: ['super_admin', 'admin', 'manager'] },
-    { name: 'Master User', href: '/users', icon: Settings, roles: ['super_admin', 'admin'] },
-    { name: 'Hak Akses Role', href: '/role-permissions', icon: Shield, roles: ['super_admin'] },
+  // Define all navigation items - now showing all menus without role filtering
+  const navigation = [
+    { name: 'Dashboard', href: '/', icon: BarChart3 },
+    { name: 'Pelanggan', href: '/customers', icon: Users },
+    { name: 'Follow-Up', href: '/follow-up', icon: UserCheck },
+    { name: 'Survei', href: '/survey', icon: MessageSquare },
+    { name: 'Sales', href: '/sales', icon: UserCog },
+    { name: 'Cabang', href: '/branches', icon: Building },
+    { name: 'Laporan', href: '/reports', icon: FileText },
+    { name: 'Master User', href: '/users', icon: Settings },
+    { name: 'Hak Akses Role', href: '/role-permissions', icon: Shield },
   ];
-
-  // Filter navigation based on user role
-  const navigation = allNavigation.filter(item => 
-    item.roles.includes(userRole)
-  );
 
   const handleLogout = async () => {
     await signOut();
