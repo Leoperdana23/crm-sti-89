@@ -16,7 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const Survey = () => {
   const { customers, loading: customersLoading } = useCustomers();
-  const { surveys, loading: surveysLoading, addSurvey, getAverageRatings } = useSurveys();
+  const { surveys, loading: surveysLoading, addSurvey, createSurveyLink, getAverageRatings } = useSurveys();
   const { toast } = useToast();
   const [isSurveyFormOpen, setIsSurveyFormOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -54,6 +54,26 @@ const Survey = () => {
       toast({
         title: "Error",
         description: "Terjadi kesalahan saat menyimpan survei.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleCreateSurveyLink = async (customer: Customer) => {
+    try {
+      const survey = await createSurveyLink(customer.id);
+      if (survey) {
+        const surveyUrl = `${window.location.origin}/public-survey/${survey.surveyToken}`;
+        navigator.clipboard.writeText(surveyUrl);
+        toast({
+          title: "Link Survei Dibuat",
+          description: "Link survei telah disalin ke clipboard dan siap dibagikan ke pelanggan",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat membuat link survei.",
         variant: "destructive"
       });
     }
@@ -170,14 +190,24 @@ const Survey = () => {
                       </TableCell>
                       <TableCell>
                         {customer.surveyStatus !== 'sudah_disurvei' && (
-                          <Button
-                            size="sm"
-                            onClick={() => openSurveyForm(customer)}
-                            className="bg-blue-600 hover:bg-blue-700"
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Buat Survei
-                          </Button>
+                          <div className="flex space-x-2">
+                            <Button
+                              size="sm"
+                              onClick={() => openSurveyForm(customer)}
+                              className="bg-blue-600 hover:bg-blue-700"
+                            >
+                              <Plus className="h-4 w-4 mr-1" />
+                              Buat Survei
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => handleCreateSurveyLink(customer)}
+                              className="border-green-600 text-green-600 hover:bg-green-50"
+                            >
+                              Buat Link
+                            </Button>
+                          </div>
                         )}
                       </TableCell>
                     </TableRow>

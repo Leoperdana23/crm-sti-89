@@ -9,6 +9,7 @@ import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import FollowUp from "./pages/FollowUp";
 import Survey from "./pages/Survey";
+import PublicSurvey from "./pages/PublicSurvey";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -27,6 +28,7 @@ const App = () => (
             <Route path="survey" element={<Survey />} />
             {/* TODO: Add Reports pages */}
           </Route>
+          <Route path="/public-survey/:token" element={<PublicSurvey />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

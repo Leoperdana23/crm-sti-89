@@ -108,6 +108,7 @@ export type Database = {
           service_sales: number
           service_technician: number
           suggestions: string | null
+          survey_token: string
           testimonial: string | null
           usage_clarity: number
         }
@@ -123,6 +124,7 @@ export type Database = {
           service_sales: number
           service_technician: number
           suggestions?: string | null
+          survey_token?: string
           testimonial?: string | null
           usage_clarity: number
         }
@@ -138,6 +140,7 @@ export type Database = {
           service_sales?: number
           service_technician?: number
           suggestions?: string | null
+          survey_token?: string
           testimonial?: string | null
           usage_clarity?: number
         }

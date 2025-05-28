@@ -38,7 +38,8 @@ export const useSurveys = () => {
         testimonial: survey.testimonial || '',
         suggestions: survey.suggestions || '',
         isCompleted: survey.is_completed,
-        completedAt: survey.completed_at
+        completedAt: survey.completed_at,
+        surveyToken: survey.survey_token
       }));
 
       setSurveys(transformedSurveys);
@@ -53,7 +54,57 @@ export const useSurveys = () => {
     fetchSurveys();
   }, []);
 
-  const addSurvey = async (surveyData: Omit<Survey, 'id' | 'isCompleted' | 'completedAt'>) => {
+  const createSurveyLink = async (customerId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('surveys')
+        .insert({
+          customer_id: customerId,
+          deal_date: new Date().toISOString().split('T')[0],
+          service_technician: 1,
+          service_sales: 1,
+          product_quality: 1,
+          usage_clarity: 1,
+          price_approval: false,
+          testimonial: '',
+          suggestions: '',
+          is_completed: false
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating survey link:', error);
+        throw error;
+      }
+
+      if (data) {
+        const newSurvey: Survey = {
+          id: data.id,
+          customerId: data.customer_id,
+          dealDate: data.deal_date,
+          serviceTechnician: data.service_technician,
+          serviceSales: data.service_sales,
+          productQuality: data.product_quality,
+          usageClarity: data.usage_clarity,
+          priceApproval: data.price_approval,
+          testimonial: data.testimonial || '',
+          suggestions: data.suggestions || '',
+          isCompleted: data.is_completed,
+          completedAt: data.completed_at,
+          surveyToken: data.survey_token
+        };
+        
+        setSurveys(prev => [newSurvey, ...prev]);
+        return newSurvey;
+      }
+    } catch (error) {
+      console.error('Error in createSurveyLink:', error);
+      throw error;
+    }
+  };
+
+  const addSurvey = async (surveyData: Omit<Survey, 'id' | 'isCompleted' | 'completedAt' | 'surveyToken'>) => {
     try {
       const { data, error } = await supabase
         .from('surveys')
@@ -91,7 +142,8 @@ export const useSurveys = () => {
           testimonial: data.testimonial || '',
           suggestions: data.suggestions || '',
           isCompleted: data.is_completed,
-          completedAt: data.completed_at
+          completedAt: data.completed_at,
+          surveyToken: data.survey_token
         };
         
         setSurveys(prev => [newSurvey, ...prev]);
@@ -122,6 +174,7 @@ export const useSurveys = () => {
     surveys,
     loading,
     addSurvey,
+    createSurveyLink,
     getAverageRatings,
     refreshSurveys: fetchSurveys
   };

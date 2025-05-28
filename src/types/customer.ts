@@ -38,4 +38,5 @@ export interface Survey {
   suggestions: string;
   isCompleted: boolean;
   completedAt?: string;
+  surveyToken: string;
 }
