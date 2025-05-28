@@ -1,7 +1,11 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Customer } from '@/types/customer';
+
+// Extend the Supabase customer type to include assigned_employees
+type CustomerWithAssignedEmployees = any & {
+  assigned_employees?: string | null;
+};
 
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
@@ -33,7 +37,7 @@ export const useCustomers = () => {
       }
 
       // Transform the data to match our Customer interface
-      const transformedCustomers: Customer[] = (data || []).map(customer => ({
+      const transformedCustomers: Customer[] = (data || []).map((customer: CustomerWithAssignedEmployees) => ({
         ...customer,
         birthDate: customer.birth_date,
         idNumber: customer.id_number,
@@ -94,23 +98,24 @@ export const useCustomers = () => {
       }
 
       if (data) {
+        const customerWithAssigned = data as CustomerWithAssignedEmployees;
         const newCustomer: Customer = {
-          ...data,
-          birthDate: data.birth_date,
-          idNumber: data.id_number,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-          dealDate: data.deal_date,
-          branchId: data.branch_id,
-          salesId: data.sales_id,
-          surveyStatus: data.survey_status as Customer['surveyStatus'],
-          status: data.status as Customer['status'],
-          workStatus: data.work_status as Customer['workStatus'],
-          workStartDate: data.work_start_date,
-          workCompletedDate: data.work_completed_date,
-          workNotes: data.work_notes,
-          estimatedDays: data.estimated_days,
-          assignedEmployees: data.assigned_employees ? JSON.parse(data.assigned_employees) : [],
+          ...customerWithAssigned,
+          birthDate: customerWithAssigned.birth_date,
+          idNumber: customerWithAssigned.id_number,
+          createdAt: customerWithAssigned.created_at,
+          updatedAt: customerWithAssigned.updated_at,
+          dealDate: customerWithAssigned.deal_date,
+          branchId: customerWithAssigned.branch_id,
+          salesId: customerWithAssigned.sales_id,
+          surveyStatus: customerWithAssigned.survey_status as Customer['surveyStatus'],
+          status: customerWithAssigned.status as Customer['status'],
+          workStatus: customerWithAssigned.work_status as Customer['workStatus'],
+          workStartDate: customerWithAssigned.work_start_date,
+          workCompletedDate: customerWithAssigned.work_completed_date,
+          workNotes: customerWithAssigned.work_notes,
+          estimatedDays: customerWithAssigned.estimated_days,
+          assignedEmployees: customerWithAssigned.assigned_employees ? JSON.parse(customerWithAssigned.assigned_employees) : [],
           interactions: []
         };
         
@@ -157,23 +162,24 @@ export const useCustomers = () => {
       }
 
       if (data) {
+        const customerWithAssigned = data as CustomerWithAssignedEmployees;
         const updatedCustomer: Customer = {
-          ...data,
-          birthDate: data.birth_date,
-          idNumber: data.id_number,
-          createdAt: data.created_at,
-          updatedAt: data.updated_at,
-          dealDate: data.deal_date,
-          branchId: data.branch_id,
-          salesId: data.sales_id,
-          surveyStatus: data.survey_status as Customer['surveyStatus'],
-          status: data.status as Customer['status'],
-          workStatus: data.work_status as Customer['workStatus'],
-          workStartDate: data.work_start_date,
-          workCompletedDate: data.work_completed_date,
-          workNotes: data.work_notes,
-          estimatedDays: data.estimated_days,
-          assignedEmployees: data.assigned_employees ? JSON.parse(data.assigned_employees) : [],
+          ...customerWithAssigned,
+          birthDate: customerWithAssigned.birth_date,
+          idNumber: customerWithAssigned.id_number,
+          createdAt: customerWithAssigned.created_at,
+          updatedAt: customerWithAssigned.updated_at,
+          dealDate: customerWithAssigned.deal_date,
+          branchId: customerWithAssigned.branch_id,
+          salesId: customerWithAssigned.sales_id,
+          surveyStatus: customerWithAssigned.survey_status as Customer['surveyStatus'],
+          status: customerWithAssigned.status as Customer['status'],
+          workStatus: customerWithAssigned.work_status as Customer['workStatus'],
+          workStartDate: customerWithAssigned.work_start_date,
+          workCompletedDate: customerWithAssigned.work_completed_date,
+          workNotes: customerWithAssigned.work_notes,
+          estimatedDays: customerWithAssigned.estimated_days,
+          assignedEmployees: customerWithAssigned.assigned_employees ? JSON.parse(customerWithAssigned.assigned_employees) : [],
           interactions: []
         };
 
