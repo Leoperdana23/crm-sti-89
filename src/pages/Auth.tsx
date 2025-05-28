@@ -100,13 +100,18 @@ const Auth = () => {
     setLoading(true);
 
     try {
-      await authenticateSales(email, password);
+      const result = await authenticateSales(email, password);
       
-      toast({
-        title: "Success",
-        description: "Login sales berhasil!",
-      });
-      navigate('/');
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Login sales berhasil!",
+        });
+        
+        // Store sales user info in localStorage for simple session management
+        localStorage.setItem('salesUser', JSON.stringify(result.user));
+        navigate('/');
+      }
     } catch (error: any) {
       toast({
         title: "Error",
