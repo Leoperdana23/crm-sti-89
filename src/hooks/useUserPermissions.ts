@@ -73,10 +73,29 @@ export const useUserPermissions = () => {
       }
 
       console.log('Fetching permissions for user:', currentUser);
-      setUserRole(currentUser.role);
+
+      // First, get the user's role from app_users table if it's an app user
+      let actualRole = currentUser.role;
+      
+      if (currentUser.type === 'app') {
+        const { data: appUserData, error: appUserError } = await supabase
+          .from('app_users')
+          .select('role')
+          .eq('email', currentUser.email)
+          .single();
+
+        if (appUserError) {
+          console.error('Error fetching app user role:', appUserError);
+        } else if (appUserData) {
+          actualRole = appUserData.role;
+          console.log('Found role from app_users:', actualRole);
+        }
+      }
+
+      setUserRole(actualRole);
 
       // If super admin, grant all permissions without checking database
-      if (currentUser.role === 'super_admin') {
+      if (actualRole === 'super_admin') {
         console.log('User is super admin, granting all permissions');
         const superAdminPermissions: UserPermissions = {
           'dashboard': { can_view: true, can_create: true, can_edit: true, can_delete: true },
@@ -107,12 +126,14 @@ export const useUserPermissions = () => {
             name
           )
         `)
-        .eq('role', currentUser.role);
+        .eq('role', actualRole);
 
       if (error) {
         console.error('Error fetching role permissions:', error);
         return;
       }
+
+      console.log('Role permissions from database:', rolePermissions);
 
       const userPermissions: UserPermissions = {};
       rolePermissions?.forEach(rp => {
@@ -147,7 +168,10 @@ export const useUserPermissions = () => {
     }
 
     const permission = permissions[permissionName];
-    if (!permission) return false;
+    if (!permission) {
+      console.log(`No permission found for: ${permissionName}`);
+      return false;
+    }
 
     switch (action) {
       case 'view': return permission.can_view;

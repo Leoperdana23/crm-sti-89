@@ -22,7 +22,7 @@ const Layout = () => {
         return {
           name: parsedAppUser.user_metadata?.full_name || parsedAppUser.full_name || 'App User',
           email: parsedAppUser.user_metadata?.email || parsedAppUser.email || '',
-          role: parsedAppUser.user_metadata?.role || 'staff'
+          role: parsedAppUser.user_metadata?.role || parsedAppUser.role || 'staff'
         };
       } catch (error) {
         // Fallback
@@ -68,7 +68,14 @@ const Layout = () => {
   ];
 
   // Filter navigation based on user permissions
-  const navigation = allNavigation.filter(item => hasPermission(item.permission, 'view'));
+  const navigation = allNavigation.filter(item => {
+    const hasAccess = hasPermission(item.permission, 'view');
+    console.log(`Menu ${item.name} (${item.permission}): ${hasAccess ? 'ALLOWED' : 'DENIED'}`);
+    return hasAccess;
+  });
+
+  console.log('Current user role:', userRole);
+  console.log('Filtered navigation items:', navigation.map(n => n.name));
 
   const handleLogout = async () => {
     await signOut();
