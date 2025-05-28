@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, User, Shield, LogOut, UserCog } from 'lucide-react';
+import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, LogOut, UserCog } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -18,8 +17,6 @@ const Layout = () => {
     { name: 'Sales', href: '/sales', icon: UserCog },
     { name: 'Cabang', href: '/branches', icon: Building },
     { name: 'Laporan', href: '/reports', icon: FileText },
-    { name: 'Master User', href: '/users', icon: User },
-    { name: 'Hak Akses Role', href: '/role-permissions', icon: Shield },
   ];
 
   const handleLogout = async () => {
@@ -64,7 +61,7 @@ const Layout = () => {
             <div className="p-4 border-t border-gray-200 space-y-3">
               <div className="flex items-center space-x-3">
                 <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                  <User className="h-4 w-4 text-white" />
+                  <Users className="h-4 w-4 text-white" />
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-900">

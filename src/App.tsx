@@ -12,8 +12,6 @@ import Survey from '@/pages/Survey';
 import Sales from '@/pages/Sales';
 import Branches from '@/pages/Branches';
 import Reports from '@/pages/Reports';
-import Users from '@/pages/Users';
-import RolePermissions from '@/pages/RolePermissions';
 import PublicSurvey from '@/pages/PublicSurvey';
 import Auth from '@/pages/Auth';
 import NotFound from '@/pages/NotFound';
@@ -40,8 +38,6 @@ function App() {
             <Route path="sales" element={<Sales />} />
             <Route path="branches" element={<Branches />} />
             <Route path="reports" element={<Reports />} />
-            <Route path="users" element={<Users />} />
-            <Route path="role-permissions" element={<RolePermissions />} />
             <Route path="*" element={<NotFound />} />
           </Route>
         </Routes>
