@@ -1,6 +1,15 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+interface SalesAuthResponse {
+  success: boolean;
+  message?: string;
+  user_id?: string;
+  email?: string;
+  name?: string;
+  sales_id?: string;
+}
+
 export const useSalesAuth = () => {
   const authenticateSales = async (email: string, password: string) => {
     try {
@@ -15,9 +24,12 @@ export const useSalesAuth = () => {
         throw new Error('Terjadi kesalahan saat login');
       }
 
+      // Cast the data to our expected type
+      const authResult = data as SalesAuthResponse;
+
       // Check if authentication was successful
-      if (!data || !data.success) {
-        throw new Error(data?.message || 'Login gagal');
+      if (!authResult || !authResult.success) {
+        throw new Error(authResult?.message || 'Login gagal');
       }
 
       // Create a temporary session for the sales user
@@ -25,11 +37,11 @@ export const useSalesAuth = () => {
       return {
         success: true,
         user: {
-          id: data.user_id,
-          email: data.email,
+          id: authResult.user_id,
+          email: authResult.email,
           user_metadata: {
-            full_name: data.name,
-            sales_id: data.sales_id
+            full_name: authResult.name,
+            sales_id: authResult.sales_id
           }
         }
       };
