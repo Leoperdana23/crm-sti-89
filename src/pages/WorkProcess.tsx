@@ -1,15 +1,21 @@
-
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Play, CheckCircle, Clock, MapPin, Phone, User, Calendar, Search, UserPlus, Users } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { Play, CheckCircle, Clock, MapPin, Phone, User, Calendar as CalendarIcon, Search, UserPlus, Users, Filter } from 'lucide-react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useToast } from '@/hooks/use-toast';
 import { useSales } from '@/hooks/useSales';
 import WorkAssignmentDialog from '@/components/WorkAssignmentDialog';
+import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+
+type DateFilter = 'all' | 'today' | 'this_week' | 'this_month' | 'custom';
 
 const WorkProcess = () => {
   const { customers, updateCustomer, getCustomersByStatus } = useCustomers();
@@ -26,6 +32,52 @@ const WorkProcess = () => {
   const [searchOngoing, setSearchOngoing] = useState('');
   const [searchCompleted, setSearchCompleted] = useState('');
 
+  // Date filter states
+  const [dateFilter, setDateFilter] = useState<DateFilter>('all');
+  const [customDateFrom, setCustomDateFrom] = useState<Date | undefined>();
+  const [customDateTo, setCustomDateTo] = useState<Date | undefined>();
+
+  // Filter customers by date
+  const filterByDate = (customers: any[], dateField: string) => {
+    if (dateFilter === 'all') return customers;
+
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    
+    return customers.filter(customer => {
+      const customerDate = customer[dateField] ? new Date(customer[dateField]) : null;
+      if (!customerDate) return false;
+
+      const customerDateOnly = new Date(customerDate.getFullYear(), customerDate.getMonth(), customerDate.getDate());
+
+      switch (dateFilter) {
+        case 'today':
+          return customerDateOnly.getTime() === today.getTime();
+        
+        case 'this_week':
+          const startOfWeek = new Date(today);
+          startOfWeek.setDate(today.getDate() - today.getDay());
+          const endOfWeek = new Date(startOfWeek);
+          endOfWeek.setDate(startOfWeek.getDate() + 6);
+          return customerDateOnly >= startOfWeek && customerDateOnly <= endOfWeek;
+        
+        case 'this_month':
+          const startOfMonth = new Date(today.getFullYear(), today.getMonth(), 1);
+          const endOfMonth = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+          return customerDateOnly >= startOfMonth && customerDateOnly <= endOfMonth;
+        
+        case 'custom':
+          if (!customDateFrom || !customDateTo) return true;
+          const fromDate = new Date(customDateFrom.getFullYear(), customDateFrom.getMonth(), customDateFrom.getDate());
+          const toDate = new Date(customDateTo.getFullYear(), customDateTo.getMonth(), customDateTo.getDate());
+          return customerDateOnly >= fromDate && customerDateOnly <= toDate;
+        
+        default:
+          return true;
+      }
+    });
+  };
+
   const dealCustomers = getCustomersByStatus('Deal').filter(customer => 
     !customer.workStatus || customer.workStatus === 'not_started'
   );
@@ -38,6 +90,11 @@ const WorkProcess = () => {
     customer.status === 'Deal' && customer.workStatus === 'completed'
   );
 
+  // Apply date filtering
+  const filteredDealCustomers = filterByDate(dealCustomers, 'dealDate');
+  const filteredOngoingWork = filterByDate(ongoingWork, 'workStartDate');
+  const filteredCompletedWork = filterByDate(completedWork, 'workCompletedDate');
+
   // Filter functions for search
   const filterCustomers = (customers: any[], searchTerm: string) => {
     if (!searchTerm.trim()) return customers;
@@ -49,9 +106,9 @@ const WorkProcess = () => {
     );
   };
 
-  const filteredReadyCustomers = filterCustomers(dealCustomers, searchReady);
-  const filteredOngoingWork = filterCustomers(ongoingWork, searchOngoing);
-  const filteredCompletedWork = filterCustomers(completedWork, searchCompleted);
+  const filteredReadyCustomers = filterCustomers(filteredDealCustomers, searchReady);
+  const filteredOngoingWorkWithSearch = filterCustomers(filteredOngoingWork, searchOngoing);
+  const filteredCompletedWorkWithSearch = filterCustomers(filteredCompletedWork, searchCompleted);
 
   const getSalesName = (salesId?: string) => {
     if (!salesId) return 'Tidak ada sales';
@@ -171,6 +228,77 @@ const WorkProcess = () => {
         <p className="text-gray-600 mt-1">Kelola pekerjaan untuk pelanggan yang sudah deal</p>
       </div>
 
+      {/* Date Filter */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Filter className="h-5 w-5 mr-2" />
+            Filter Berdasarkan Waktu
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="flex items-center space-x-2">
+              <label className="text-sm font-medium">Filter:</label>
+              <Select value={dateFilter} onValueChange={(value: DateFilter) => setDateFilter(value)}>
+                <SelectTrigger className="w-40">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Waktu</SelectItem>
+                  <SelectItem value="today">Hari Ini</SelectItem>
+                  <SelectItem value="this_week">Minggu Ini</SelectItem>
+                  <SelectItem value="this_month">Bulan Ini</SelectItem>
+                  <SelectItem value="custom">Periode Kustom</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {dateFilter === 'custom' && (
+              <div className="flex items-center space-x-2">
+                <span className="text-sm">Dari:</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-40 justify-start text-left font-normal", !customDateFrom && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customDateFrom ? format(customDateFrom, "dd/MM/yyyy") : "Pilih tanggal"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={customDateFrom}
+                      onSelect={setCustomDateFrom}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+
+                <span className="text-sm">Sampai:</span>
+                <Popover>
+                  <PopoverTrigger asChild>
+                    <Button variant="outline" className={cn("w-40 justify-start text-left font-normal", !customDateTo && "text-muted-foreground")}>
+                      <CalendarIcon className="mr-2 h-4 w-4" />
+                      {customDateTo ? format(customDateTo, "dd/MM/yyyy") : "Pilih tanggal"}
+                    </Button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-auto p-0" align="start">
+                    <Calendar
+                      mode="single"
+                      selected={customDateTo}
+                      onSelect={setCustomDateTo}
+                      initialFocus
+                      className="pointer-events-auto"
+                    />
+                  </PopoverContent>
+                </Popover>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Siap Mulai Pekerjaan */}
         <Card>
@@ -209,7 +337,7 @@ const WorkProcess = () => {
                     </div>
                     {customer.dealDate && (
                       <div className="flex items-center text-sm text-gray-600 mt-1">
-                        <Calendar className="h-4 w-4 mr-1" />
+                        <CalendarIcon className="h-4 w-4 mr-1" />
                         <strong>Deal:</strong> {formatDate(customer.dealDate)}
                       </div>
                     )}
@@ -289,7 +417,7 @@ const WorkProcess = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Clock className="h-5 w-5 mr-2 text-orange-600" />
-              Sedang Dikerjakan ({filteredOngoingWork.length})
+              Sedang Dikerjakan ({filteredOngoingWorkWithSearch.length})
             </CardTitle>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -302,7 +430,7 @@ const WorkProcess = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {filteredOngoingWork.map((customer) => (
+            {filteredOngoingWorkWithSearch.map((customer) => (
               <div key={customer.id} className="p-4 border border-orange-200 bg-orange-50 rounded-lg">
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -323,7 +451,7 @@ const WorkProcess = () => {
                     )}
                     {customer.workStartDate && (
                       <div className="flex items-center text-sm text-gray-600 mt-1">
-                        <Calendar className="h-4 w-4 mr-1" />
+                        <CalendarIcon className="h-4 w-4 mr-1" />
                         <strong>Mulai:</strong> {formatDateTime(customer.workStartDate)}
                       </div>
                     )}
@@ -362,7 +490,7 @@ const WorkProcess = () => {
               </div>
             ))}
 
-            {filteredOngoingWork.length === 0 && (
+            {filteredOngoingWorkWithSearch.length === 0 && (
               <p className="text-gray-500 text-center py-8">
                 {searchOngoing ? 'Tidak ada data yang cocok dengan pencarian' : 'Tidak ada pekerjaan yang sedang dikerjakan'}
               </p>
@@ -375,7 +503,7 @@ const WorkProcess = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
-              Selesai ({filteredCompletedWork.length})
+              Selesai ({filteredCompletedWorkWithSearch.length})
             </CardTitle>
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
@@ -388,7 +516,7 @@ const WorkProcess = () => {
             </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {filteredCompletedWork.map((customer) => (
+            {filteredCompletedWorkWithSearch.map((customer) => (
               <div key={customer.id} className="p-4 border border-green-200 bg-green-50 rounded-lg">
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -409,13 +537,13 @@ const WorkProcess = () => {
                     )}
                     {customer.workStartDate && (
                       <div className="flex items-center text-sm text-gray-600 mt-1">
-                        <Calendar className="h-4 w-4 mr-1" />
+                        <CalendarIcon className="h-4 w-4 mr-1" />
                         <strong>Mulai:</strong> {formatDateTime(customer.workStartDate)}
                       </div>
                     )}
                     {customer.workCompletedDate && (
                       <div className="flex items-center text-sm text-gray-600 mt-1">
-                        <Calendar className="h-4 w-4 mr-1" />
+                        <CalendarIcon className="h-4 w-4 mr-1" />
                         <strong>Selesai:</strong> {formatDateTime(customer.workCompletedDate)}
                       </div>
                     )}
@@ -438,7 +566,7 @@ const WorkProcess = () => {
               </div>
             ))}
 
-            {filteredCompletedWork.length === 0 && (
+            {filteredCompletedWorkWithSearch.length === 0 && (
               <p className="text-gray-500 text-center py-8">
                 {searchCompleted ? 'Tidak ada data yang cocok dengan pencarian' : 'Belum ada pekerjaan yang selesai'}
               </p>
