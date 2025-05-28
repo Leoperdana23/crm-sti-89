@@ -1,4 +1,5 @@
 
+
 import { supabase } from '@/integrations/supabase/client';
 
 interface AuthResponse {
@@ -23,7 +24,7 @@ export const useSalesAuth = () => {
         throw new Error('Terjadi kesalahan saat login');
       }
 
-      const authResponse = data as AuthResponse;
+      const authResponse = data as unknown as AuthResponse;
 
       if (!authResponse.success) {
         throw new Error(authResponse.message || 'Login gagal');
@@ -51,3 +52,4 @@ export const useSalesAuth = () => {
     authenticateSales
   };
 };
+
