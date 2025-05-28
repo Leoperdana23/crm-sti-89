@@ -8,6 +8,7 @@ import Index from '@/pages/Index';
 import Dashboard from '@/pages/Dashboard';
 import Customers from '@/pages/Customers';
 import FollowUp from '@/pages/FollowUp';
+import WorkProcess from '@/pages/WorkProcess';
 import Survey from '@/pages/Survey';
 import Sales from '@/pages/Sales';
 import Branches from '@/pages/Branches';
@@ -36,6 +37,7 @@ function App() {
             <Route index element={<Dashboard />} />
             <Route path="customers" element={<Customers />} />
             <Route path="follow-up" element={<FollowUp />} />
+            <Route path="work-process" element={<WorkProcess />} />
             <Route path="survey" element={<Survey />} />
             <Route path="sales" element={<Sales />} />
             <Route path="branches" element={<Branches />} />

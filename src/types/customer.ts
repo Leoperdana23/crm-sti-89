@@ -1,4 +1,3 @@
-
 export interface Customer {
   id: string;
   name: string;
@@ -16,6 +15,11 @@ export interface Customer {
   branchId?: string;
   salesId?: string;
   interactions: Interaction[];
+  workStatus?: 'not_started' | 'in_progress' | 'completed';
+  workStartDate?: string;
+  workCompletedDate?: string;
+  workNotes?: string;
+  estimatedDays?: number;
 }
 
 export interface Interaction {
