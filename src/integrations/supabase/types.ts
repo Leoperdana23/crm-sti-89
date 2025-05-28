@@ -102,6 +102,7 @@ export type Database = {
           needs: string | null
           notes: string | null
           phone: string
+          sales_name: string | null
           status: string
           survey_status: string | null
           updated_at: string
@@ -118,6 +119,7 @@ export type Database = {
           needs?: string | null
           notes?: string | null
           phone: string
+          sales_name?: string | null
           status: string
           survey_status?: string | null
           updated_at?: string
@@ -134,6 +136,7 @@ export type Database = {
           needs?: string | null
           notes?: string | null
           phone?: string
+          sales_name?: string | null
           status?: string
           survey_status?: string | null
           updated_at?: string

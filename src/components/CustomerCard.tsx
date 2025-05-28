@@ -4,7 +4,7 @@ import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Phone, MapPin, Calendar, Edit, Trash2, RotateCcw } from 'lucide-react';
+import { Phone, MapPin, Calendar, Edit, Trash2, RotateCcw, User } from 'lucide-react';
 import { Customer } from '@/types/customer';
 
 interface CustomerCardProps {
@@ -142,6 +142,13 @@ const CustomerCard: React.FC<CustomerCardProps> = ({
           <Calendar className="h-4 w-4 mr-2" />
           <span>{formatDate(customer.birthDate)}</span>
         </div>
+
+        {customer.salesName && (
+          <div className="flex items-center text-sm text-gray-600">
+            <User className="h-4 w-4 mr-2" />
+            <span><strong>Sales:</strong> {customer.salesName}</span>
+          </div>
+        )}
         
         {customer.needs && (
           <div className="text-sm text-gray-600">

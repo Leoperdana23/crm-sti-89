@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,6 +21,7 @@ const customerSchema = z.object({
   notes: z.string().optional(),
   status: z.enum(['Prospek', 'Follow-up', 'Deal', 'Tidak Jadi']),
   branchId: z.string().min(1, 'Cabang harus dipilih'),
+  salesName: z.string().optional(),
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
@@ -45,6 +47,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
       notes: customer?.notes || '',
       status: customer?.status || 'Prospek',
       branchId: customer?.branchId || '',
+      salesName: customer?.salesName || '',
     },
   });
 
@@ -123,7 +126,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
           )}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           <FormField
             control={form.control}
             name="branchId"
@@ -168,6 +171,20 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
                     <SelectItem value="Tidak Jadi">Tidak Jadi</SelectItem>
                   </SelectContent>
                 </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="salesName"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nama Sales</FormLabel>
+                <FormControl>
+                  <Input placeholder="Nama sales yang menangani" {...field} />
+                </FormControl>
                 <FormMessage />
               </FormItem>
             )}
