@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Play, CheckCircle, Clock, MapPin, Phone, User, Calendar } from 'lucide-react';
+import { Play, CheckCircle, Clock, MapPin, Phone, User, Calendar, Search } from 'lucide-react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useToast } from '@/hooks/use-toast';
 import { useSales } from '@/hooks/useSales';
@@ -17,6 +16,11 @@ const WorkProcess = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
   const [workNotes, setWorkNotes] = useState('');
   const [estimatedDays, setEstimatedDays] = useState('');
+  
+  // Search states for each column
+  const [searchReady, setSearchReady] = useState('');
+  const [searchOngoing, setSearchOngoing] = useState('');
+  const [searchCompleted, setSearchCompleted] = useState('');
 
   const dealCustomers = getCustomersByStatus('Deal').filter(customer => 
     !customer.workStatus || customer.workStatus === 'not_started'
@@ -29,6 +33,21 @@ const WorkProcess = () => {
   const completedWork = customers.filter(customer => 
     customer.status === 'Deal' && customer.workStatus === 'completed'
   );
+
+  // Filter functions for search
+  const filterCustomers = (customers: any[], searchTerm: string) => {
+    if (!searchTerm.trim()) return customers;
+    
+    return customers.filter(customer => 
+      customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.phone.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      customer.address.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+  };
+
+  const filteredReadyCustomers = filterCustomers(dealCustomers, searchReady);
+  const filteredOngoingWork = filterCustomers(ongoingWork, searchOngoing);
+  const filteredCompletedWork = filterCustomers(completedWork, searchCompleted);
 
   const getSalesName = (salesId?: string) => {
     if (!salesId) return 'Tidak ada sales';
@@ -116,11 +135,20 @@ const WorkProcess = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Play className="h-5 w-5 mr-2 text-blue-600" />
-              Siap Mulai ({dealCustomers.length})
+              Siap Mulai ({filteredReadyCustomers.length})
             </CardTitle>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Cari nama, telepon, atau alamat..."
+                value={searchReady}
+                onChange={(e) => setSearchReady(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {dealCustomers.map((customer) => (
+            {filteredReadyCustomers.map((customer) => (
               <div key={customer.id} className="p-4 border border-blue-200 bg-blue-50 rounded-lg">
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -195,8 +223,10 @@ const WorkProcess = () => {
               </div>
             ))}
 
-            {dealCustomers.length === 0 && (
-              <p className="text-gray-500 text-center py-8">Tidak ada pekerjaan siap mulai</p>
+            {filteredReadyCustomers.length === 0 && (
+              <p className="text-gray-500 text-center py-8">
+                {searchReady ? 'Tidak ada data yang cocok dengan pencarian' : 'Tidak ada pekerjaan siap mulai'}
+              </p>
             )}
           </CardContent>
         </Card>
@@ -206,11 +236,20 @@ const WorkProcess = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Clock className="h-5 w-5 mr-2 text-orange-600" />
-              Sedang Dikerjakan ({ongoingWork.length})
+              Sedang Dikerjakan ({filteredOngoingWork.length})
             </CardTitle>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Cari nama, telepon, atau alamat..."
+                value={searchOngoing}
+                onChange={(e) => setSearchOngoing(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {ongoingWork.map((customer) => (
+            {filteredOngoingWork.map((customer) => (
               <div key={customer.id} className="p-4 border border-orange-200 bg-orange-50 rounded-lg">
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -264,8 +303,10 @@ const WorkProcess = () => {
               </div>
             ))}
 
-            {ongoingWork.length === 0 && (
-              <p className="text-gray-500 text-center py-8">Tidak ada pekerjaan yang sedang dikerjakan</p>
+            {filteredOngoingWork.length === 0 && (
+              <p className="text-gray-500 text-center py-8">
+                {searchOngoing ? 'Tidak ada data yang cocok dengan pencarian' : 'Tidak ada pekerjaan yang sedang dikerjakan'}
+              </p>
             )}
           </CardContent>
         </Card>
@@ -275,11 +316,20 @@ const WorkProcess = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <CheckCircle className="h-5 w-5 mr-2 text-green-600" />
-              Selesai ({completedWork.length})
+              Selesai ({filteredCompletedWork.length})
             </CardTitle>
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Cari nama, telepon, atau alamat..."
+                value={searchCompleted}
+                onChange={(e) => setSearchCompleted(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </CardHeader>
           <CardContent className="space-y-4">
-            {completedWork.map((customer) => (
+            {filteredCompletedWork.map((customer) => (
               <div key={customer.id} className="p-4 border border-green-200 bg-green-50 rounded-lg">
                 <div className="flex justify-between items-start mb-3">
                   <div>
@@ -323,8 +373,10 @@ const WorkProcess = () => {
               </div>
             ))}
 
-            {completedWork.length === 0 && (
-              <p className="text-gray-500 text-center py-8">Belum ada pekerjaan yang selesai</p>
+            {filteredCompletedWork.length === 0 && (
+              <p className="text-gray-500 text-center py-8">
+                {searchCompleted ? 'Tidak ada data yang cocok dengan pencarian' : 'Belum ada pekerjaan yang selesai'}
+              </p>
             )}
           </CardContent>
         </Card>
