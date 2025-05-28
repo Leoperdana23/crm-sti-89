@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, LogOut, UserCog } from 'lucide-react';
+import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, LogOut, UserCog, Settings, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -23,6 +23,8 @@ const Layout = () => {
     { name: 'Sales', href: '/sales', icon: UserCog, roles: ['super_admin', 'admin', 'manager'] },
     { name: 'Cabang', href: '/branches', icon: Building, roles: ['super_admin', 'admin', 'manager'] },
     { name: 'Laporan', href: '/reports', icon: FileText, roles: ['super_admin', 'admin', 'manager'] },
+    { name: 'Master User', href: '/users', icon: Settings, roles: ['super_admin', 'admin'] },
+    { name: 'Hak Akses Role', href: '/role-permissions', icon: Shield, roles: ['super_admin'] },
   ];
 
   // Filter navigation based on user role
