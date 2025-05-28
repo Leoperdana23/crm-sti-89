@@ -69,6 +69,12 @@ export const useCustomers = () => {
       if (!customerData.address?.trim()) {
         throw new Error('Alamat harus diisi');
       }
+      if (!customerData.birth_date?.trim()) {
+        throw new Error('Tanggal lahir harus diisi');
+      }
+      if (!customerData.id_number?.trim()) {
+        throw new Error('Nomor identitas harus diisi');
+      }
       if (!customerData.needs?.trim()) {
         throw new Error('Kebutuhan harus diisi');
       }
@@ -83,10 +89,10 @@ export const useCustomers = () => {
         name: customerData.name.trim(),
         phone: customerData.phone.trim(),
         address: customerData.address.trim(),
-        birth_date: customerData.birth_date || null,
-        id_number: customerData.id_number || null,
+        birth_date: customerData.birth_date.trim(),
+        id_number: customerData.id_number.trim(),
         needs: customerData.needs.trim(),
-        notes: customerData.notes || null,
+        notes: customerData.notes?.trim() || '',
         status: customerData.status,
         deal_date: customerData.deal_date || null,
         branch_id: customerData.branch_id,

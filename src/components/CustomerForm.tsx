@@ -16,8 +16,8 @@ const customerSchema = z.object({
   name: z.string().min(1, 'Nama lengkap harus diisi'),
   phone: z.string().min(1, 'Nomor HP/WA harus diisi'),
   address: z.string().min(1, 'Alamat harus diisi'),
-  birth_date: z.string().optional(),
-  id_number: z.string().optional(),
+  birth_date: z.string().min(1, 'Tanggal lahir harus diisi'),
+  id_number: z.string().min(1, 'Nomor identitas harus diisi'),
   needs: z.string().min(1, 'Kebutuhan harus diisi'),
   notes: z.string().optional(),
   status: z.enum(['Prospek', 'Follow-up', 'Deal', 'Tidak Jadi']),
@@ -98,7 +98,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
             name="birth_date"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Tanggal Lahir</FormLabel>
+                <FormLabel>Tanggal Lahir *</FormLabel>
                 <FormControl>
                   <Input type="date" {...field} />
                 </FormControl>
@@ -112,7 +112,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
             name="id_number"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nomor Identitas</FormLabel>
+                <FormLabel>Nomor Identitas *</FormLabel>
                 <FormControl>
                   <Input placeholder="KTP/SIM/Passport" {...field} />
                 </FormControl>
