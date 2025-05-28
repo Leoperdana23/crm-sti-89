@@ -8,16 +8,22 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import UserCard from '@/components/UserCard';
 import UserForm from '@/components/UserForm';
 import { useUsers } from '@/hooks/useUsers';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { AppUser } from '@/types/user';
 import { useToast } from '@/hooks/use-toast';
 
 const Users = () => {
   const { users, loading, addUser, updateUser, deleteUser } = useUsers();
+  const { hasPermission } = useUserPermissions();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState<AppUser | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [roleFilter, setRoleFilter] = useState<string>('all');
+
+  // Check permissions
+  const canCreate = hasPermission('users', 'create');
+  const canView = hasPermission('users', 'view');
 
   const filteredUsers = users.filter(user => {
     const matchesSearch = user.full_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -76,6 +82,20 @@ const Users = () => {
     }
   };
 
+  // Show access denied if user doesn't have view permission
+  if (!canView) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[400px] space-y-4">
+        <UsersIcon className="h-16 w-16 text-gray-400" />
+        <h3 className="text-xl font-semibold text-gray-900">Akses Ditolak</h3>
+        <p className="text-gray-600 text-center max-w-md">
+          Anda tidak memiliki hak akses untuk melihat halaman Master User. 
+          Silakan hubungi administrator untuk mendapatkan akses.
+        </p>
+      </div>
+    );
+  }
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -126,32 +146,34 @@ const Users = () => {
           </div>
         </div>
         
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogTrigger asChild>
-            <Button 
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-              onClick={() => setEditingUser(null)}
-            >
-              <Plus className="h-4 w-4 mr-2" />
-              Tambah User
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingUser ? 'Edit User' : 'Tambah User Baru'}
-              </DialogTitle>
-            </DialogHeader>
-            <UserForm
-              user={editingUser}
-              onSubmit={handleSubmit}
-              onCancel={() => {
-                setIsFormOpen(false);
-                setEditingUser(null);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+        {canCreate && (
+          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                onClick={() => setEditingUser(null)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Tambah User
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingUser ? 'Edit User' : 'Tambah User Baru'}
+                </DialogTitle>
+              </DialogHeader>
+              <UserForm
+                user={editingUser}
+                onSubmit={handleSubmit}
+                onCancel={() => {
+                  setIsFormOpen(false);
+                  setEditingUser(null);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        )}
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

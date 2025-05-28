@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2, User, Mail, Building } from 'lucide-react';
 import { AppUser } from '@/types/user';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 interface UserCardProps {
   user: AppUser;
@@ -13,6 +14,8 @@ interface UserCardProps {
 }
 
 const UserCard: React.FC<UserCardProps> = ({ user, onEdit, onDelete }) => {
+  const { hasPermission } = useUserPermissions();
+
   const getRoleBadgeColor = (role: string) => {
     switch (role) {
       case 'super_admin': return 'bg-purple-100 text-purple-800 border-purple-200';
@@ -33,6 +36,9 @@ const UserCard: React.FC<UserCardProps> = ({ user, onEdit, onDelete }) => {
     }
   };
 
+  const canEdit = hasPermission('users', 'edit');
+  const canDelete = hasPermission('users', 'delete');
+
   return (
     <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
       <CardHeader className="pb-3">
@@ -50,22 +56,26 @@ const UserCard: React.FC<UserCardProps> = ({ user, onEdit, onDelete }) => {
             </div>
           </div>
           <div className="flex space-x-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onEdit(user)}
-              className="text-blue-600 hover:bg-blue-50"
-            >
-              <Edit className="h-4 w-4" />
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => onDelete(user.id)}
-              className="text-red-600 hover:bg-red-50"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            {canEdit && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onEdit(user)}
+                className="text-blue-600 hover:bg-blue-50"
+              >
+                <Edit className="h-4 w-4" />
+              </Button>
+            )}
+            {canDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onDelete(user.id)}
+                className="text-red-600 hover:bg-red-50"
+              >
+                <Trash2 className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>

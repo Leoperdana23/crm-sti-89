@@ -1,29 +1,56 @@
+
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, LogOut, UserCog, Settings, Shield, Wrench, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
-import { usePermissions } from '@/hooks/usePermissions';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
 const Layout = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
-  const { permissions, rolePermissions } = usePermissions();
+  const { hasPermission, userRole, loading } = useUserPermissions();
 
-  // Get current user role - simplified for sales users
-  const getCurrentUserRole = () => {
-    const salesUser = localStorage.getItem('salesUser');
-    if (salesUser) {
-      return 'staff'; // Sales users are treated as staff
+  // Get current user info for display
+  const getCurrentUserInfo = () => {
+    const appUser = localStorage.getItem('appUser');
+    if (appUser) {
+      try {
+        const parsedAppUser = JSON.parse(appUser);
+        return {
+          name: parsedAppUser.user_metadata?.full_name || parsedAppUser.full_name || 'App User',
+          email: parsedAppUser.user_metadata?.email || parsedAppUser.email || '',
+          role: parsedAppUser.user_metadata?.role || 'staff'
+        };
+      } catch (error) {
+        // Fallback
+      }
     }
     
-    // For regular auth users, you might want to implement role fetching
-    // For now, defaulting to 'staff' for safety
-    return 'staff';
+    const salesUser = localStorage.getItem('salesUser');
+    if (salesUser) {
+      try {
+        const parsedSalesUser = JSON.parse(salesUser);
+        return {
+          name: parsedSalesUser.user_metadata?.full_name || 'Sales User',
+          email: parsedSalesUser.user_metadata?.email || parsedSalesUser.email || '',
+          role: 'staff'
+        };
+      } catch (error) {
+        // Fallback
+      }
+    }
+
+    return {
+      name: user?.user_metadata?.full_name || user?.email || 'User',
+      email: user?.email || '',
+      role: userRole || 'staff'
+    };
   };
 
-  const userRole = getCurrentUserRole();
+  const userInfo = getCurrentUserInfo();
 
   // Define all navigation items with their permission mappings
   const allNavigation = [
@@ -40,13 +67,33 @@ const Layout = () => {
     { name: 'Hak Akses Role', href: '/role-permissions', icon: Shield, permission: 'role_permissions' },
   ];
 
-  // Show all navigation items regardless of permissions for now
-  // You can implement permission filtering later if needed
-  const navigation = allNavigation;
+  // Filter navigation based on user permissions
+  const navigation = allNavigation.filter(item => hasPermission(item.permission, 'view'));
 
   const handleLogout = async () => {
     await signOut();
   };
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'super_admin': return 'Super Admin';
+      case 'admin': return 'Admin';
+      case 'manager': return 'Manager';
+      case 'staff': return 'Staff';
+      default: return role;
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+          <span>Memuat hak akses...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
@@ -90,10 +137,13 @@ const Layout = () => {
                 </div>
                 <div>
                   <p className="text-sm font-medium text-gray-900">
-                    {user?.user_metadata?.full_name || user?.email || 'User'}
+                    {userInfo.name}
                   </p>
                   <p className="text-xs text-gray-500">
-                    {user?.email} ({userRole})
+                    {userInfo.email}
+                  </p>
+                  <p className="text-xs text-blue-600 font-medium">
+                    {getRoleLabel(userInfo.role)}
                   </p>
                 </div>
               </div>
