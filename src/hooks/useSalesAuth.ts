@@ -1,6 +1,15 @@
 
 import { supabase } from '@/integrations/supabase/client';
 
+interface AuthResponse {
+  success: boolean;
+  message?: string;
+  user_id?: string;
+  sales_id?: string;
+  name?: string;
+  email?: string;
+}
+
 export const useSalesAuth = () => {
   const authenticateSales = async (email: string, password: string) => {
     try {
@@ -14,8 +23,10 @@ export const useSalesAuth = () => {
         throw new Error('Terjadi kesalahan saat login');
       }
 
-      if (!data.success) {
-        throw new Error(data.message);
+      const authResponse = data as AuthResponse;
+
+      if (!authResponse.success) {
+        throw new Error(authResponse.message || 'Login gagal');
       }
 
       // Now sign in with Supabase Auth using the sales email
@@ -29,7 +40,7 @@ export const useSalesAuth = () => {
         throw new Error('Terjadi kesalahan saat login');
       }
 
-      return data;
+      return authResponse;
     } catch (error) {
       console.error('Error in authenticateSales:', error);
       throw error;
