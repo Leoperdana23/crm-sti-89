@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Play, CheckCircle, Clock, MapPin, Phone, User } from 'lucide-react';
+import { Play, CheckCircle, Clock, MapPin, Phone, User, Calendar } from 'lucide-react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useToast } from '@/hooks/use-toast';
 import { useSales } from '@/hooks/useSales';
@@ -75,8 +75,32 @@ const WorkProcess = () => {
     });
   };
 
+  const formatDateTime = (dateString: string) => {
+    return new Date(dateString).toLocaleString('id-ID', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
   const formatDate = (dateString: string) => {
     return new Date(dateString).toLocaleDateString('id-ID');
+  };
+
+  const calculateWorkDuration = (startDate: string, endDate?: string) => {
+    const start = new Date(startDate);
+    const end = endDate ? new Date(endDate) : new Date();
+    const diffInMs = end.getTime() - start.getTime();
+    const diffInDays = Math.floor(diffInMs / (1000 * 60 * 60 * 24));
+    const diffInHours = Math.floor((diffInMs % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+    
+    if (diffInDays > 0) {
+      return `${diffInDays} hari ${diffInHours} jam`;
+    } else {
+      return `${diffInHours} jam`;
+    }
   };
 
   return (
@@ -114,9 +138,10 @@ const WorkProcess = () => {
                       {getSalesName(customer.salesId)}
                     </div>
                     {customer.dealDate && (
-                      <p className="text-sm text-gray-600 mt-1">
+                      <div className="flex items-center text-sm text-gray-600 mt-1">
+                        <Calendar className="h-4 w-4 mr-1" />
                         <strong>Deal:</strong> {formatDate(customer.dealDate)}
-                      </p>
+                      </div>
                     )}
                   </div>
                   <Badge className="bg-blue-100 text-blue-800">
@@ -199,13 +224,19 @@ const WorkProcess = () => {
                       {getSalesName(customer.salesId)}
                     </div>
                     {customer.workStartDate && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        <strong>Mulai:</strong> {formatDate(customer.workStartDate)}
-                      </p>
+                      <div className="flex items-center text-sm text-gray-600 mt-1">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        <strong>Mulai:</strong> {formatDateTime(customer.workStartDate)}
+                      </div>
                     )}
                     {customer.estimatedDays && (
                       <p className="text-sm text-gray-600">
                         <strong>Estimasi:</strong> {customer.estimatedDays} hari
+                      </p>
+                    )}
+                    {customer.workStartDate && (
+                      <p className="text-sm text-blue-600 font-medium">
+                        <strong>Durasi:</strong> {calculateWorkDuration(customer.workStartDate)}
                       </p>
                     )}
                   </div>
@@ -261,9 +292,21 @@ const WorkProcess = () => {
                       <User className="h-4 w-4 mr-1" />
                       {getSalesName(customer.salesId)}
                     </div>
+                    {customer.workStartDate && (
+                      <div className="flex items-center text-sm text-gray-600 mt-1">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        <strong>Mulai:</strong> {formatDateTime(customer.workStartDate)}
+                      </div>
+                    )}
                     {customer.workCompletedDate && (
-                      <p className="text-sm text-gray-600 mt-1">
-                        <strong>Selesai:</strong> {formatDate(customer.workCompletedDate)}
+                      <div className="flex items-center text-sm text-gray-600 mt-1">
+                        <Calendar className="h-4 w-4 mr-1" />
+                        <strong>Selesai:</strong> {formatDateTime(customer.workCompletedDate)}
+                      </div>
+                    )}
+                    {customer.workStartDate && customer.workCompletedDate && (
+                      <p className="text-sm text-green-600 font-medium">
+                        <strong>Total Durasi:</strong> {calculateWorkDuration(customer.workStartDate, customer.workCompletedDate)}
                       </p>
                     )}
                   </div>
