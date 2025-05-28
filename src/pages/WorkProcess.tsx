@@ -1,277 +1,193 @@
 
 import React, { useState } from 'react';
-import { Calendar, Clock, CheckCircle, Users, Eye, Edit, AlertCircle } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Calendar, Users, Clock, CheckCircle, XCircle, Search, Filter, Play, Pause, X } from 'lucide-react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useBranches } from '@/hooks/useBranches';
-import { useSales } from '@/hooks/useSales';
+import { Customer } from '@/types/customer';
 import { useToast } from '@/hooks/use-toast';
 import WorkAssignmentDialog from '@/components/WorkAssignmentDialog';
 
 const WorkProcess = () => {
-  const { customers, updateCustomer } = useCustomers();
+  const { customers, loading, updateCustomer, cancelWorkProcess } = useCustomers();
   const { branches } = useBranches();
-  const { sales } = useSales();
   const { toast } = useToast();
-  const [statusFilter, setStatusFilter] = useState<string>('all');
-  const [branchFilter, setBranchFilter] = useState<string>('all');
-  const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
-  const [selectedCustomer, setSelectedCustomer] = useState<any>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [branchFilter, setBranchFilter] = useState('all');
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isAssignmentDialogOpen, setIsAssignmentDialogOpen] = useState(false);
+  const [workNotes, setWorkNotes] = useState('');
+  const [isNotesDialogOpen, setIsNotesDialogOpen] = useState(false);
 
-  // Filter customers yang sudah deal
-  const dealCustomers = customers.filter(c => c.status === 'Deal');
+  // Filter customers to show only Deal customers
+  const dealCustomers = customers.filter(customer => customer.status === 'Deal');
 
-  // Apply filters
   const filteredCustomers = dealCustomers.filter(customer => {
-    const statusMatch = statusFilter === 'all' || 
-      (statusFilter === 'not_started' && (!customer.work_status || customer.work_status === 'not_started')) ||
-      (statusFilter === 'in_progress' && customer.work_status === 'in_progress') ||
-      (statusFilter === 'completed' && customer.work_status === 'completed');
+    const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                         customer.phone.includes(searchTerm);
+    const matchesStatus = statusFilter === 'all' || customer.work_status === statusFilter;
+    const matchesBranch = branchFilter === 'all' || customer.branch_id === branchFilter;
     
-    const branchMatch = branchFilter === 'all' || customer.branch_id === branchFilter;
-    
-    return statusMatch && branchMatch;
+    return matchesSearch && matchesStatus && matchesBranch;
   });
 
-  // Statistics
-  const stats = {
-    total: dealCustomers.length,
-    notStarted: dealCustomers.filter(c => !c.work_status || c.work_status === 'not_started').length,
-    inProgress: dealCustomers.filter(c => c.work_status === 'in_progress').length,
-    completed: dealCustomers.filter(c => c.work_status === 'completed').length,
-  };
-
-  const handleStartWork = async (customerId: string) => {
-    try {
-      await updateCustomer(customerId, {
-        work_status: 'in_progress',
-        work_start_date: new Date().toISOString()
-      });
-      toast({
-        title: "Berhasil",
-        description: "Pekerjaan telah dimulai",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Terjadi kesalahan saat memulai pekerjaan",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleCompleteWork = async (customerId: string) => {
-    try {
-      await updateCustomer(customerId, {
-        work_status: 'completed',
-        work_completed_date: new Date().toISOString()
-      });
-      toast({
-        title: "Berhasil",
-        description: "Pekerjaan telah diselesaikan",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Terjadi kesalahan saat menyelesaikan pekerjaan",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const handleReopenWork = async (customerId: string) => {
-    try {
-      await updateCustomer(customerId, {
-        work_status: 'in_progress',
-        work_completed_date: null
-      });
-      toast({
-        title: "Berhasil",
-        description: "Pekerjaan telah dibuka kembali",
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Terjadi kesalahan saat membuka kembali pekerjaan",
-        variant: "destructive"
-      });
-    }
-  };
-
-  const getStatusBadge = (status?: string) => {
+  const getStatusColor = (status: string | undefined) => {
     switch (status) {
-      case 'in_progress':
-        return <Badge className="bg-orange-100 text-orange-800">Sedang Dikerjakan</Badge>;
-      case 'completed':
-        return <Badge className="bg-green-100 text-green-800">Selesai</Badge>;
-      default:
-        return <Badge variant="outline">Belum Mulai</Badge>;
+      case 'not_started': return 'bg-gray-100 text-gray-800 border-gray-200';
+      case 'in_progress': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'completed': return 'bg-green-100 text-green-800 border-green-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
     }
   };
 
-  const getStatusActions = (customer: any) => {
-    const currentStatus = customer.work_status;
-    
-    if (!currentStatus || currentStatus === 'not_started') {
-      return (
-        <>
-          <Button
-            size="sm"
-            onClick={() => handleStartWork(customer.id)}
-            className="bg-blue-600 hover:bg-blue-700 text-white"
-          >
-            <Clock className="h-4 w-4 mr-1" />
-            Mulai
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setSelectedCustomer(customer);
-              setAssignmentDialogOpen(true);
-            }}
-          >
-            <Users className="h-4 w-4 mr-1" />
-            Assign
-          </Button>
-        </>
-      );
-    } else if (currentStatus === 'in_progress') {
-      return (
-        <>
-          <Button
-            size="sm"
-            onClick={() => handleCompleteWork(customer.id)}
-            className="bg-green-600 hover:bg-green-700 text-white"
-          >
-            <CheckCircle className="h-4 w-4 mr-1" />
-            Selesai
-          </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => {
-              setSelectedCustomer(customer);
-              setAssignmentDialogOpen(true);
-            }}
-          >
-            <Edit className="h-4 w-4 mr-1" />
-            Edit
-          </Button>
-        </>
-      );
-    } else if (currentStatus === 'completed') {
-      return (
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => handleReopenWork(customer.id)}
-          className="text-orange-600 hover:text-orange-700"
-        >
-          <AlertCircle className="h-4 w-4 mr-1" />
-          Buka Ulang
-        </Button>
-      );
+  const getStatusText = (status: string | undefined) => {
+    switch (status) {
+      case 'not_started': return 'Belum Dimulai';
+      case 'in_progress': return 'Sedang Dikerjakan';
+      case 'completed': return 'Selesai';
+      default: return 'Belum Dimulai';
     }
   };
 
-  const handleSaveAssignment = async (assignmentData: any) => {
+  const handleStartWork = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setIsAssignmentDialogOpen(true);
+  };
+
+  const handleCompleteWork = (customer: Customer) => {
+    setSelectedCustomer(customer);
+    setWorkNotes(customer.work_notes || '');
+    setIsNotesDialogOpen(true);
+  };
+
+  const handleCancelWork = async (customer: Customer) => {
+    if (confirm('Yakin ingin membatalkan proses pekerjaan ini?')) {
+      try {
+        await cancelWorkProcess(customer.id);
+        toast({
+          title: "Berhasil",
+          description: "Proses pekerjaan berhasil dibatalkan",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Terjadi kesalahan saat membatalkan proses pekerjaan.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  const handleAssignmentComplete = async (assignmentData: any) => {
     try {
-      await updateCustomer(selectedCustomer.id, assignmentData);
-      toast({
-        title: "Berhasil",
-        description: "Assignment berhasil disimpan",
-      });
-      setAssignmentDialogOpen(false);
+      if (selectedCustomer) {
+        await updateCustomer(selectedCustomer.id, {
+          work_status: 'in_progress',
+          work_start_date: new Date().toISOString(),
+          estimated_days: assignmentData.estimatedDays,
+          assigned_employees: assignmentData.assignedEmployees,
+          work_notes: assignmentData.notes
+        });
+        
+        toast({
+          title: "Berhasil",
+          description: "Pekerjaan berhasil dimulai",
+        });
+      }
+      setIsAssignmentDialogOpen(false);
       setSelectedCustomer(null);
     } catch (error) {
       toast({
         title: "Error",
-        description: "Terjadi kesalahan saat menyimpan assignment",
+        description: "Terjadi kesalahan saat memulai pekerjaan.",
         variant: "destructive"
       });
     }
   };
 
-  const getWorkDuration = (customer: any) => {
-    if (!customer.work_start_date) return '-';
-    
-    const startDate = new Date(customer.work_start_date);
-    const endDate = customer.work_completed_date ? new Date(customer.work_completed_date) : new Date();
-    const diffTime = endDate.getTime() - startDate.getTime();
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
-    return `${diffDays} hari`;
-  };
-
-  const getAssignedEmployees = (customer: any) => {
-    if (!customer.assigned_employees) return '-';
-    
+  const handleWorkComplete = async () => {
     try {
-      const employees = JSON.parse(customer.assigned_employees);
-      return employees.join(', ');
-    } catch {
-      return customer.assigned_employees;
+      if (selectedCustomer) {
+        await updateCustomer(selectedCustomer.id, {
+          work_status: 'completed',
+          work_completed_date: new Date().toISOString(),
+          work_notes: workNotes
+        });
+        
+        toast({
+          title: "Berhasil",
+          description: "Pekerjaan berhasil diselesaikan",
+        });
+      }
+      setIsNotesDialogOpen(false);
+      setSelectedCustomer(null);
+      setWorkNotes('');
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat menyelesaikan pekerjaan.",
+        variant: "destructive"
+      });
     }
   };
 
-  const handleAssignmentSubmit = (data: { employeeIds: string[]; workNotes: string; estimatedDays: string }) => {
-    const assignmentData = {
-      assigned_employees: data.employeeIds,
-      work_notes: data.workNotes,
-      estimated_days: data.estimatedDays ? parseInt(data.estimatedDays) : null
-    };
-    handleSaveAssignment(assignmentData);
+  const stats = {
+    notStarted: filteredCustomers.filter(c => !c.work_status || c.work_status === 'not_started').length,
+    inProgress: filteredCustomers.filter(c => c.work_status === 'in_progress').length,
+    completed: filteredCustomers.filter(c => c.work_status === 'completed').length,
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center space-x-2">
+          <Clock className="h-6 w-6 animate-spin" />
+          <span>Memuat data proses pekerjaan...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Proses Pekerjaan</h1>
-        <p className="text-gray-600 mt-1">Kelola dan pantau progress pekerjaan untuk setiap deal</p>
+      <div className="flex justify-between items-center">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900">Proses Pekerjaan</h1>
+          <p className="text-gray-600 mt-1">Kelola proses pekerjaan untuk pelanggan deal</p>
+        </div>
       </div>
 
-      {/* Statistics Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
+      {/* Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Deal</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-sm font-medium">Belum Dimulai</CardTitle>
+            <Clock className="h-4 w-4 text-gray-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-2xl font-bold text-gray-600">{stats.notStarted}</div>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Belum Mulai</CardTitle>
-            <AlertCircle className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.notStarted}</div>
-          </CardContent>
-        </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Sedang Dikerjakan</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
+            <Play className="h-4 w-4 text-blue-500" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-orange-600">{stats.inProgress}</div>
+            <div className="text-2xl font-bold text-blue-600">{stats.inProgress}</div>
           </CardContent>
         </Card>
-
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Selesai</CardTitle>
-            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+            <CheckCircle className="h-4 w-4 text-green-500" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-green-600">{stats.completed}</div>
@@ -279,20 +195,33 @@ const WorkProcess = () => {
         </Card>
       </div>
 
-      {/* Filters */}
+      {/* Search and Filter */}
       <Card>
         <CardHeader>
-          <CardTitle>Filter & Pencarian</CardTitle>
+          <CardTitle className="flex items-center space-x-2">
+            <Filter className="h-5 w-5" />
+            <span>Filter & Pencarian</span>
+          </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
+              <Input
+                placeholder="Cari nama atau telepon..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
             <Select value={statusFilter} onValueChange={setStatusFilter}>
               <SelectTrigger>
                 <SelectValue placeholder="Status Pekerjaan" />
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Status</SelectItem>
-                <SelectItem value="not_started">Belum Mulai</SelectItem>
+                <SelectItem value="not_started">Belum Dimulai</SelectItem>
                 <SelectItem value="in_progress">Sedang Dikerjakan</SelectItem>
                 <SelectItem value="completed">Selesai</SelectItem>
               </SelectContent>
@@ -315,6 +244,7 @@ const WorkProcess = () => {
             <Button 
               variant="outline" 
               onClick={() => {
+                setSearchTerm('');
                 setStatusFilter('all');
                 setBranchFilter('all');
               }}
@@ -325,85 +255,173 @@ const WorkProcess = () => {
         </CardContent>
       </Card>
 
-      {/* Work Process Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Daftar Pekerjaan ({filteredCustomers.length})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Pelanggan</TableHead>
-                <TableHead>Cabang</TableHead>
-                <TableHead>Sales</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Tanggal Deal</TableHead>
-                <TableHead>Durasi</TableHead>
-                <TableHead>Karyawan</TableHead>
-                <TableHead>Estimasi</TableHead>
-                <TableHead>Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredCustomers.map((customer) => {
-                const branch = branches.find(b => b.id === customer.branch_id);
-                const salesPerson = sales.find(s => s.id === customer.sales_id);
-                
-                return (
-                  <TableRow key={customer.id}>
-                    <TableCell>
+      {/* Work Process List */}
+      <div className="grid grid-cols-1 gap-4">
+        {filteredCustomers.map((customer) => (
+          <Card key={customer.id} className="hover:shadow-lg transition-all duration-300">
+            <CardContent className="p-6">
+              <div className="flex justify-between items-start">
+                <div className="flex-1">
+                  <div className="flex items-center gap-3 mb-2">
+                    <h3 className="font-semibold text-lg text-gray-900">{customer.name}</h3>
+                    <Badge className={getStatusColor(customer.work_status)}>
+                      {getStatusText(customer.work_status)}
+                    </Badge>
+                  </div>
+                  
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
+                    <div>
+                      <strong>Telepon:</strong> {customer.phone}
+                    </div>
+                    <div>
+                      <strong>Alamat:</strong> {customer.address}
+                    </div>
+                    {customer.deal_date && (
                       <div>
-                        <div className="font-medium">{customer.name}</div>
-                        <div className="text-sm text-gray-500">{customer.phone}</div>
+                        <strong>Tanggal Deal:</strong> {new Date(customer.deal_date).toLocaleDateString('id-ID')}
                       </div>
-                    </TableCell>
-                    <TableCell>{branch?.code || '-'}</TableCell>
-                    <TableCell>{salesPerson?.name || '-'}</TableCell>
-                    <TableCell>{getStatusBadge(customer.work_status)}</TableCell>
-                    <TableCell>
-                      {customer.deal_date ? new Date(customer.deal_date).toLocaleDateString('id-ID') : '-'}
-                    </TableCell>
-                    <TableCell>{getWorkDuration(customer)}</TableCell>
-                    <TableCell>
-                      <div className="max-w-32 truncate" title={getAssignedEmployees(customer)}>
-                        {getAssignedEmployees(customer)}
+                    )}
+                    {customer.estimated_days && (
+                      <div>
+                        <strong>Estimasi:</strong> {customer.estimated_days} hari
                       </div>
-                    </TableCell>
-                    <TableCell>
-                      {customer.estimated_days ? `${customer.estimated_days} hari` : '-'}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex space-x-2">
-                        {getStatusActions(customer)}
-                      </div>
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
+                    )}
+                  </div>
 
-          {filteredCustomers.length === 0 && (
-            <div className="text-center py-8 text-gray-500">
-              Tidak ada pekerjaan yang sesuai dengan filter
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  {customer.work_start_date && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      <strong>Dimulai:</strong> {new Date(customer.work_start_date).toLocaleDateString('id-ID')}
+                    </div>
+                  )}
 
-      {/* Work Assignment Dialog */}
-      {selectedCustomer && (
-        <WorkAssignmentDialog
-          customerName={selectedCustomer.name}
-          isOpen={assignmentDialogOpen}
-          onClose={() => {
-            setAssignmentDialogOpen(false);
-            setSelectedCustomer(null);
-          }}
-          onAssign={handleAssignmentSubmit}
-        />
+                  {customer.work_completed_date && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      <strong>Selesai:</strong> {new Date(customer.work_completed_date).toLocaleDateString('id-ID')}
+                    </div>
+                  )}
+
+                  {customer.assigned_employees && customer.assigned_employees.length > 0 && (
+                    <div className="mt-2">
+                      <strong className="text-sm text-gray-600">Karyawan:</strong>
+                      <div className="flex flex-wrap gap-1 mt-1">
+                        {customer.assigned_employees.map((employeeId, index) => (
+                          <Badge key={index} variant="secondary" className="text-xs">
+                            {employeeId}
+                          </Badge>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+
+                  {customer.work_notes && (
+                    <div className="mt-2 text-sm text-gray-600">
+                      <strong>Catatan:</strong> {customer.work_notes}
+                    </div>
+                  )}
+                </div>
+                
+                <div className="flex space-x-2 ml-4">
+                  {(!customer.work_status || customer.work_status === 'not_started') && (
+                    <Button
+                      onClick={() => handleStartWork(customer)}
+                      className="bg-green-500 hover:bg-green-600 text-white"
+                      size="sm"
+                    >
+                      <Play className="h-4 w-4 mr-1" />
+                      Mulai
+                    </Button>
+                  )}
+                  
+                  {customer.work_status === 'in_progress' && (
+                    <>
+                      <Button
+                        onClick={() => handleCompleteWork(customer)}
+                        className="bg-blue-500 hover:bg-blue-600 text-white"
+                        size="sm"
+                      >
+                        <CheckCircle className="h-4 w-4 mr-1" />
+                        Selesai
+                      </Button>
+                      <Button
+                        onClick={() => handleCancelWork(customer)}
+                        variant="destructive"
+                        size="sm"
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Batal
+                      </Button>
+                    </>
+                  )}
+
+                  {customer.work_status === 'completed' && (
+                    <Button
+                      onClick={() => handleCancelWork(customer)}
+                      variant="outline"
+                      size="sm"
+                    >
+                      <X className="h-4 w-4 mr-1" />
+                      Reset
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {filteredCustomers.length === 0 && (
+        <Card>
+          <CardContent className="text-center py-12">
+            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">
+              Tidak ada proses pekerjaan
+            </h3>
+            <p className="text-gray-600">
+              Belum ada pelanggan deal yang memerlukan proses pekerjaan
+            </p>
+          </CardContent>
+        </Card>
       )}
+
+      {/* Assignment Dialog */}
+      <WorkAssignmentDialog
+        isOpen={isAssignmentDialogOpen}
+        onClose={() => {
+          setIsAssignmentDialogOpen(false);
+          setSelectedCustomer(null);
+        }}
+        onAssign={handleAssignmentComplete}
+        customer={selectedCustomer}
+      />
+
+      {/* Complete Work Dialog */}
+      <Dialog open={isNotesDialogOpen} onOpenChange={setIsNotesDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Selesaikan Pekerjaan</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-2">Catatan Penyelesaian</label>
+              <Textarea
+                value={workNotes}
+                onChange={(e) => setWorkNotes(e.target.value)}
+                placeholder="Tambahkan catatan tentang penyelesaian pekerjaan..."
+                rows={4}
+              />
+            </div>
+            <div className="flex justify-end space-x-2">
+              <Button variant="outline" onClick={() => setIsNotesDialogOpen(false)}>
+                Batal
+              </Button>
+              <Button onClick={handleWorkComplete}>
+                Selesai
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };

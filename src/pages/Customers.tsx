@@ -1,6 +1,5 @@
-
-import React, { useState } from 'react';
-import { Plus, Users, Filter, Search, Calendar, Loader2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Plus, Users, Filter, Search, Calendar, Loader2, Trash } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -16,7 +15,7 @@ import { Customer } from '@/types/customer';
 import { useToast } from '@/hooks/use-toast';
 
 const Customers = () => {
-  const { customers, loading, addCustomer, updateCustomer, deleteCustomer } = useCustomers();
+  const { customers, loading, addCustomer, updateCustomer, deleteCustomer, deleteCustomersByName } = useCustomers();
   const { branches } = useBranches();
   const { sales } = useSales();
   const { toast } = useToast();
@@ -26,6 +25,22 @@ const Customers = () => {
   const [salesFilter, setSalesFilter] = useState('all');
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
+
+  // Auto-delete test customers on component mount
+  useEffect(() => {
+    const deleteTestCustomers = async () => {
+      try {
+        await deleteCustomersByName('tes');
+        console.log('Test customers deleted automatically');
+      } catch (error) {
+        console.error('Error deleting test customers:', error);
+      }
+    };
+    
+    if (customers.some(c => c.name.toLowerCase() === 'tes')) {
+      deleteTestCustomers();
+    }
+  }, [customers, deleteCustomersByName]);
 
   const handleSubmit = async (data: any) => {
     try {
@@ -70,6 +85,24 @@ const Customers = () => {
         toast({
           title: "Error",
           description: "Terjadi kesalahan saat menghapus pelanggan.",
+          variant: "destructive"
+        });
+      }
+    }
+  };
+
+  const handleDeleteTestCustomers = async () => {
+    if (confirm('Yakin ingin menghapus semua pelanggan dengan nama "tes"?')) {
+      try {
+        await deleteCustomersByName('tes');
+        toast({
+          title: "Berhasil",
+          description: "Semua pelanggan test berhasil dihapus",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Terjadi kesalahan saat menghapus pelanggan test.",
           variant: "destructive"
         });
       }
@@ -124,6 +157,8 @@ const Customers = () => {
     tidakJadi: customers.filter(c => c.status === 'Tidak Jadi').length,
   };
 
+  const testCustomersCount = customers.filter(c => c.name.toLowerCase() === 'tes').length;
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
@@ -143,32 +178,44 @@ const Customers = () => {
           <p className="text-gray-600 mt-1">Kelola data pelanggan dan prospek bisnis</p>
         </div>
         
-        <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-          <DialogTrigger asChild>
+        <div className="flex space-x-2">
+          {testCustomersCount > 0 && (
             <Button 
-              className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
-              onClick={() => setEditingCustomer(null)}
+              variant="destructive"
+              onClick={handleDeleteTestCustomers}
             >
-              <Plus className="h-4 w-4 mr-2" />
-              Tambah Pelanggan
+              <Trash className="h-4 w-4 mr-2" />
+              Hapus Data Test ({testCustomersCount})
             </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingCustomer ? 'Edit Pelanggan' : 'Tambah Pelanggan Baru'}
-              </DialogTitle>
-            </DialogHeader>
-            <CustomerForm
-              customer={editingCustomer}
-              onSubmit={handleSubmit}
-              onCancel={() => {
-                setIsFormOpen(false);
-                setEditingCustomer(null);
-              }}
-            />
-          </DialogContent>
-        </Dialog>
+          )}
+          
+          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogTrigger asChild>
+              <Button 
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                onClick={() => setEditingCustomer(null)}
+              >
+                <Plus className="h-4 w-4 mr-2" />
+                Tambah Pelanggan
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+              <DialogHeader>
+                <DialogTitle>
+                  {editingCustomer ? 'Edit Pelanggan' : 'Tambah Pelanggan Baru'}
+                </DialogTitle>
+              </DialogHeader>
+              <CustomerForm
+                customer={editingCustomer}
+                onSubmit={handleSubmit}
+                onCancel={() => {
+                  setIsFormOpen(false);
+                  setEditingCustomer(null);
+                }}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats Cards */}

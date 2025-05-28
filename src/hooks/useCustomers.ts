@@ -69,15 +69,6 @@ export const useCustomers = () => {
       if (!customerData.address?.trim()) {
         throw new Error('Alamat harus diisi');
       }
-      if (!customerData.birth_date?.trim()) {
-        throw new Error('Tanggal lahir harus diisi');
-      }
-      if (!customerData.id_number?.trim()) {
-        throw new Error('Nomor identitas harus diisi');
-      }
-      if (!customerData.needs?.trim()) {
-        throw new Error('Kebutuhan harus diisi');
-      }
       if (!customerData.branch_id) {
         throw new Error('Cabang harus dipilih');
       }
@@ -89,10 +80,10 @@ export const useCustomers = () => {
         name: customerData.name.trim(),
         phone: customerData.phone.trim(),
         address: customerData.address.trim(),
-        birth_date: customerData.birth_date.trim(),
-        id_number: customerData.id_number.trim(),
-        needs: customerData.needs.trim(),
-        notes: customerData.notes?.trim() || '',
+        birth_date: customerData.birth_date?.trim() || null,
+        id_number: customerData.id_number?.trim() || null,
+        needs: customerData.needs?.trim() || null,
+        notes: customerData.notes?.trim() || null,
         status: customerData.status,
         deal_date: customerData.deal_date || null,
         branch_id: customerData.branch_id,
@@ -204,6 +195,68 @@ export const useCustomers = () => {
     }
   };
 
+  const deleteCustomersByName = async (name: string) => {
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .delete()
+        .ilike('name', name);
+
+      if (error) {
+        console.error('Error deleting customers by name:', error);
+        throw error;
+      }
+
+      setCustomers(prev => prev.filter(customer => 
+        customer.name.toLowerCase() !== name.toLowerCase()
+      ));
+    } catch (error) {
+      console.error('Error in deleteCustomersByName:', error);
+      throw error;
+    }
+  };
+
+  const cancelWorkProcess = async (customerId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .update({
+          work_status: null,
+          work_start_date: null,
+          work_completed_date: null,
+          work_notes: null,
+          estimated_days: null,
+          assigned_employees: null
+        })
+        .eq('id', customerId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error canceling work process:', error);
+        throw error;
+      }
+
+      if (data) {
+        const customerWithAssigned = data as CustomerWithAssignedEmployees;
+        const updatedCustomer: Customer = {
+          ...customerWithAssigned,
+          assigned_employees: [],
+          interactions: []
+        };
+
+        setCustomers(prev => 
+          prev.map(customer => 
+            customer.id === customerId ? updatedCustomer : customer
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error in cancelWorkProcess:', error);
+      throw error;
+    }
+  };
+
   const getCustomersByStatus = (status: Customer['status']) => {
     return customers.filter(customer => customer.status === status);
   };
@@ -286,6 +339,8 @@ export const useCustomers = () => {
     addCustomer,
     updateCustomer,
     deleteCustomer,
+    deleteCustomersByName,
+    cancelWorkProcess,
     getCustomersByStatus,
     getCustomersByBranch,
     getCustomersBySales,
