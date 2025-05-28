@@ -1,23 +1,22 @@
 
 import React from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
-import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
-import { Loader2, RefreshCw, AlertCircle } from 'lucide-react';
+import { RefreshCw } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
+import { getRoleLabel } from '@/utils/permissionLabels';
+import PermissionSwitchCell from './PermissionsMatrix/PermissionSwitchCell';
+import PermissionsLoadingState from './PermissionsMatrix/PermissionsLoadingState';
+import PermissionsErrorState from './PermissionsMatrix/PermissionsErrorState';
+import PermissionsEmptyState from './PermissionsMatrix/PermissionsEmptyState';
 
 const PermissionsMatrix: React.FC = () => {
   const { permissions, rolePermissions, loading, error, updateRolePermission, refetch } = usePermissions();
   const { toast } = useToast();
 
   const roles = ['super_admin', 'admin', 'manager', 'staff'] as const;
-  const permissionTypes = ['can_view', 'can_create', 'can_edit', 'can_delete'] as const;
-
-  const getRolePermission = (role: string, permissionId: string) => {
-    return rolePermissions.find(rp => rp.role === role && rp.permission_id === permissionId);
-  };
 
   const handlePermissionChange = async (
     role: 'super_admin' | 'admin' | 'manager' | 'staff',
@@ -26,7 +25,7 @@ const PermissionsMatrix: React.FC = () => {
     value: boolean
   ) => {
     try {
-      const currentPermission = getRolePermission(role, permissionId);
+      const currentPermission = rolePermissions.find(rp => rp.role === role && rp.permission_id === permissionId);
       
       // If no permission exists, create a default one
       let updatedPermissions;
@@ -64,26 +63,6 @@ const PermissionsMatrix: React.FC = () => {
     }
   };
 
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'super_admin': return 'Super Admin';
-      case 'admin': return 'Admin';
-      case 'manager': return 'Manager';
-      case 'staff': return 'Staff';
-      default: return role;
-    }
-  };
-
-  const getPermissionTypeLabel = (type: string) => {
-    switch (type) {
-      case 'can_view': return 'Lihat';
-      case 'can_create': return 'Buat';
-      case 'can_edit': return 'Edit';
-      case 'can_delete': return 'Hapus';
-      default: return type;
-    }
-  };
-
   const handleRefresh = async () => {
     try {
       await refetch();
@@ -101,68 +80,15 @@ const PermissionsMatrix: React.FC = () => {
   };
 
   if (loading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Matrix Hak Akses Role</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-center py-8">
-            <div className="flex items-center space-x-2">
-              <Loader2 className="h-6 w-6 animate-spin" />
-              <span>Memuat data hak akses...</span>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <PermissionsLoadingState />;
   }
 
   if (error) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Matrix Hak Akses Role</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-8 space-y-4">
-            <div className="flex items-center space-x-2 text-red-600">
-              <AlertCircle className="h-6 w-6" />
-              <span>Terjadi kesalahan: {error}</span>
-            </div>
-            <Button onClick={handleRefresh} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Coba Lagi
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <PermissionsErrorState error={error} onRefresh={handleRefresh} />;
   }
 
   if (permissions.length === 0) {
-    return (
-      <Card>
-        <CardHeader>
-          <div className="flex justify-between items-center">
-            <CardTitle>Matrix Hak Akses Role</CardTitle>
-            <Button onClick={handleRefresh} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Refresh
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="flex flex-col items-center justify-center py-8 space-y-4">
-            <p className="text-gray-600">Tidak ada data permissions. Sistem sedang menginisialisasi data...</p>
-            <Button onClick={handleRefresh} variant="outline">
-              <RefreshCw className="h-4 w-4 mr-2" />
-              Muat Ulang Data
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-    );
+    return <PermissionsEmptyState onRefresh={handleRefresh} />;
   }
 
   return (
@@ -203,25 +129,12 @@ const PermissionsMatrix: React.FC = () => {
                   </td>
                   {roles.map(role => (
                     <td key={`${role}-${permission.id}`} className="border border-gray-300 p-3">
-                      <div className="grid grid-cols-2 gap-2">
-                        {permissionTypes.map(permType => {
-                          const rolePermission = getRolePermission(role, permission.id);
-                          const isChecked = rolePermission ? Boolean(rolePermission[permType]) : false;
-                          
-                          return (
-                            <div key={permType} className="flex items-center space-x-1">
-                              <Switch
-                                checked={isChecked}
-                                onCheckedChange={(value) => 
-                                  handlePermissionChange(role, permission.id, permType, value)
-                                }
-                                disabled={role === 'super_admin'} // Super admin always has all permissions
-                              />
-                              <span className="text-xs">{getPermissionTypeLabel(permType)}</span>
-                            </div>
-                          );
-                        })}
-                      </div>
+                      <PermissionSwitchCell
+                        role={role}
+                        permissionId={permission.id}
+                        rolePermissions={rolePermissions}
+                        onPermissionChange={handlePermissionChange}
+                      />
                     </td>
                   ))}
                 </tr>
