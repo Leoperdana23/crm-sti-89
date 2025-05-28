@@ -31,49 +31,15 @@ export const debugSalesPassword = async (email: string) => {
   }
 };
 
-export const hashPasswordWithBcrypt = async (plainPassword: string): Promise<string> => {
-  try {
-    // Use the Supabase function to hash the password properly
-    const { data, error } = await supabase.rpc('hash_password_bcrypt', {
-      password_input: plainPassword
-    });
-
-    if (error) {
-      console.error('Error hashing password:', error);
-      // Fallback: let the database trigger handle it
-      return plainPassword;
-    }
-
-    return data || plainPassword;
-  } catch (error) {
-    console.error('Error in hashPasswordWithBcrypt:', error);
-    // Fallback: let the database trigger handle it
-    return plainPassword;
-  }
-};
-
 export const resetSalesPassword = async (email: string, newPassword: string) => {
   try {
     console.log('Resetting password for:', email);
     
-    // First, let's try to hash the password using a direct database call
-    const { data: hashedPassword, error: hashError } = await supabase.rpc('hash_password_bcrypt', {
-      password_input: newPassword
-    });
-
-    let passwordToStore = newPassword;
-    if (!hashError && hashedPassword) {
-      passwordToStore = hashedPassword;
-      console.log('Password hashed successfully, length:', hashedPassword.length);
-    } else {
-      console.log('Hash function not available, using plain password (database trigger should handle)');
-    }
-    
-    // Update the password
+    // Update the password directly - the database trigger should handle hashing
     const { data, error } = await supabase
       .from('sales')
       .update({ 
-        password_hash: passwordToStore,
+        password_hash: newPassword,
         updated_at: new Date().toISOString()
       })
       .eq('email', email)
@@ -108,28 +74,5 @@ export const testPasswordHash = async (email: string, testPassword: string) => {
   } catch (error) {
     console.error('Error testing password:', error);
     return { data: null, error };
-  }
-};
-
-export const forcePasswordReset = async (email: string, password: string) => {
-  try {
-    console.log('Force resetting password with direct SQL for:', email);
-    
-    // Use a more direct approach with SQL
-    const { data, error } = await supabase.rpc('force_reset_sales_password', {
-      sales_email: email,
-      new_password: password
-    });
-
-    if (error) {
-      console.error('Error in force reset:', error);
-      throw error;
-    }
-
-    console.log('Force password reset successful');
-    return data;
-  } catch (error) {
-    console.error('Error in forcePasswordReset:', error);
-    throw error;
   }
 };

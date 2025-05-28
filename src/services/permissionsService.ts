@@ -7,9 +7,12 @@ import { createRolePermissionsData } from '@/utils/rolePermissions';
 export const permissionsService = {
   async checkExistingPermissions() {
     console.log('Checking existing permissions...');
+    
+    // Use a simple query without any complex joins that might trigger RLS issues
     const { data: existingPermissions, error: checkError } = await supabase
       .from('permissions')
-      .select('*');
+      .select('id, name, description, menu_path, created_at')
+      .limit(100);
 
     if (checkError) {
       console.error('Error checking permissions:', checkError);
@@ -62,7 +65,7 @@ export const permissionsService = {
     console.log('Checking existing role permissions...');
     const { data: existingRolePerms, error } = await supabase
       .from('role_permissions')
-      .select('*')
+      .select('id, role, permission_id, can_view, can_create, can_edit, can_delete')
       .limit(1);
 
     if (error) {
@@ -78,7 +81,7 @@ export const permissionsService = {
     console.log('Fetching permissions...');
     const { data, error } = await supabase
       .from('permissions')
-      .select('*')
+      .select('id, name, description, menu_path, created_at')
       .order('menu_path');
 
     if (error) {
@@ -92,26 +95,36 @@ export const permissionsService = {
 
   async fetchRolePermissions() {
     console.log('Fetching role permissions...');
-    const { data, error } = await supabase
+    
+    // First get role permissions
+    const { data: rolePerms, error: roleError } = await supabase
       .from('role_permissions')
-      .select(`
-        *,
-        permissions (
-          id,
-          name,
-          description,
-          menu_path
-        )
-      `)
+      .select('id, role, permission_id, can_view, can_create, can_edit, can_delete')
       .order('role');
 
-    if (error) {
-      console.error('Error fetching role permissions:', error);
-      throw new Error('Error fetching role permissions: ' + error.message);
+    if (roleError) {
+      console.error('Error fetching role permissions:', roleError);
+      throw new Error('Error fetching role permissions: ' + roleError.message);
     }
+
+    // Then get permissions separately
+    const { data: permissions, error: permError } = await supabase
+      .from('permissions')
+      .select('id, name, description, menu_path');
+
+    if (permError) {
+      console.error('Error fetching permissions for join:', permError);
+      throw new Error('Error fetching permissions: ' + permError.message);
+    }
+
+    // Manually join the data
+    const joinedData = rolePerms?.map(rp => ({
+      ...rp,
+      permissions: permissions?.find(p => p.id === rp.permission_id) || null
+    })) || [];
     
-    console.log('Role permissions fetched:', data);
-    return data || [];
+    console.log('Role permissions fetched:', joinedData);
+    return joinedData;
   },
 
   async updateRolePermission(
