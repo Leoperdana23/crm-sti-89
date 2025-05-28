@@ -8,7 +8,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useSalesAuth } from '@/hooks/useSalesAuth';
-import { debugSalesPassword, resetSalesPassword, forcePasswordReset, testPasswordHash } from '@/utils/salesPasswordUtils';
+import { debugSalesPassword, resetSalesPassword, testPasswordHash } from '@/utils/salesPasswordUtils';
 import { Loader2 } from 'lucide-react';
 
 const Auth = () => {
@@ -117,38 +117,20 @@ const Auth = () => {
       if (needsPasswordFix) {
         console.log('Password needs fixing, attempting to reset...');
         
-        // Try different methods to fix the password
-        let passwordFixed = false;
-        
-        // Method 1: Standard reset
-        if (!passwordFixed && salesDebugData.password_hash === password) {
+        // Try to fix the password if it matches the plain text
+        if (salesDebugData.password_hash === password) {
           try {
-            console.log('Attempting standard password reset...');
+            console.log('Attempting password reset...');
             await resetSalesPassword(email, password);
-            await new Promise(resolve => setTimeout(resolve, 1500)); // Wait longer
-            passwordFixed = true;
+            await new Promise(resolve => setTimeout(resolve, 1500)); // Wait for trigger
           } catch (error) {
-            console.log('Standard reset failed, trying force reset...');
+            console.log('Password reset failed:', error);
           }
         }
         
-        // Method 2: Force reset if available
-        if (!passwordFixed) {
-          try {
-            console.log('Attempting force password reset...');
-            await forcePasswordReset(email, password);
-            await new Promise(resolve => setTimeout(resolve, 1500));
-            passwordFixed = true;
-          } catch (error) {
-            console.log('Force reset not available, continuing...');
-          }
-        }
-        
-        if (passwordFixed) {
-          // Verify the fix worked
-          const updatedData = await debugSalesPassword(email);
-          console.log('Password fix verification:', updatedData);
-        }
+        // Verify the fix worked
+        const updatedData = await debugSalesPassword(email);
+        console.log('Password fix verification:', updatedData);
       }
       
       // Attempt authentication
