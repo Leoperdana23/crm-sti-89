@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Customer } from '@/types/customer';
@@ -28,6 +27,7 @@ export const useCustomers = () => {
         createdAt: customer.created_at,
         updatedAt: customer.updated_at,
         dealDate: customer.deal_date,
+        status: customer.status as Customer['status'], // Type assertion for status
         interactions: [] // We'll load interactions separately if needed
       }));
 
@@ -74,6 +74,7 @@ export const useCustomers = () => {
           createdAt: data.created_at,
           updatedAt: data.updated_at,
           dealDate: data.deal_date,
+          status: data.status as Customer['status'], // Type assertion for status
           interactions: []
         };
         
@@ -118,6 +119,7 @@ export const useCustomers = () => {
           createdAt: data.created_at,
           updatedAt: data.updated_at,
           dealDate: data.deal_date,
+          status: data.status as Customer['status'], // Type assertion for status
           interactions: []
         };
 
