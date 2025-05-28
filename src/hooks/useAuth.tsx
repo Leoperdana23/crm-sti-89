@@ -9,7 +9,21 @@ export const useAuth = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Check for sales user in localStorage first
+    // Check for app user in localStorage first
+    const appUser = localStorage.getItem('appUser');
+    if (appUser) {
+      try {
+        const parsedAppUser = JSON.parse(appUser);
+        setUser(parsedAppUser);
+        setLoading(false);
+        return;
+      } catch (error) {
+        // Invalid app user data, remove it
+        localStorage.removeItem('appUser');
+      }
+    }
+
+    // Check for sales user in localStorage
     const salesUser = localStorage.getItem('salesUser');
     if (salesUser) {
       try {
@@ -30,8 +44,9 @@ export const useAuth = () => {
         setUser(session?.user ?? null);
         setLoading(false);
         
-        // Clear sales user if regular auth is active
+        // Clear app and sales user if regular auth is active
         if (session?.user) {
+          localStorage.removeItem('appUser');
           localStorage.removeItem('salesUser');
         }
       }
@@ -48,8 +63,9 @@ export const useAuth = () => {
   }, []);
 
   const signOut = async () => {
-    // Sign out from both regular auth and sales auth
+    // Sign out from all auth types
     await supabase.auth.signOut();
+    localStorage.removeItem('appUser');
     localStorage.removeItem('salesUser');
     setUser(null);
     setSession(null);

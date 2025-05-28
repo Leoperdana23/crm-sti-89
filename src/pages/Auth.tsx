@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,6 +9,7 @@ import { Label } from '@/components/ui/label';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { useSalesAuth } from '@/hooks/useSalesAuth';
+import { useAppAuth } from '@/hooks/useAppAuth';
 import { debugSalesPassword, resetSalesPassword, testPasswordHash } from '@/utils/salesPasswordUtils';
 import { Loader2 } from 'lucide-react';
 
@@ -22,6 +24,7 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { authenticateSales } = useSalesAuth();
+  const { authenticateAppUser } = useAppAuth();
 
   useEffect(() => {
     // Check if user is already logged in
@@ -88,6 +91,39 @@ const Auth = () => {
       toast({
         title: "Error",
         description: "Terjadi kesalahan yang tidak terduga.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleAppUserAuth = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      console.log('=== APP USER LOGIN DEBUG START ===');
+      
+      const result = await authenticateAppUser(email, password);
+      
+      if (result.success) {
+        toast({
+          title: "Success",
+          description: "Login app user berhasil!",
+        });
+        
+        // Store app user info in localStorage for simple session management
+        localStorage.setItem('appUser', JSON.stringify(result.user));
+        console.log('=== APP USER LOGIN SUCCESS ===');
+        navigate('/');
+      }
+    } catch (error: any) {
+      console.error('=== APP USER LOGIN ERROR ===', error);
+      
+      toast({
+        title: "Error",
+        description: error.message || "Terjadi kesalahan saat login",
         variant: "destructive",
       });
     } finally {
@@ -195,8 +231,9 @@ const Auth = () => {
         </CardHeader>
         <CardContent>
           <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-4">
-            <TabsList className="grid w-full grid-cols-2">
+            <TabsList className="grid w-full grid-cols-3">
               <TabsTrigger value="admin">Admin</TabsTrigger>
+              <TabsTrigger value="user">User</TabsTrigger>
               <TabsTrigger value="sales">Sales</TabsTrigger>
             </TabsList>
             
@@ -264,6 +301,41 @@ const Auth = () => {
                 >
                   {isLogin ? 'Belum punya akun? Daftar di sini' : 'Sudah punya akun? Masuk di sini'}
                 </button>
+              </div>
+            </TabsContent>
+
+            <TabsContent value="user">
+              <form onSubmit={handleAppUserAuth} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="userEmail">Email User</Label>
+                  <Input
+                    id="userEmail"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    required
+                    placeholder="Masukkan email user"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="userPassword">Password</Label>
+                  <Input
+                    id="userPassword"
+                    type="password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    required
+                    placeholder="Masukkan password"
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={loading}>
+                  {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Masuk sebagai User
+                </Button>
+              </form>
+              
+              <div className="mt-4 text-center text-sm text-gray-600">
+                <p>Gunakan email dan password yang sudah terdaftar di master user</p>
               </div>
             </TabsContent>
             

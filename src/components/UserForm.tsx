@@ -21,6 +21,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
     username: '',
     full_name: '',
     email: '',
+    password: '',
     role: 'staff' as 'super_admin' | 'admin' | 'manager' | 'staff',
     branch_id: 'none',
     is_active: true
@@ -33,6 +34,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
         username: user.username,
         full_name: user.full_name,
         email: user.email,
+        password: '', // Don't show existing password
         role: user.role,
         branch_id: user.branch_id || 'none',
         is_active: user.is_active
@@ -43,6 +45,7 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
         username: '',
         full_name: '',
         email: '',
+        password: '',
         role: 'staff',
         branch_id: 'none',
         is_active: true
@@ -63,11 +66,21 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
         throw new Error('Username, nama lengkap, dan email wajib diisi');
       }
       
+      // Untuk user baru, password wajib diisi
+      if (!user && !formData.password.trim()) {
+        throw new Error('Password wajib diisi untuk user baru');
+      }
+      
       // Convert 'none' back to null for database
       const submitData = {
         ...formData,
-        branch_id: formData.branch_id === 'none' ? null : formData.branch_id
+        branch_id: formData.branch_id === 'none' ? null : formData.branch_id,
+        // Only include password if it's provided (for updates, empty password means don't change)
+        ...(formData.password.trim() && { password_hash: formData.password })
       };
+      
+      // Remove the plain password field to avoid confusion
+      delete submitData.password;
       
       await onSubmit(submitData);
     } catch (error) {
@@ -124,6 +137,21 @@ const UserForm: React.FC<UserFormProps> = ({ user, onSubmit, onCancel }) => {
                 onChange={(e) => setFormData(prev => ({ ...prev, email: e.target.value }))}
                 required
                 disabled={isSubmitting}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="password">
+                Password {!user ? '*' : '(kosongkan jika tidak ingin mengubah)'}
+              </Label>
+              <Input
+                id="password"
+                type="password"
+                value={formData.password}
+                onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
+                required={!user}
+                disabled={isSubmitting}
+                placeholder={user ? 'Kosongkan jika tidak ingin mengubah' : 'Masukkan password'}
               />
             </div>
 
