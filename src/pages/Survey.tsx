@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Plus, Search, Filter, BarChart, Users, CheckCircle, AlertCircle, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -92,9 +91,16 @@ const Survey = () => {
       const survey = await createSurveyLink(customer.id);
       if (survey) {
         const surveyUrl = `${window.location.origin}/public-survey/${survey.surveyToken}`;
-        const message = `Halo ${customer.name}, terima kasih telah menjadi pelanggan kami. Mohon bantuan Anda untuk mengisi survei kepuasan pelanggan melalui link berikut: ${surveyUrl}
+        const branch = branches.find(b => b.id === customer.branchId);
+        const branchName = branch?.name || 'Tim Kami';
+        
+        const message = `Assalamualaikum Bapak/Ibu ${customer.name},
+Saya dari Tim ${branchName} ingin meminta sedikit waktunya untuk mengisi survei kepuasan layanan kami.
+Jawaban Bapak/Ibu sangat berharga untuk meningkatkan kualitas pelayanan kami ke depannya.
 
-Survei ini hanya membutuhkan waktu 2-3 menit. Masukan Anda sangat berharga untuk meningkatkan kualitas layanan kami.
+Atas ketersediaan bapak/ibu mengisi link survei, kami memberikan apresiasi berupa *Gratis Perbaikan sebanyak 1x* dapat dipergunakan 6 bulan kedepan.
+
+Berikut link survei ${surveyUrl}
 
 Terima kasih atas kerjasamanya.`;
 
