@@ -7,6 +7,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
+import { getRoleLabel } from '@/utils/permissionLabels';
 
 const Layout = () => {
   const location = useLocation();
@@ -70,25 +71,16 @@ const Layout = () => {
   // Filter navigation based on user permissions
   const navigation = allNavigation.filter(item => {
     const hasAccess = hasPermission(item.permission, 'view');
-    console.log(`Menu ${item.name} (${item.permission}): ${hasAccess ? 'ALLOWED' : 'DENIED'}`);
+    console.log(`Menu ${item.name} (${item.permission}): ${hasAccess ? 'ALLOWED' : 'DENIED'} for role ${userRole}`);
     return hasAccess;
   });
 
   console.log('Current user role:', userRole);
+  console.log('User info:', userInfo);
   console.log('Filtered navigation items:', navigation.map(n => n.name));
 
   const handleLogout = async () => {
     await signOut();
-  };
-
-  const getRoleLabel = (role: string) => {
-    switch (role) {
-      case 'super_admin': return 'Super Admin';
-      case 'admin': return 'Admin';
-      case 'manager': return 'Manager';
-      case 'staff': return 'Staff';
-      default: return role;
-    }
   };
 
   if (loading) {

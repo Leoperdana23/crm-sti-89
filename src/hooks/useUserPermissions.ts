@@ -77,7 +77,7 @@ export const useUserPermissions = () => {
       // First, get the user's role from app_users table if it's an app user
       let actualRole = currentUser.role;
       
-      if (currentUser.type === 'app') {
+      if (currentUser.type === 'app' || currentUser.type === 'auth') {
         const { data: appUserData, error: appUserError } = await supabase
           .from('app_users')
           .select('role')
@@ -85,7 +85,7 @@ export const useUserPermissions = () => {
           .single();
 
         if (appUserError) {
-          console.error('Error fetching app user role:', appUserError);
+          console.log('No app user found, using default role:', actualRole);
         } else if (appUserData) {
           actualRole = appUserData.role;
           console.log('Found role from app_users:', actualRole);
@@ -114,7 +114,45 @@ export const useUserPermissions = () => {
         return;
       }
 
-      // Fetch role permissions for other roles
+      // For admin, manager, and staff roles, use default permissions based on role
+      let defaultPermissions: UserPermissions = {};
+
+      if (actualRole === 'admin') {
+        defaultPermissions = {
+          'dashboard': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'customers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'work_process': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'survey': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'sales': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+          'branches': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+          'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'users': { can_view: true, can_create: true, can_edit: true, can_delete: false }
+        };
+      } else if (actualRole === 'manager') {
+        defaultPermissions = {
+          'dashboard': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'customers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'work_process': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'survey': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'sales': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+          'branches': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+          'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true }
+        };
+      } else if (actualRole === 'staff') {
+        defaultPermissions = {
+          'dashboard': { can_view: true, can_create: false, can_edit: false, can_delete: false },
+          'customers': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+          'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+          'work_process': { can_view: true, can_create: false, can_edit: true, can_delete: false },
+          'survey': { can_view: true, can_create: true, can_edit: true, can_delete: false }
+        };
+      }
+
+      // Try to fetch role permissions from database
       const { data: rolePermissions, error } = await supabase
         .from('role_permissions')
         .select(`
@@ -129,28 +167,43 @@ export const useUserPermissions = () => {
         .eq('role', actualRole);
 
       if (error) {
-        console.error('Error fetching role permissions:', error);
+        console.log('Using default permissions due to error:', error);
+        setPermissions(defaultPermissions);
         return;
       }
 
       console.log('Role permissions from database:', rolePermissions);
 
-      const userPermissions: UserPermissions = {};
-      rolePermissions?.forEach(rp => {
-        if (rp.permissions && 'name' in rp.permissions) {
-          userPermissions[rp.permissions.name] = {
-            can_view: rp.can_view,
-            can_create: rp.can_create,
-            can_edit: rp.can_edit,
-            can_delete: rp.can_delete
-          };
-        }
-      });
-
-      console.log('User permissions loaded:', userPermissions);
-      setPermissions(userPermissions);
+      // If database has permissions, use them, otherwise use defaults
+      if (rolePermissions && rolePermissions.length > 0) {
+        const userPermissions: UserPermissions = {};
+        rolePermissions.forEach(rp => {
+          if (rp.permissions && 'name' in rp.permissions) {
+            userPermissions[rp.permissions.name] = {
+              can_view: rp.can_view,
+              can_create: rp.can_create,
+              can_edit: rp.can_edit,
+              can_delete: rp.can_delete
+            };
+          }
+        });
+        
+        console.log('Using database permissions:', userPermissions);
+        setPermissions(userPermissions);
+      } else {
+        console.log('No database permissions found, using defaults:', defaultPermissions);
+        setPermissions(defaultPermissions);
+      }
     } catch (error) {
       console.error('Error fetching user permissions:', error);
+      // Set basic permissions for staff as fallback
+      setPermissions({
+        'dashboard': { can_view: true, can_create: false, can_edit: false, can_delete: false },
+        'customers': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+        'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+        'work_process': { can_view: true, can_create: false, can_edit: true, can_delete: false },
+        'survey': { can_view: true, can_create: true, can_edit: true, can_delete: false }
+      });
     } finally {
       setLoading(false);
     }
