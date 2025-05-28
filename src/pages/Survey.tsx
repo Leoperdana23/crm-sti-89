@@ -26,10 +26,12 @@ const Survey = () => {
   const [branchFilter, setBranchFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'customers' | 'analytics'>('customers');
 
-  // Filter customers who have Deal status
-  const dealCustomers = customers.filter(customer => customer.status === 'Deal');
+  // Filter customers who have Deal status AND completed work
+  const readyForSurveyCustomers = customers.filter(customer => 
+    customer.status === 'Deal' && customer.workStatus === 'completed'
+  );
   
-  const filteredCustomers = dealCustomers.filter(customer => {
+  const filteredCustomers = readyForSurveyCustomers.filter(customer => {
     const matchesSearch = customer.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          customer.phone.includes(searchTerm);
     
@@ -154,7 +156,7 @@ Terima kasih atas kerjasamanya.`;
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Survei Kepuasan Pelanggan</h1>
-          <p className="text-gray-600 mt-1">Kelola survei kepuasan untuk pelanggan Deal</p>
+          <p className="text-gray-600 mt-1">Kelola survei kepuasan untuk pelanggan yang telah menyelesaikan pekerjaan</p>
         </div>
       </div>
 
@@ -225,7 +227,7 @@ Terima kasih atas kerjasamanya.`;
           {/* Customers Table */}
           <Card>
             <CardHeader>
-              <CardTitle>Pelanggan Deal ({filteredCustomers.length})</CardTitle>
+              <CardTitle>Pelanggan Siap Survei ({filteredCustomers.length})</CardTitle>
             </CardHeader>
             <CardContent>
               <Table>
@@ -292,11 +294,11 @@ Terima kasih atas kerjasamanya.`;
               {filteredCustomers.length === 0 && (
                 <div className="text-center py-8">
                   <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada pelanggan</h3>
+                  <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada pelanggan siap survei</h3>
                   <p className="text-gray-600">
                     {searchTerm || statusFilter !== 'all' || branchFilter !== 'all'
                       ? 'Tidak ada pelanggan yang sesuai dengan filter' 
-                      : 'Belum ada pelanggan dengan status Deal'
+                      : 'Belum ada pelanggan yang menyelesaikan pekerjaan dan siap untuk disurvei'
                     }
                   </p>
                 </div>
