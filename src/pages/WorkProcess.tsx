@@ -1,13 +1,15 @@
+
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { Play, CheckCircle, Clock, MapPin, Phone, User, Calendar, Search } from 'lucide-react';
+import { Play, CheckCircle, Clock, MapPin, Phone, User, Calendar, Search, UserPlus, Users } from 'lucide-react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useToast } from '@/hooks/use-toast';
 import { useSales } from '@/hooks/useSales';
+import WorkAssignmentDialog from '@/components/WorkAssignmentDialog';
 
 const WorkProcess = () => {
   const { customers, updateCustomer, getCustomersByStatus } = useCustomers();
@@ -16,6 +18,8 @@ const WorkProcess = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
   const [workNotes, setWorkNotes] = useState('');
   const [estimatedDays, setEstimatedDays] = useState('');
+  const [assignmentDialogOpen, setAssignmentDialogOpen] = useState(false);
+  const [customerForAssignment, setCustomerForAssignment] = useState<any>(null);
   
   // Search states for each column
   const [searchReady, setSearchReady] = useState('');
@@ -55,6 +59,15 @@ const WorkProcess = () => {
     return salesPerson?.name || 'Sales tidak ditemukan';
   };
 
+  const getAssignedEmployeesNames = (employeeIds?: string[]) => {
+    if (!employeeIds || employeeIds.length === 0) return 'Belum ada karyawan';
+    
+    return employeeIds.map(id => {
+      const employee = sales.find(s => s.id === id);
+      return employee?.name || 'Unknown';
+    }).join(', ');
+  };
+
   const handleStartWork = (customerId: string) => {
     if (!workNotes.trim()) {
       toast({
@@ -80,6 +93,35 @@ const WorkProcess = () => {
     setSelectedCustomer(null);
     setWorkNotes('');
     setEstimatedDays('');
+  };
+
+  const handleAssignEmployees = (customer: any) => {
+    setCustomerForAssignment(customer);
+    setAssignmentDialogOpen(true);
+  };
+
+  const handleAssignmentSubmit = (data: {
+    employeeIds: string[];
+    workNotes: string;
+    estimatedDays: string;
+  }) => {
+    if (!customerForAssignment) return;
+
+    updateCustomer(customerForAssignment.id, {
+      workStatus: 'in_progress',
+      workStartDate: new Date().toISOString(),
+      workNotes: data.workNotes,
+      estimatedDays: data.estimatedDays ? parseInt(data.estimatedDays) : undefined,
+      assignedEmployees: data.employeeIds
+    });
+
+    toast({
+      title: "Berhasil",
+      description: `Pekerjaan berhasil dimulai dengan ${data.employeeIds.length} karyawan`,
+    });
+
+    setAssignmentDialogOpen(false);
+    setCustomerForAssignment(null);
   };
 
   const handleCompleteWork = (customerId: string) => {
@@ -211,14 +253,25 @@ const WorkProcess = () => {
                     </div>
                   </div>
                 ) : (
-                  <Button
-                    size="sm"
-                    onClick={() => setSelectedCustomer(customer.id)}
-                    className="bg-blue-600 hover:bg-blue-700"
-                  >
-                    <Play className="h-4 w-4 mr-1" />
-                    Mulai Pekerjaan
-                  </Button>
+                  <div className="space-y-2">
+                    <Button
+                      size="sm"
+                      onClick={() => setSelectedCustomer(customer.id)}
+                      className="bg-blue-600 hover:bg-blue-700 w-full"
+                    >
+                      <Play className="h-4 w-4 mr-1" />
+                      Mulai Pekerjaan
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => handleAssignEmployees(customer)}
+                      className="w-full"
+                    >
+                      <UserPlus className="h-4 w-4 mr-1" />
+                      Assign Karyawan
+                    </Button>
+                  </div>
                 )}
               </div>
             ))}
@@ -262,6 +315,12 @@ const WorkProcess = () => {
                       <User className="h-4 w-4 mr-1" />
                       {getSalesName(customer.salesId)}
                     </div>
+                    {customer.assignedEmployees && customer.assignedEmployees.length > 0 && (
+                      <div className="flex items-center text-sm text-gray-600 mt-1">
+                        <Users className="h-4 w-4 mr-1" />
+                        <strong>Karyawan:</strong> {getAssignedEmployeesNames(customer.assignedEmployees)}
+                      </div>
+                    )}
                     {customer.workStartDate && (
                       <div className="flex items-center text-sm text-gray-600 mt-1">
                         <Calendar className="h-4 w-4 mr-1" />
@@ -342,6 +401,12 @@ const WorkProcess = () => {
                       <User className="h-4 w-4 mr-1" />
                       {getSalesName(customer.salesId)}
                     </div>
+                    {customer.assignedEmployees && customer.assignedEmployees.length > 0 && (
+                      <div className="flex items-center text-sm text-gray-600 mt-1">
+                        <Users className="h-4 w-4 mr-1" />
+                        <strong>Karyawan:</strong> {getAssignedEmployeesNames(customer.assignedEmployees)}
+                      </div>
+                    )}
                     {customer.workStartDate && (
                       <div className="flex items-center text-sm text-gray-600 mt-1">
                         <Calendar className="h-4 w-4 mr-1" />
@@ -381,6 +446,13 @@ const WorkProcess = () => {
           </CardContent>
         </Card>
       </div>
+
+      <WorkAssignmentDialog
+        isOpen={assignmentDialogOpen}
+        onClose={() => setAssignmentDialogOpen(false)}
+        onAssign={handleAssignmentSubmit}
+        customerName={customerForAssignment?.name || ''}
+      />
     </div>
   );
 };

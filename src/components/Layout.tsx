@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, LogOut, UserCog, Settings, Shield, Wrench } from 'lucide-react';
@@ -32,7 +33,7 @@ const Layout = () => {
     { name: 'Follow-Up', href: '/follow-up', icon: UserCheck, permission: 'follow_up' },
     { name: 'Proses Pekerjaan', href: '/work-process', icon: Wrench, permission: 'work_process' },
     { name: 'Survei', href: '/survey', icon: MessageSquare, permission: 'survey' },
-    { name: 'Sales', href: '/sales', icon: UserCog, permission: 'sales' },
+    { name: 'Karyawan', href: '/sales', icon: UserCog, permission: 'sales' },
     { name: 'Cabang', href: '/branches', icon: Building, permission: 'branches' },
     { name: 'Laporan', href: '/reports', icon: FileText, permission: 'reports' },
     { name: 'Master User', href: '/users', icon: Settings, permission: 'users' },
