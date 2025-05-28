@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
 import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, LogOut, UserCog } from 'lucide-react';
@@ -9,15 +10,25 @@ const Layout = () => {
   const location = useLocation();
   const { user, signOut } = useAuth();
 
-  const navigation = [
-    { name: 'Dashboard', href: '/', icon: BarChart3 },
-    { name: 'Pelanggan', href: '/customers', icon: Users },
-    { name: 'Follow-Up', href: '/follow-up', icon: UserCheck },
-    { name: 'Survei', href: '/survey', icon: MessageSquare },
-    { name: 'Sales', href: '/sales', icon: UserCog },
-    { name: 'Cabang', href: '/branches', icon: Building },
-    { name: 'Laporan', href: '/reports', icon: FileText },
+  // Get user role from metadata or default to staff for sales users
+  const userRole = user?.user_metadata?.role || 'staff';
+  const isSalesUser = user?.user_metadata?.sales_id;
+
+  // Define navigation based on user role
+  const allNavigation = [
+    { name: 'Dashboard', href: '/', icon: BarChart3, roles: ['super_admin', 'admin', 'manager', 'staff'] },
+    { name: 'Pelanggan', href: '/customers', icon: Users, roles: ['super_admin', 'admin', 'manager', 'staff'] },
+    { name: 'Follow-Up', href: '/follow-up', icon: UserCheck, roles: ['super_admin', 'admin', 'manager', 'staff'] },
+    { name: 'Survei', href: '/survey', icon: MessageSquare, roles: ['super_admin', 'admin', 'manager', 'staff'] },
+    { name: 'Sales', href: '/sales', icon: UserCog, roles: ['super_admin', 'admin', 'manager'] },
+    { name: 'Cabang', href: '/branches', icon: Building, roles: ['super_admin', 'admin', 'manager'] },
+    { name: 'Laporan', href: '/reports', icon: FileText, roles: ['super_admin', 'admin', 'manager'] },
   ];
+
+  // Filter navigation based on user role
+  const navigation = allNavigation.filter(item => 
+    item.roles.includes(userRole)
+  );
 
   const handleLogout = async () => {
     await signOut();
@@ -33,6 +44,9 @@ const Layout = () => {
               <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
                 CRM Dashboard
               </h1>
+              {isSalesUser && (
+                <p className="text-xs text-gray-500 mt-1">Sales Portal</p>
+              )}
             </div>
             
             <nav className="flex-1 p-4 space-y-2">
@@ -68,6 +82,9 @@ const Layout = () => {
                     {user?.user_metadata?.full_name || user?.email || 'User'}
                   </p>
                   <p className="text-xs text-gray-500">{user?.email}</p>
+                  {isSalesUser && (
+                    <p className="text-xs text-blue-600">Sales</p>
+                  )}
                 </div>
               </div>
               <Button

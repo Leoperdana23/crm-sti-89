@@ -7,6 +7,7 @@ export interface Sales {
   email?: string;
   branchId?: string;
   isActive: boolean;
+  passwordHash?: string;
   createdAt: string;
   updatedAt: string;
 }

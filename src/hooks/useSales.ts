@@ -31,6 +31,7 @@ export const useSales = () => {
         ...sale,
         branchId: sale.branch_id,
         isActive: sale.is_active,
+        passwordHash: sale.password_hash,
         createdAt: sale.created_at,
         updatedAt: sale.updated_at,
       }));
@@ -47,18 +48,25 @@ export const useSales = () => {
     fetchSales();
   }, []);
 
-  const addSales = async (salesData: Omit<Sales, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addSales = async (salesData: Omit<Sales, 'id' | 'createdAt' | 'updatedAt'> & { password?: string }) => {
     try {
+      const insertData: any = {
+        name: salesData.name,
+        code: salesData.code,
+        phone: salesData.phone,
+        email: salesData.email,
+        branch_id: salesData.branchId === 'no-branch' ? null : salesData.branchId,
+        is_active: salesData.isActive
+      };
+
+      // Add password if provided
+      if (salesData.password) {
+        insertData.password_hash = salesData.password; // Will be hashed by trigger
+      }
+
       const { data, error } = await supabase
         .from('sales')
-        .insert({
-          name: salesData.name,
-          code: salesData.code,
-          phone: salesData.phone,
-          email: salesData.email,
-          branch_id: salesData.branchId === 'no-branch' ? null : salesData.branchId,
-          is_active: salesData.isActive
-        })
+        .insert(insertData)
         .select()
         .single();
 
@@ -72,6 +80,7 @@ export const useSales = () => {
           ...data,
           branchId: data.branch_id,
           isActive: data.is_active,
+          passwordHash: data.password_hash,
           createdAt: data.created_at,
           updatedAt: data.updated_at,
         };
@@ -85,18 +94,25 @@ export const useSales = () => {
     }
   };
 
-  const updateSales = async (id: string, updates: Partial<Sales>) => {
+  const updateSales = async (id: string, updates: Partial<Sales> & { password?: string }) => {
     try {
+      const updateData: any = {
+        name: updates.name,
+        code: updates.code,
+        phone: updates.phone,
+        email: updates.email,
+        branch_id: updates.branchId === 'no-branch' ? null : updates.branchId,
+        is_active: updates.isActive
+      };
+
+      // Add password if provided
+      if (updates.password) {
+        updateData.password_hash = updates.password; // Will be hashed by trigger
+      }
+
       const { data, error } = await supabase
         .from('sales')
-        .update({
-          name: updates.name,
-          code: updates.code,
-          phone: updates.phone,
-          email: updates.email,
-          branch_id: updates.branchId === 'no-branch' ? null : updates.branchId,
-          is_active: updates.isActive
-        })
+        .update(updateData)
         .eq('id', id)
         .select()
         .single();
@@ -111,6 +127,7 @@ export const useSales = () => {
           ...data,
           branchId: data.branch_id,
           isActive: data.is_active,
+          passwordHash: data.password_hash,
           createdAt: data.created_at,
           updatedAt: data.updated_at,
         };
