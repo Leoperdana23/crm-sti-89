@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Permission, RolePermission } from '@/types/user';
@@ -8,6 +7,7 @@ const INITIAL_PERMISSIONS = [
   { name: 'customers', description: 'Pelanggan', menu_path: '/customers' },
   { name: 'follow_up', description: 'Follow-Up', menu_path: '/follow-up' },
   { name: 'survey', description: 'Survei', menu_path: '/survey' },
+  { name: 'sales', description: 'Sales', menu_path: '/sales' },
   { name: 'branches', description: 'Cabang', menu_path: '/branches' },
   { name: 'reports', description: 'Laporan', menu_path: '/reports' },
   { name: 'users', description: 'Master User', menu_path: '/users' },
@@ -55,22 +55,46 @@ export const usePermissions = () => {
 
           for (const role of roles) {
             for (const permission of newPermissions) {
-              // Super admin gets all permissions
-              const hasFullAccess = role === 'super_admin';
-              // Admin gets most permissions except role management
-              const isAdmin = role === 'admin' && permission.name !== 'role_permissions';
-              // Manager gets view and create permissions for most modules
-              const isManager = role === 'manager' && !['users', 'role_permissions'].includes(permission.name);
-              // Staff gets basic view permissions
-              const isStaff = role === 'staff' && ['dashboard', 'customers', 'follow_up', 'survey'].includes(permission.name);
+              let hasAccess = false;
+              let canCreate = false;
+              let canEdit = false;
+              let canDelete = false;
+
+              if (role === 'super_admin') {
+                // Super admin gets full access to everything
+                hasAccess = true;
+                canCreate = true;
+                canEdit = true;
+                canDelete = true;
+              } else if (role === 'admin') {
+                // Admin gets access to all except role permissions management
+                hasAccess = true;
+                canCreate = permission.name !== 'role_permissions';
+                canEdit = permission.name !== 'role_permissions';
+                canDelete = permission.name !== 'role_permissions' && permission.name !== 'users';
+              } else if (role === 'manager') {
+                // Manager gets access to operational modules
+                const managerModules = ['dashboard', 'customers', 'follow_up', 'survey', 'sales', 'reports'];
+                hasAccess = managerModules.includes(permission.name);
+                canCreate = hasAccess && !['reports'].includes(permission.name);
+                canEdit = hasAccess && !['reports'].includes(permission.name);
+                canDelete = hasAccess && ['customers', 'follow_up', 'survey', 'sales'].includes(permission.name);
+              } else if (role === 'staff') {
+                // Staff only gets access to dashboard, customers, follow-up, and survey
+                const staffModules = ['dashboard', 'customers', 'follow_up', 'survey'];
+                hasAccess = staffModules.includes(permission.name);
+                canCreate = hasAccess && ['customers', 'follow_up', 'survey'].includes(permission.name);
+                canEdit = hasAccess && ['customers', 'follow_up', 'survey'].includes(permission.name);
+                canDelete = false; // Staff cannot delete anything
+              }
 
               rolePermissionsData.push({
                 role: role as 'super_admin' | 'admin' | 'manager' | 'staff',
                 permission_id: permission.id,
-                can_view: hasFullAccess || isAdmin || isManager || isStaff,
-                can_create: hasFullAccess || isAdmin || (isManager && !['reports'].includes(permission.name)),
-                can_edit: hasFullAccess || isAdmin || (isManager && !['reports'].includes(permission.name)),
-                can_delete: hasFullAccess || (isAdmin && !['role_permissions'].includes(permission.name))
+                can_view: hasAccess,
+                can_create: canCreate,
+                can_edit: canEdit,
+                can_delete: canDelete
               });
             }
           }
