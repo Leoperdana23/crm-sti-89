@@ -27,18 +27,26 @@ const PermissionsMatrix: React.FC = () => {
   ) => {
     try {
       const currentPermission = getRolePermission(role, permissionId);
+      
+      // If no permission exists, create a default one
+      let updatedPermissions;
       if (!currentPermission) {
-        console.log('No current permission found for', role, permissionId);
-        return;
+        console.log('Creating new permission for', role, permissionId);
+        updatedPermissions = {
+          can_view: permissionType === 'can_view' ? value : false,
+          can_create: permissionType === 'can_create' ? value : false,
+          can_edit: permissionType === 'can_edit' ? value : false,
+          can_delete: permissionType === 'can_delete' ? value : false
+        };
+      } else {
+        updatedPermissions = {
+          can_view: currentPermission.can_view,
+          can_create: currentPermission.can_create,
+          can_edit: currentPermission.can_edit,
+          can_delete: currentPermission.can_delete,
+          [permissionType]: value
+        };
       }
-
-      const updatedPermissions = {
-        can_view: currentPermission.can_view,
-        can_create: currentPermission.can_create,
-        can_edit: currentPermission.can_edit,
-        can_delete: currentPermission.can_delete,
-        [permissionType]: value
-      };
 
       await updateRolePermission(role, permissionId, updatedPermissions);
       
@@ -156,6 +164,42 @@ const PermissionsMatrix: React.FC = () => {
       </Card>
     );
   }
+
+  const getRoleLabel = (role: string) => {
+    switch (role) {
+      case 'super_admin': return 'Super Admin';
+      case 'admin': return 'Admin';
+      case 'manager': return 'Manager';
+      case 'staff': return 'Staff';
+      default: return role;
+    }
+  };
+
+  const getPermissionTypeLabel = (type: string) => {
+    switch (type) {
+      case 'can_view': return 'Lihat';
+      case 'can_create': return 'Buat';
+      case 'can_edit': return 'Edit';
+      case 'can_delete': return 'Hapus';
+      default: return type;
+    }
+  };
+
+  const handleRefresh = async () => {
+    try {
+      await refetch();
+      toast({
+        title: "Berhasil",
+        description: "Data hak akses berhasil dimuat ulang",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Gagal memuat ulang data hak akses",
+        variant: "destructive"
+      });
+    }
+  };
 
   return (
     <Card>

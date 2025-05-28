@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { Permission, RolePermission } from '@/types/user';
 import { INITIAL_PERMISSIONS } from '@/constants/permissions';
@@ -138,17 +137,49 @@ export const permissionsService = {
     }
   ) {
     console.log('Updating role permission:', { role, permissionId, permissions });
-    const { error } = await supabase
+    
+    // First check if the role permission exists
+    const { data: existingRolePermission, error: checkError } = await supabase
       .from('role_permissions')
-      .update(permissions)
+      .select('id')
       .eq('role', role)
-      .eq('permission_id', permissionId);
+      .eq('permission_id', permissionId)
+      .maybeSingle();
 
-    if (error) {
-      console.error('Error updating role permission:', error);
-      throw error;
+    if (checkError) {
+      console.error('Error checking existing role permission:', checkError);
+      throw checkError;
+    }
+
+    if (existingRolePermission) {
+      // Update existing role permission
+      const { error } = await supabase
+        .from('role_permissions')
+        .update(permissions)
+        .eq('role', role)
+        .eq('permission_id', permissionId);
+
+      if (error) {
+        console.error('Error updating role permission:', error);
+        throw error;
+      }
+    } else {
+      // Create new role permission
+      console.log('Creating new role permission for', role, permissionId);
+      const { error } = await supabase
+        .from('role_permissions')
+        .insert({
+          role,
+          permission_id: permissionId,
+          ...permissions
+        });
+
+      if (error) {
+        console.error('Error creating role permission:', error);
+        throw error;
+      }
     }
     
-    console.log('Role permission updated successfully');
+    console.log('Role permission updated/created successfully');
   }
 };
