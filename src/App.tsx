@@ -9,6 +9,8 @@ import Dashboard from "./pages/Dashboard";
 import Customers from "./pages/Customers";
 import FollowUp from "./pages/FollowUp";
 import Survey from "./pages/Survey";
+import Branches from "./pages/Branches";
+import Reports from "./pages/Reports";
 import PublicSurvey from "./pages/PublicSurvey";
 import NotFound from "./pages/NotFound";
 
@@ -26,7 +28,8 @@ const App = () => (
             <Route path="customers" element={<Customers />} />
             <Route path="follow-up" element={<FollowUp />} />
             <Route path="survey" element={<Survey />} />
-            {/* TODO: Add Reports pages */}
+            <Route path="branches" element={<Branches />} />
+            <Route path="reports" element={<Reports />} />
           </Route>
           <Route path="/public-survey/:token" element={<PublicSurvey />} />
           <Route path="*" element={<NotFound />} />

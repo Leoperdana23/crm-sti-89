@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Customer } from '@/types/customer';
@@ -11,7 +12,14 @@ export const useCustomers = () => {
       setLoading(true);
       const { data, error } = await supabase
         .from('customers')
-        .select('*')
+        .select(`
+          *,
+          branches (
+            id,
+            name,
+            code
+          )
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -27,9 +35,10 @@ export const useCustomers = () => {
         createdAt: customer.created_at,
         updatedAt: customer.updated_at,
         dealDate: customer.deal_date,
+        branchId: customer.branch_id,
         surveyStatus: customer.survey_status as Customer['surveyStatus'],
-        status: customer.status as Customer['status'], // Type assertion for status
-        interactions: [] // We'll load interactions separately if needed
+        status: customer.status as Customer['status'],
+        interactions: []
       }));
 
       setCustomers(transformedCustomers);
@@ -58,6 +67,7 @@ export const useCustomers = () => {
           notes: customerData.notes,
           status: customerData.status,
           deal_date: customerData.dealDate,
+          branch_id: customerData.branchId,
           survey_status: customerData.status === 'Deal' ? 'belum_disurvei' : null
         })
         .select()
@@ -76,8 +86,9 @@ export const useCustomers = () => {
           createdAt: data.created_at,
           updatedAt: data.updated_at,
           dealDate: data.deal_date,
+          branchId: data.branch_id,
           surveyStatus: data.survey_status as Customer['surveyStatus'],
-          status: data.status as Customer['status'], // Type assertion for status
+          status: data.status as Customer['status'],
           interactions: []
         };
         
@@ -104,6 +115,7 @@ export const useCustomers = () => {
           notes: updates.notes,
           status: updates.status,
           deal_date: updates.dealDate,
+          branch_id: updates.branchId,
           survey_status: updates.status === 'Deal' ? 'belum_disurvei' : updates.surveyStatus
         })
         .eq('id', id)
@@ -123,8 +135,9 @@ export const useCustomers = () => {
           createdAt: data.created_at,
           updatedAt: data.updated_at,
           dealDate: data.deal_date,
+          branchId: data.branch_id,
           surveyStatus: data.survey_status as Customer['surveyStatus'],
-          status: data.status as Customer['status'], // Type assertion for status
+          status: data.status as Customer['status'],
           interactions: []
         };
 
@@ -163,6 +176,10 @@ export const useCustomers = () => {
     return customers.filter(customer => customer.status === status);
   };
 
+  const getCustomersByBranch = (branchId: string) => {
+    return customers.filter(customer => customer.branchId === branchId);
+  };
+
   const getStats = () => {
     return {
       total: customers.length,
@@ -173,6 +190,20 @@ export const useCustomers = () => {
     };
   };
 
+  const getStatsByBranch = (branchId?: string) => {
+    const filteredCustomers = branchId 
+      ? customers.filter(c => c.branchId === branchId)
+      : customers;
+
+    return {
+      total: filteredCustomers.length,
+      prospek: filteredCustomers.filter(c => c.status === 'Prospek').length,
+      followUp: filteredCustomers.filter(c => c.status === 'Follow-up').length,
+      deal: filteredCustomers.filter(c => c.status === 'Deal').length,
+      tidakJadi: filteredCustomers.filter(c => c.status === 'Tidak Jadi').length,
+    };
+  };
+
   return {
     customers,
     loading,
@@ -180,7 +211,9 @@ export const useCustomers = () => {
     updateCustomer,
     deleteCustomer,
     getCustomersByStatus,
+    getCustomersByBranch,
     getStats,
+    getStatsByBranch,
     refreshCustomers: fetchCustomers
   };
 };

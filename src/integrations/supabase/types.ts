@@ -9,10 +9,44 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      branches: {
+        Row: {
+          address: string | null
+          code: string
+          created_at: string
+          id: string
+          manager_name: string | null
+          name: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          code: string
+          created_at?: string
+          id?: string
+          manager_name?: string | null
+          name: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          code?: string
+          created_at?: string
+          id?: string
+          manager_name?: string | null
+          name?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       customers: {
         Row: {
           address: string
           birth_date: string
+          branch_id: string | null
           created_at: string
           deal_date: string | null
           id: string
@@ -28,6 +62,7 @@ export type Database = {
         Insert: {
           address: string
           birth_date: string
+          branch_id?: string | null
           created_at?: string
           deal_date?: string | null
           id?: string
@@ -43,6 +78,7 @@ export type Database = {
         Update: {
           address?: string
           birth_date?: string
+          branch_id?: string | null
           created_at?: string
           deal_date?: string | null
           id?: string
@@ -55,7 +91,15 @@ export type Database = {
           survey_status?: string | null
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "customers_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       interactions: {
         Row: {

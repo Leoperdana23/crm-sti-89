@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Plus, Search, Filter, BarChart, Users, CheckCircle, AlertCircle } from 'lucide-react';
+import { Plus, Search, Filter, BarChart, Users, CheckCircle, AlertCircle, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,17 +11,20 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import SurveyForm from '@/components/SurveyForm';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useSurveys } from '@/hooks/useSurveys';
+import { useBranches } from '@/hooks/useBranches';
 import { Customer } from '@/types/customer';
 import { useToast } from '@/hooks/use-toast';
 
 const Survey = () => {
   const { customers, loading: customersLoading } = useCustomers();
   const { surveys, loading: surveysLoading, addSurvey, createSurveyLink, getAverageRatings } = useSurveys();
+  const { branches } = useBranches();
   const { toast } = useToast();
   const [isSurveyFormOpen, setIsSurveyFormOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [branchFilter, setBranchFilter] = useState<string>('all');
   const [activeTab, setActiveTab] = useState<'customers' | 'analytics'>('customers');
 
   // Filter customers who have Deal status
@@ -37,8 +40,13 @@ const Survey = () => {
     } else if (statusFilter === 'belum_disurvei') {
       matchesStatus = customer.surveyStatus === 'belum_disurvei' || !customer.surveyStatus;
     }
+
+    let matchesBranch = true;
+    if (branchFilter !== 'all') {
+      matchesBranch = customer.branchId === branchFilter;
+    }
     
-    return matchesSearch && matchesStatus;
+    return matchesSearch && matchesStatus && matchesBranch;
   });
 
   const handleSurveySubmit = async (surveyData: any) => {
@@ -74,6 +82,37 @@ const Survey = () => {
       toast({
         title: "Error",
         description: "Terjadi kesalahan saat membuat link survei.",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const handleWhatsAppSurvey = async (customer: Customer) => {
+    try {
+      const survey = await createSurveyLink(customer.id);
+      if (survey) {
+        const surveyUrl = `${window.location.origin}/public-survey/${survey.surveyToken}`;
+        const message = `Halo ${customer.name}, terima kasih telah menjadi pelanggan kami. Mohon bantuan Anda untuk mengisi survei kepuasan pelanggan melalui link berikut: ${surveyUrl}
+
+Survei ini hanya membutuhkan waktu 2-3 menit. Masukan Anda sangat berharga untuk meningkatkan kualitas layanan kami.
+
+Terima kasih atas kerjasamanya.`;
+
+        const cleanPhone = customer.phone.replace(/\D/g, '');
+        const whatsappPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
+        const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`;
+        
+        window.open(whatsappUrl, '_blank');
+        
+        toast({
+          title: "Link WhatsApp Dibuka",
+          description: "Pesan WhatsApp dengan link survei telah disiapkan untuk dikirim ke pelanggan",
+        });
+      }
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Terjadi kesalahan saat membuat link WhatsApp.",
         variant: "destructive"
       });
     }
@@ -159,6 +198,22 @@ const Survey = () => {
                 </SelectContent>
               </Select>
             </div>
+            <div className="w-48">
+              <Select value={branchFilter} onValueChange={setBranchFilter}>
+                <SelectTrigger>
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Filter Cabang" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Cabang</SelectItem>
+                  {branches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
 
           {/* Customers Table */}
@@ -172,46 +227,59 @@ const Survey = () => {
                   <TableRow>
                     <TableHead>Nama</TableHead>
                     <TableHead>No. HP</TableHead>
+                    <TableHead>Cabang</TableHead>
                     <TableHead>Tanggal Deal</TableHead>
                     <TableHead>Status Survei</TableHead>
                     <TableHead>Aksi</TableHead>
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {filteredCustomers.map((customer) => (
-                    <TableRow key={customer.id}>
-                      <TableCell className="font-medium">{customer.name}</TableCell>
-                      <TableCell>{customer.phone}</TableCell>
-                      <TableCell>
-                        {customer.dealDate ? new Date(customer.dealDate).toLocaleDateString('id-ID') : '-'}
-                      </TableCell>
-                      <TableCell>
-                        {getSurveyStatusBadge(customer.surveyStatus)}
-                      </TableCell>
-                      <TableCell>
-                        {customer.surveyStatus !== 'sudah_disurvei' && (
-                          <div className="flex space-x-2">
-                            <Button
-                              size="sm"
-                              onClick={() => openSurveyForm(customer)}
-                              className="bg-blue-600 hover:bg-blue-700"
-                            >
-                              <Plus className="h-4 w-4 mr-1" />
-                              Buat Survei
-                            </Button>
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => handleCreateSurveyLink(customer)}
-                              className="border-green-600 text-green-600 hover:bg-green-50"
-                            >
-                              Buat Link
-                            </Button>
-                          </div>
-                        )}
-                      </TableCell>
-                    </TableRow>
-                  ))}
+                  {filteredCustomers.map((customer) => {
+                    const branch = branches.find(b => b.id === customer.branchId);
+                    return (
+                      <TableRow key={customer.id}>
+                        <TableCell className="font-medium">{customer.name}</TableCell>
+                        <TableCell>{customer.phone}</TableCell>
+                        <TableCell>{branch?.name || '-'}</TableCell>
+                        <TableCell>
+                          {customer.dealDate ? new Date(customer.dealDate).toLocaleDateString('id-ID') : '-'}
+                        </TableCell>
+                        <TableCell>
+                          {getSurveyStatusBadge(customer.surveyStatus)}
+                        </TableCell>
+                        <TableCell>
+                          {customer.surveyStatus !== 'sudah_disurvei' && (
+                            <div className="flex space-x-2">
+                              <Button
+                                size="sm"
+                                onClick={() => openSurveyForm(customer)}
+                                className="bg-blue-600 hover:bg-blue-700"
+                              >
+                                <Plus className="h-4 w-4 mr-1" />
+                                Buat Survei
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => handleCreateSurveyLink(customer)}
+                                className="border-green-600 text-green-600 hover:bg-green-50"
+                              >
+                                Buat Link
+                              </Button>
+                              <Button
+                                size="sm"
+                                onClick={() => handleWhatsAppSurvey(customer)}
+                                className="bg-green-600 hover:bg-green-700"
+                              >
+                                <MessageCircle className="h-4 w-4 mr-1" />
+                                WhatsApp
+                              </Button>
+                            </div>
+                          )}
+                        </TableCell>
+                      </TableRow>
+                    );
+                  })}
                 </TableBody>
               </Table>
 
@@ -220,7 +288,7 @@ const Survey = () => {
                   <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
                   <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak ada pelanggan</h3>
                   <p className="text-gray-600">
-                    {searchTerm || statusFilter !== 'all' 
+                    {searchTerm || statusFilter !== 'all' || branchFilter !== 'all'
                       ? 'Tidak ada pelanggan yang sesuai dengan filter' 
                       : 'Belum ada pelanggan dengan status Deal'
                     }

@@ -13,6 +13,7 @@ export interface Customer {
   updatedAt: string;
   dealDate?: string;
   surveyStatus?: 'sudah_disurvei' | 'belum_disurvei';
+  branchId?: string;
   interactions: Interaction[];
 }
 
