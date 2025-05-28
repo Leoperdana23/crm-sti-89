@@ -26,7 +26,7 @@ export const useUserPermissions = () => {
         const parsedAppUser = JSON.parse(appUser);
         return {
           email: parsedAppUser.user_metadata?.email || parsedAppUser.email,
-          role: parsedAppUser.user_metadata?.role,
+          role: parsedAppUser.user_metadata?.role || parsedAppUser.role,
           type: 'app'
         };
       } catch (error) {
@@ -75,24 +75,23 @@ export const useUserPermissions = () => {
       console.log('Fetching permissions for user:', currentUser);
       setUserRole(currentUser.role);
 
-      // If super admin, grant all permissions
+      // If super admin, grant all permissions without checking database
       if (currentUser.role === 'super_admin') {
-        const { data: allPermissions } = await supabase
-          .from('permissions')
-          .select('name');
-        
-        if (allPermissions) {
-          const superAdminPermissions: UserPermissions = {};
-          allPermissions.forEach(permission => {
-            superAdminPermissions[permission.name] = {
-              can_view: true,
-              can_create: true,
-              can_edit: true,
-              can_delete: true
-            };
-          });
-          setPermissions(superAdminPermissions);
-        }
+        console.log('User is super admin, granting all permissions');
+        const superAdminPermissions: UserPermissions = {
+          'dashboard': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'customers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'work_process': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'survey': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'sales': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'branches': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'users': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+          'role_permissions': { can_view: true, can_create: true, can_edit: true, can_delete: true }
+        };
+        setPermissions(superAdminPermissions);
         return;
       }
 
@@ -141,6 +140,12 @@ export const useUserPermissions = () => {
   }, [user]);
 
   const hasPermission = (permissionName: string, action: 'view' | 'create' | 'edit' | 'delete' = 'view') => {
+    // Super admin always has all permissions
+    const currentUser = getCurrentUser();
+    if (currentUser?.role === 'super_admin') {
+      return true;
+    }
+
     const permission = permissions[permissionName];
     if (!permission) return false;
 
