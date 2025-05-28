@@ -3,11 +3,12 @@ import React from 'react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
+import { Loader2 } from 'lucide-react';
 import { usePermissions } from '@/hooks/usePermissions';
 import { useToast } from '@/hooks/use-toast';
 
 const PermissionsMatrix: React.FC = () => {
-  const { permissions, rolePermissions, updateRolePermission } = usePermissions();
+  const { permissions, rolePermissions, loading, updateRolePermission } = usePermissions();
   const { toast } = useToast();
 
   const roles = ['super_admin', 'admin', 'manager', 'staff'] as const;
@@ -69,6 +70,39 @@ const PermissionsMatrix: React.FC = () => {
       default: return type;
     }
   };
+
+  if (loading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Matrix Hak Akses Role</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-center py-8">
+            <div className="flex items-center space-x-2">
+              <Loader2 className="h-6 w-6 animate-spin" />
+              <span>Memuat data hak akses...</span>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (permissions.length === 0) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Matrix Hak Akses Role</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-center py-8">
+            <p className="text-gray-600">Tidak ada data permissions. Silakan refresh halaman untuk menginisialisasi data.</p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
