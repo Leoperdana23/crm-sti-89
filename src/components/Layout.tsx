@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, User } from 'lucide-react';
+import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, User, Shield } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 const Layout = () => {
@@ -15,6 +14,7 @@ const Layout = () => {
     { name: 'Cabang', href: '/branches', icon: Building },
     { name: 'Laporan', href: '/reports', icon: FileText },
     { name: 'Master User', href: '/users', icon: User },
+    { name: 'Hak Akses Role', href: '/role-permissions', icon: Shield },
   ];
 
   return (
