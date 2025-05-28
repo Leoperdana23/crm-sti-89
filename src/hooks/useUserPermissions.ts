@@ -61,6 +61,52 @@ export const useUserPermissions = () => {
     return null;
   };
 
+  const getDefaultPermissions = (role: string): UserPermissions => {
+    const basePermissions = {
+      'dashboard': { can_view: true, can_create: false, can_edit: false, can_delete: false },
+      'customers': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+      'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+      'work_process': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+      'survey': { can_view: true, can_create: true, can_edit: true, can_delete: false }
+    };
+
+    if (role === 'super_admin') {
+      return {
+        ...basePermissions,
+        'dashboard': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'customers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'work_process': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'survey': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'sales': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'branches': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'users': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'role_permissions': { can_view: true, can_create: true, can_edit: true, can_delete: true }
+      };
+    } else if (role === 'admin') {
+      return {
+        ...basePermissions,
+        'sales': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+        'branches': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+        'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'users': { can_view: true, can_create: true, can_edit: true, can_delete: false }
+      };
+    } else if (role === 'manager') {
+      return {
+        ...basePermissions,
+        'branches': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+        'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true }
+      };
+    }
+
+    // Default for staff
+    return basePermissions;
+  };
+
   const fetchUserPermissions = async () => {
     try {
       setLoading(true);
@@ -94,63 +140,9 @@ export const useUserPermissions = () => {
 
       setUserRole(actualRole);
 
-      // If super admin, grant all permissions without checking database
-      if (actualRole === 'super_admin') {
-        console.log('User is super admin, granting all permissions');
-        const superAdminPermissions: UserPermissions = {
-          'dashboard': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'customers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'work_process': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'survey': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'sales': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'branches': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'users': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'role_permissions': { can_view: true, can_create: true, can_edit: true, can_delete: true }
-        };
-        setPermissions(superAdminPermissions);
-        return;
-      }
-
-      // For admin, manager, and staff roles, use default permissions based on role
-      let defaultPermissions: UserPermissions = {};
-
-      if (actualRole === 'admin') {
-        defaultPermissions = {
-          'dashboard': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'customers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'work_process': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'survey': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'sales': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-          'branches': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-          'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'users': { can_view: true, can_create: true, can_edit: true, can_delete: false }
-        };
-      } else if (actualRole === 'manager') {
-        defaultPermissions = {
-          'dashboard': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'customers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'work_process': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'survey': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'sales': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-          'branches': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-          'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-          'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true }
-        };
-      } else if (actualRole === 'staff') {
-        defaultPermissions = {
-          'dashboard': { can_view: true, can_create: false, can_edit: false, can_delete: false },
-          'customers': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-          'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-          'work_process': { can_view: true, can_create: false, can_edit: true, can_delete: false },
-          'survey': { can_view: true, can_create: true, can_edit: true, can_delete: false }
-        };
-      }
+      // Get default permissions based on role
+      const defaultPermissions = getDefaultPermissions(actualRole);
+      console.log('Setting default permissions for role:', actualRole, defaultPermissions);
 
       // Try to fetch role permissions from database
       const { data: rolePermissions, error } = await supabase
@@ -174,12 +166,12 @@ export const useUserPermissions = () => {
 
       console.log('Role permissions from database:', rolePermissions);
 
-      // If database has permissions, use them, otherwise use defaults
+      // If database has permissions, merge them with defaults
       if (rolePermissions && rolePermissions.length > 0) {
-        const userPermissions: UserPermissions = {};
+        const dbPermissions: UserPermissions = {};
         rolePermissions.forEach(rp => {
           if (rp.permissions && 'name' in rp.permissions) {
-            userPermissions[rp.permissions.name] = {
+            dbPermissions[rp.permissions.name] = {
               can_view: rp.can_view,
               can_create: rp.can_create,
               can_edit: rp.can_edit,
@@ -188,8 +180,10 @@ export const useUserPermissions = () => {
           }
         });
         
-        console.log('Using database permissions:', userPermissions);
-        setPermissions(userPermissions);
+        // Merge database permissions with defaults (defaults as fallback)
+        const finalPermissions = { ...defaultPermissions, ...dbPermissions };
+        console.log('Using merged permissions:', finalPermissions);
+        setPermissions(finalPermissions);
       } else {
         console.log('No database permissions found, using defaults:', defaultPermissions);
         setPermissions(defaultPermissions);
@@ -197,13 +191,8 @@ export const useUserPermissions = () => {
     } catch (error) {
       console.error('Error fetching user permissions:', error);
       // Set basic permissions for staff as fallback
-      setPermissions({
-        'dashboard': { can_view: true, can_create: false, can_edit: false, can_delete: false },
-        'customers': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-        'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-        'work_process': { can_view: true, can_create: false, can_edit: true, can_delete: false },
-        'survey': { can_view: true, can_create: true, can_edit: true, can_delete: false }
-      });
+      const fallbackPermissions = getDefaultPermissions('staff');
+      setPermissions(fallbackPermissions);
     } finally {
       setLoading(false);
     }
@@ -226,13 +215,18 @@ export const useUserPermissions = () => {
       return false;
     }
 
-    switch (action) {
-      case 'view': return permission.can_view;
-      case 'create': return permission.can_create;
-      case 'edit': return permission.can_edit;
-      case 'delete': return permission.can_delete;
-      default: return false;
-    }
+    const hasAccess = (() => {
+      switch (action) {
+        case 'view': return permission.can_view;
+        case 'create': return permission.can_create;
+        case 'edit': return permission.can_edit;
+        case 'delete': return permission.can_delete;
+        default: return false;
+      }
+    })();
+
+    console.log(`Permission check: ${permissionName} (${action}) = ${hasAccess}`);
+    return hasAccess;
   };
 
   return {

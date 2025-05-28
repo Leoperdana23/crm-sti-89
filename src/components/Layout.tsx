@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Outlet, Link, useLocation } from 'react-router-dom';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, LogOut, UserCog, Settings, Shield, Wrench, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
@@ -11,6 +11,7 @@ import { getRoleLabel } from '@/utils/permissionLabels';
 
 const Layout = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const { user, signOut } = useAuth();
   const { hasPermission, userRole, loading } = useUserPermissions();
 
@@ -80,7 +81,15 @@ const Layout = () => {
   console.log('Filtered navigation items:', navigation.map(n => n.name));
 
   const handleLogout = async () => {
-    await signOut();
+    try {
+      await signOut();
+      // Force page refresh after logout
+      window.location.href = '/auth';
+    } catch (error) {
+      console.error('Logout error:', error);
+      // Force refresh even if there's an error
+      window.location.href = '/auth';
+    }
   };
 
   if (loading) {

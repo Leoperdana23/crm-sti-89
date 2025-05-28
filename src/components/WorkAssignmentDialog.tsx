@@ -40,11 +40,7 @@ const WorkAssignmentDialog: React.FC<WorkAssignmentDialogProps> = ({
   };
 
   const handleSubmit = () => {
-    if (selectedEmployees.length === 0) {
-      alert('Pilih minimal 1 karyawan');
-      return;
-    }
-    
+    // Work notes is still required, but employees can be empty
     if (!workNotes.trim()) {
       alert('Catatan pekerjaan harus diisi');
       return;
@@ -101,7 +97,8 @@ const WorkAssignmentDialog: React.FC<WorkAssignmentDialogProps> = ({
 
           {/* Employee Selection */}
           <div>
-            <h4 className="font-medium mb-3">Pilih Karyawan:</h4>
+            <h4 className="font-medium mb-3">Pilih Karyawan (Opsional):</h4>
+            <p className="text-sm text-gray-600 mb-3">Anda dapat mengassign karyawan sekarang atau nanti</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto border rounded-lg p-4">
               {sales.map((employee) => (
                 <div key={employee.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
@@ -158,7 +155,7 @@ const WorkAssignmentDialog: React.FC<WorkAssignmentDialogProps> = ({
             </Button>
             <Button onClick={handleSubmit} className="bg-green-600 hover:bg-green-700">
               <UserPlus className="h-4 w-4 mr-2" />
-              Assign Karyawan
+              Simpan Assignment
             </Button>
           </div>
         </div>
