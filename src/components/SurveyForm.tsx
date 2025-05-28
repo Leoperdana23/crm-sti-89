@@ -10,7 +10,7 @@ import { Customer, Survey } from '@/types/customer';
 
 interface SurveyFormProps {
   customer: Customer;
-  onSubmit: (surveyData: Omit<Survey, 'id' | 'isCompleted' | 'completedAt'>) => Promise<void>;
+  onSubmit: (surveyData: Omit<Survey, 'id' | 'isCompleted' | 'completedAt' | 'surveyToken'>) => Promise<void>;
   onCancel: () => void;
 }
 

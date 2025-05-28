@@ -15,18 +15,28 @@ interface PublicSurveyFormProps {
   isCompleted?: boolean;
 }
 
+interface FormData {
+  serviceTechnician: number;
+  serviceSales: number;
+  productQuality: number;
+  usageClarity: number;
+  priceApproval: boolean;
+  testimonial: string;
+  suggestions: string;
+}
+
 const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({ 
   survey, 
   customerName, 
   onSubmit, 
   isCompleted = false 
 }) => {
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     serviceTechnician: survey.serviceTechnician || 5,
     serviceSales: survey.serviceSales || 5,
     productQuality: survey.productQuality || 5,
     usageClarity: survey.usageClarity || 5,
-    priceApproval: survey.priceApproval || true,
+    priceApproval: survey.priceApproval !== undefined ? survey.priceApproval : true,
     testimonial: survey.testimonial || '',
     suggestions: survey.suggestions || ''
   });
@@ -47,7 +57,7 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
     }
   };
 
-  const renderRatingScale = (field: keyof typeof formData, label: string) => {
+  const renderRatingScale = (field: keyof FormData, label: string) => {
     if (typeof formData[field] !== 'number') return null;
     
     return (
