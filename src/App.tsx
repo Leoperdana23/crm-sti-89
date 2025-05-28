@@ -29,6 +29,7 @@ function App() {
         <Routes>
           <Route path="/auth" element={<Auth />} />
           <Route path="/survey/:token" element={<PublicSurvey />} />
+          <Route path="/public-survey/:token" element={<PublicSurvey />} />
           <Route path="/" element={
             <ProtectedRoute>
               <Layout />
