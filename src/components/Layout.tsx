@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, User, Shield, LogOut } from 'lucide-react';
+import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, User, Shield, LogOut, UserCog } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { Button } from '@/components/ui/button';
@@ -15,6 +15,7 @@ const Layout = () => {
     { name: 'Pelanggan', href: '/customers', icon: Users },
     { name: 'Follow-Up', href: '/follow-up', icon: UserCheck },
     { name: 'Survei', href: '/survey', icon: MessageSquare },
+    { name: 'Sales', href: '/sales', icon: UserCog },
     { name: 'Cabang', href: '/branches', icon: Building },
     { name: 'Laporan', href: '/reports', icon: FileText },
     { name: 'Master User', href: '/users', icon: User },
