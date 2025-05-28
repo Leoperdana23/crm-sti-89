@@ -5,9 +5,9 @@ export interface Sales {
   code: string;
   phone?: string;
   email?: string;
-  branchId?: string;
-  isActive: boolean;
-  passwordHash?: string;
-  createdAt: string;
-  updatedAt: string;
+  branch_id?: string;
+  is_active: boolean;
+  password_hash?: string;
+  created_at: string;
+  updated_at: string;
 }

@@ -1,49 +1,50 @@
+
 export interface Customer {
   id: string;
   name: string;
   phone: string;
   address: string;
-  birthDate: string;
-  idNumber: string;
+  birth_date: string;
+  id_number: string;
   needs?: string;
   notes?: string;
   status: 'Prospek' | 'Follow-up' | 'Deal' | 'Tidak Jadi';
-  createdAt: string;
-  updatedAt: string;
-  dealDate?: string;
-  surveyStatus?: 'sudah_disurvei' | 'belum_disurvei';
-  branchId?: string;
-  salesId?: string;
+  created_at: string;
+  updated_at: string;
+  deal_date?: string;
+  survey_status?: 'sudah_disurvei' | 'belum_disurvei';
+  branch_id?: string;
+  sales_id?: string;
   interactions: Interaction[];
-  workStatus?: 'not_started' | 'in_progress' | 'completed';
-  workStartDate?: string;
-  workCompletedDate?: string;
-  workNotes?: string;
-  estimatedDays?: number;
-  assignedEmployees?: string[];
+  work_status?: 'not_started' | 'in_progress' | 'completed';
+  work_start_date?: string;
+  work_completed_date?: string;
+  work_notes?: string;
+  estimated_days?: number;
+  assigned_employees?: string[];
 }
 
 export interface Interaction {
   id: string;
-  customerId: string;
+  customer_id: string;
   type: 'call' | 'whatsapp' | 'email' | 'meeting';
   notes: string;
   date: string;
-  followUpDate?: string;
+  follow_up_date?: string;
 }
 
 export interface Survey {
   id: string;
-  customerId: string;
-  dealDate: string;
-  serviceTechnician: number;
-  serviceSales: number;
-  productQuality: number;
-  usageClarity: number;
-  priceApproval: boolean;
+  customer_id: string;
+  deal_date: string;
+  service_technician: number;
+  service_sales: number;
+  product_quality: number;
+  usage_clarity: number;
+  price_approval: boolean;
   testimonial: string;
   suggestions: string;
-  isCompleted: boolean;
-  completedAt?: string;
-  surveyToken: string;
+  is_completed: boolean;
+  completed_at?: string;
+  survey_token: string;
 }

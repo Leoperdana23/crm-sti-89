@@ -5,7 +5,7 @@ export interface Branch {
   code: string;
   address?: string;
   phone?: string;
-  managerName?: string;
-  createdAt: string;
-  updatedAt: string;
+  manager_name?: string;
+  created_at: string;
+  updated_at: string;
 }
