@@ -720,6 +720,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      authenticate_app_user: {
+        Args: { email_input: string; password_input: string }
+        Returns: Json
+      }
       authenticate_sales_user: {
         Args: { email_input: string; password_input: string }
         Returns: Json
