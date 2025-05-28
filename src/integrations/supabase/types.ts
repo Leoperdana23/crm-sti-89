@@ -515,6 +515,59 @@ export type Database = {
         }
         Relationships: []
       }
+      resellers: {
+        Row: {
+          address: string
+          birth_date: string | null
+          branch_id: string | null
+          created_at: string
+          email: string | null
+          id: string
+          id_number: string | null
+          is_active: boolean
+          name: string
+          notes: string | null
+          phone: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          birth_date?: string | null
+          branch_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          id_number?: string | null
+          is_active?: boolean
+          name: string
+          notes?: string | null
+          phone: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          birth_date?: string | null
+          branch_id?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          id_number?: string | null
+          is_active?: boolean
+          name?: string
+          notes?: string | null
+          phone?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "resellers_branch_id_fkey"
+            columns: ["branch_id"]
+            isOneToOne: false
+            referencedRelation: "branches"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           can_create: boolean

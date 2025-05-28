@@ -1,0 +1,31 @@
+
+export interface Reseller {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  birth_date?: string;
+  email?: string;
+  id_number?: string;
+  notes?: string;
+  branch_id?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateResellerData {
+  name: string;
+  phone: string;
+  address: string;
+  birth_date?: string;
+  email?: string;
+  id_number?: string;
+  notes?: string;
+  branch_id?: string;
+  is_active?: boolean;
+}
+
+export interface UpdateResellerData extends Partial<CreateResellerData> {
+  id: string;
+}

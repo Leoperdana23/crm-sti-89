@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Outlet, Link, useLocation } from 'react-router-dom';
-import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, LogOut, UserCog, Settings, Shield, Wrench } from 'lucide-react';
+import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, LogOut, UserCog, Settings, Shield, Wrench, Store } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { usePermissions } from '@/hooks/usePermissions';
@@ -35,6 +34,7 @@ const Layout = () => {
     { name: 'Survei', href: '/survey', icon: MessageSquare, permission: 'survey' },
     { name: 'Karyawan', href: '/sales', icon: UserCog, permission: 'sales' },
     { name: 'Cabang', href: '/branches', icon: Building, permission: 'branches' },
+    { name: 'Reseller', href: '/resellers', icon: Store, permission: 'resellers' },
     { name: 'Laporan', href: '/reports', icon: FileText, permission: 'reports' },
     { name: 'Master User', href: '/users', icon: Settings, permission: 'users' },
     { name: 'Hak Akses Role', href: '/role-permissions', icon: Shield, permission: 'role_permissions' },

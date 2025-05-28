@@ -1,4 +1,4 @@
-
+import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
@@ -12,6 +12,7 @@ import WorkProcess from '@/pages/WorkProcess';
 import Survey from '@/pages/Survey';
 import Sales from '@/pages/Sales';
 import Branches from '@/pages/Branches';
+import Resellers from '@/pages/Resellers';
 import Reports from '@/pages/Reports';
 import Users from '@/pages/Users';
 import RolePermissions from '@/pages/RolePermissions';
@@ -43,6 +44,7 @@ function App() {
             <Route path="survey" element={<Survey />} />
             <Route path="sales" element={<Sales />} />
             <Route path="branches" element={<Branches />} />
+            <Route path="resellers" element={<Resellers />} />
             <Route path="reports" element={<Reports />} />
             <Route path="users" element={<Users />} />
             <Route path="role-permissions" element={<RolePermissions />} />
