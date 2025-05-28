@@ -1,0 +1,98 @@
+
+import React from 'react';
+import { Card, CardHeader, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Phone, MapPin, Calendar, Edit, Trash2 } from 'lucide-react';
+import { Customer } from '@/types/customer';
+
+interface CustomerCardProps {
+  customer: Customer;
+  onEdit: (customer: Customer) => void;
+  onDelete: (id: string) => void;
+  onWhatsApp: (phone: string) => void;
+}
+
+const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onEdit, onDelete, onWhatsApp }) => {
+  const getStatusColor = (status: string) => {
+    switch (status) {
+      case 'Prospek': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
+      case 'Follow-up': return 'bg-blue-100 text-blue-800 border-blue-200';
+      case 'Deal': return 'bg-green-100 text-green-800 border-green-200';
+      case 'Tidak Jadi': return 'bg-red-100 text-red-800 border-red-200';
+      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    }
+  };
+
+  return (
+    <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <h3 className="font-semibold text-lg text-gray-900">{customer.name}</h3>
+            <Badge className={getStatusColor(customer.status)}>
+              {customer.status}
+            </Badge>
+          </div>
+          <div className="flex space-x-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onEdit(customer)}
+              className="text-blue-600 hover:bg-blue-50"
+            >
+              <Edit className="h-4 w-4" />
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onDelete(customer.id)}
+              className="text-red-600 hover:bg-red-50"
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        </div>
+      </CardHeader>
+      
+      <CardContent className="space-y-3">
+        <div className="flex items-center text-sm text-gray-600">
+          <Phone className="h-4 w-4 mr-2" />
+          <span>{customer.phone}</span>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => onWhatsApp(customer.phone)}
+            className="ml-2 text-green-600 hover:bg-green-50"
+          >
+            WA
+          </Button>
+        </div>
+        
+        <div className="flex items-center text-sm text-gray-600">
+          <MapPin className="h-4 w-4 mr-2" />
+          <span className="truncate">{customer.address}</span>
+        </div>
+        
+        <div className="flex items-center text-sm text-gray-600">
+          <Calendar className="h-4 w-4 mr-2" />
+          <span>{new Date(customer.birthDate).toLocaleDateString('id-ID')}</span>
+        </div>
+        
+        {customer.needs && (
+          <div className="text-sm text-gray-600">
+            <strong>Kebutuhan:</strong> {customer.needs}
+          </div>
+        )}
+        
+        {customer.notes && (
+          <div className="text-sm text-gray-600">
+            <strong>Catatan:</strong> {customer.notes}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+export default CustomerCard;
