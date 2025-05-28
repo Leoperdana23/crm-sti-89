@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { Plus, Search, Filter, Users } from 'lucide-react';
+import { Plus, Search, Filter, Users, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -11,7 +12,7 @@ import { Customer } from '@/types/customer';
 import { useToast } from '@/hooks/use-toast';
 
 const Customers = () => {
-  const { customers, addCustomer, updateCustomer, deleteCustomer } = useCustomers();
+  const { customers, loading, addCustomer, updateCustomer, deleteCustomer } = useCustomers();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingCustomer, setEditingCustomer] = useState<Customer | null>(null);
@@ -25,22 +26,30 @@ const Customers = () => {
     return matchesSearch && matchesStatus;
   });
 
-  const handleSubmit = (data: any) => {
-    if (editingCustomer) {
-      updateCustomer(editingCustomer.id, data);
+  const handleSubmit = async (data: any) => {
+    try {
+      if (editingCustomer) {
+        await updateCustomer(editingCustomer.id, data);
+        toast({
+          title: "Berhasil",
+          description: "Data pelanggan berhasil diperbarui",
+        });
+      } else {
+        await addCustomer(data);
+        toast({
+          title: "Berhasil",
+          description: "Pelanggan baru berhasil ditambahkan",
+        });
+      }
+      setIsFormOpen(false);
+      setEditingCustomer(null);
+    } catch (error) {
       toast({
-        title: "Berhasil",
-        description: "Data pelanggan berhasil diperbarui",
-      });
-    } else {
-      addCustomer(data);
-      toast({
-        title: "Berhasil",
-        description: "Pelanggan baru berhasil ditambahkan",
+        title: "Error",
+        description: "Terjadi kesalahan. Silakan coba lagi.",
+        variant: "destructive"
       });
     }
-    setIsFormOpen(false);
-    setEditingCustomer(null);
   };
 
   const handleEdit = (customer: Customer) => {
@@ -48,13 +57,21 @@ const Customers = () => {
     setIsFormOpen(true);
   };
 
-  const handleDelete = (id: string) => {
+  const handleDelete = async (id: string) => {
     if (confirm('Yakin ingin menghapus pelanggan ini?')) {
-      deleteCustomer(id);
-      toast({
-        title: "Berhasil",
-        description: "Pelanggan berhasil dihapus",
-      });
+      try {
+        await deleteCustomer(id);
+        toast({
+          title: "Berhasil",
+          description: "Pelanggan berhasil dihapus",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Terjadi kesalahan saat menghapus pelanggan.",
+          variant: "destructive"
+        });
+      }
     }
   };
 
@@ -63,6 +80,17 @@ const Customers = () => {
     const whatsappPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
     window.open(`https://wa.me/${whatsappPhone}`, '_blank');
   };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="flex items-center space-x-2">
+          <Loader2 className="h-6 w-6 animate-spin" />
+          <span>Memuat data pelanggan...</span>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

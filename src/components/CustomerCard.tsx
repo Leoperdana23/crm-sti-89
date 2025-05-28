@@ -24,6 +24,14 @@ const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onEdit, onDelete,
     }
   };
 
+  const formatDate = (dateString: string) => {
+    try {
+      return new Date(dateString).toLocaleDateString('id-ID');
+    } catch (error) {
+      return dateString;
+    }
+  };
+
   return (
     <Card className="hover:shadow-lg transition-all duration-300 border-l-4 border-l-blue-500">
       <CardHeader className="pb-3">
@@ -76,7 +84,7 @@ const CustomerCard: React.FC<CustomerCardProps> = ({ customer, onEdit, onDelete,
         
         <div className="flex items-center text-sm text-gray-600">
           <Calendar className="h-4 w-4 mr-2" />
-          <span>{new Date(customer.birthDate).toLocaleDateString('id-ID')}</span>
+          <span>{formatDate(customer.birthDate)}</span>
         </div>
         
         {customer.needs && (

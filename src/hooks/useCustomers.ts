@@ -1,80 +1,155 @@
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { supabase } from '@/integrations/supabase/client';
 import { Customer } from '@/types/customer';
 
-const initialCustomers: Customer[] = [
-  {
-    id: '1',
-    name: 'Ahmad Rizki',
-    phone: '081234567890',
-    address: 'Jl. Sudirman No. 123, Jakarta Selatan',
-    birthDate: '1985-05-15',
-    idNumber: '3175051505850001',
-    needs: 'Sistem CCTV untuk rumah',
-    notes: 'Tertarik dengan paket premium',
-    status: 'Follow-up',
-    createdAt: '2024-01-15',
-    updatedAt: '2024-01-20',
-    interactions: []
-  },
-  {
-    id: '2',
-    name: 'Siti Nurhaliza',
-    phone: '082345678901',
-    address: 'Jl. Gatot Subroto No. 456, Jakarta Pusat',
-    birthDate: '1990-08-22',
-    idNumber: '3175082290900002',
-    needs: 'Alarm system untuk toko',
-    notes: 'Budget terbatas, perlu penawaran khusus',
-    status: 'Prospek',
-    createdAt: '2024-01-10',
-    updatedAt: '2024-01-10',
-    interactions: []
-  },
-  {
-    id: '3',
-    name: 'Budi Santoso',
-    phone: '083456789012',
-    address: 'Jl. Thamrin No. 789, Jakarta Pusat',
-    birthDate: '1982-12-03',
-    idNumber: '3175120382820003',
-    needs: 'Access control dan CCTV kantor',
-    notes: 'Deal closed, instalasi minggu depan',
-    status: 'Deal',
-    createdAt: '2024-01-05',
-    updatedAt: '2024-01-25',
-    dealDate: '2024-01-25',
-    interactions: []
-  }
-];
-
 export const useCustomers = () => {
-  const [customers, setCustomers] = useState<Customer[]>(initialCustomers);
+  const [customers, setCustomers] = useState<Customer[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const addCustomer = (customerData: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'interactions'>) => {
-    const newCustomer: Customer = {
-      ...customerData,
-      id: Date.now().toString(),
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-      interactions: []
-    };
-    setCustomers(prev => [newCustomer, ...prev]);
-    return newCustomer;
+  const fetchCustomers = async () => {
+    try {
+      setLoading(true);
+      const { data, error } = await supabase
+        .from('customers')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching customers:', error);
+        return;
+      }
+
+      // Transform the data to match our Customer interface
+      const transformedCustomers: Customer[] = (data || []).map(customer => ({
+        ...customer,
+        birthDate: customer.birth_date,
+        idNumber: customer.id_number,
+        createdAt: customer.created_at,
+        updatedAt: customer.updated_at,
+        dealDate: customer.deal_date,
+        interactions: [] // We'll load interactions separately if needed
+      }));
+
+      setCustomers(transformedCustomers);
+    } catch (error) {
+      console.error('Error in fetchCustomers:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const updateCustomer = (id: string, updates: Partial<Customer>) => {
-    setCustomers(prev => 
-      prev.map(customer => 
-        customer.id === id 
-          ? { ...customer, ...updates, updatedAt: new Date().toISOString() }
-          : customer
-      )
-    );
+  useEffect(() => {
+    fetchCustomers();
+  }, []);
+
+  const addCustomer = async (customerData: Omit<Customer, 'id' | 'createdAt' | 'updatedAt' | 'interactions'>) => {
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .insert({
+          name: customerData.name,
+          phone: customerData.phone,
+          address: customerData.address,
+          birth_date: customerData.birthDate,
+          id_number: customerData.idNumber,
+          needs: customerData.needs,
+          notes: customerData.notes,
+          status: customerData.status,
+          deal_date: customerData.dealDate
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error adding customer:', error);
+        throw error;
+      }
+
+      if (data) {
+        const newCustomer: Customer = {
+          ...data,
+          birthDate: data.birth_date,
+          idNumber: data.id_number,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+          dealDate: data.deal_date,
+          interactions: []
+        };
+        
+        setCustomers(prev => [newCustomer, ...prev]);
+        return newCustomer;
+      }
+    } catch (error) {
+      console.error('Error in addCustomer:', error);
+      throw error;
+    }
   };
 
-  const deleteCustomer = (id: string) => {
-    setCustomers(prev => prev.filter(customer => customer.id !== id));
+  const updateCustomer = async (id: string, updates: Partial<Customer>) => {
+    try {
+      const { data, error } = await supabase
+        .from('customers')
+        .update({
+          name: updates.name,
+          phone: updates.phone,
+          address: updates.address,
+          birth_date: updates.birthDate,
+          id_number: updates.idNumber,
+          needs: updates.needs,
+          notes: updates.notes,
+          status: updates.status,
+          deal_date: updates.dealDate
+        })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating customer:', error);
+        throw error;
+      }
+
+      if (data) {
+        const updatedCustomer: Customer = {
+          ...data,
+          birthDate: data.birth_date,
+          idNumber: data.id_number,
+          createdAt: data.created_at,
+          updatedAt: data.updated_at,
+          dealDate: data.deal_date,
+          interactions: []
+        };
+
+        setCustomers(prev => 
+          prev.map(customer => 
+            customer.id === id ? updatedCustomer : customer
+          )
+        );
+      }
+    } catch (error) {
+      console.error('Error in updateCustomer:', error);
+      throw error;
+    }
+  };
+
+  const deleteCustomer = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('customers')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting customer:', error);
+        throw error;
+      }
+
+      setCustomers(prev => prev.filter(customer => customer.id !== id));
+    } catch (error) {
+      console.error('Error in deleteCustomer:', error);
+      throw error;
+    }
   };
 
   const getCustomersByStatus = (status: Customer['status']) => {
@@ -93,10 +168,12 @@ export const useCustomers = () => {
 
   return {
     customers,
+    loading,
     addCustomer,
     updateCustomer,
     deleteCustomer,
     getCustomersByStatus,
-    getStats
+    getStats,
+    refreshCustomers: fetchCustomers
   };
 };

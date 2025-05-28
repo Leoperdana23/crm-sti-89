@@ -9,7 +9,145 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      customers: {
+        Row: {
+          address: string
+          birth_date: string
+          created_at: string
+          deal_date: string | null
+          id: string
+          id_number: string
+          name: string
+          needs: string | null
+          notes: string | null
+          phone: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          birth_date: string
+          created_at?: string
+          deal_date?: string | null
+          id?: string
+          id_number: string
+          name: string
+          needs?: string | null
+          notes?: string | null
+          phone: string
+          status: string
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          birth_date?: string
+          created_at?: string
+          deal_date?: string | null
+          id?: string
+          id_number?: string
+          name?: string
+          needs?: string | null
+          notes?: string | null
+          phone?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      interactions: {
+        Row: {
+          created_at: string
+          customer_id: string
+          date: string
+          follow_up_date: string | null
+          id: string
+          notes: string
+          type: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id: string
+          date?: string
+          follow_up_date?: string | null
+          id?: string
+          notes: string
+          type: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string
+          date?: string
+          follow_up_date?: string | null
+          id?: string
+          notes?: string
+          type?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "interactions_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      surveys: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          customer_id: string
+          deal_date: string
+          id: string
+          is_completed: boolean
+          price_approval: boolean
+          product_quality: number
+          service_sales: number
+          service_technician: number
+          suggestions: string | null
+          testimonial: string | null
+          usage_clarity: number
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          customer_id: string
+          deal_date: string
+          id?: string
+          is_completed?: boolean
+          price_approval: boolean
+          product_quality: number
+          service_sales: number
+          service_technician: number
+          suggestions?: string | null
+          testimonial?: string | null
+          usage_clarity: number
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          customer_id?: string
+          deal_date?: string
+          id?: string
+          is_completed?: boolean
+          price_approval?: boolean
+          product_quality?: number
+          service_sales?: number
+          service_technician?: number
+          suggestions?: string | null
+          testimonial?: string | null
+          usage_clarity?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "surveys_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
