@@ -135,7 +135,7 @@ const Branches = () => {
                   <TableCell>{branch.code}</TableCell>
                   <TableCell>{branch.address || '-'}</TableCell>
                   <TableCell>{branch.phone || '-'}</TableCell>
-                  <TableCell>{branch.managerName || '-'}</TableCell>
+                  <TableCell>{branch.manager_name || '-'}</TableCell>
                   <TableCell>
                     <div className="flex space-x-2">
                       <Button

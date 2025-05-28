@@ -13,7 +13,7 @@ import { useSurveys } from '@/hooks/useSurveys';
 import { useBranches } from '@/hooks/useBranches';
 import { useSales } from '@/hooks/useSales';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
-import { format, isAfter, isBefore, startOfDay, endOfDay, startOfMonth, endOfMonth } from 'date-fns';
+import { format, isAfter, isBefore, startOfDay, endOfDay, startOfMonth, endOfMonth, isValid } from 'date-fns';
 import { cn } from '@/lib/utils';
 
 const Reports = () => {
@@ -56,8 +56,11 @@ const Reports = () => {
       }
 
       return items.filter(item => {
-        const itemDate = new Date(item.createdAt || item.created_at || item.dealDate || item.deal_date);
-        return itemDate >= filterStartDate;
+        const dateValue = item.created_at || item.deal_date;
+        if (!dateValue) return false;
+        
+        const itemDate = new Date(dateValue);
+        return isValid(itemDate) && itemDate >= filterStartDate;
       });
     } else if (dateFilterType === 'month') {
       // Filter by selected month
@@ -65,8 +68,11 @@ const Reports = () => {
       const monthEnd = endOfMonth(selectedMonth);
       
       return items.filter(item => {
-        const itemDate = new Date(item.createdAt || item.created_at || item.dealDate || item.deal_date);
-        return itemDate >= monthStart && itemDate <= monthEnd;
+        const dateValue = item.created_at || item.deal_date;
+        if (!dateValue) return false;
+        
+        const itemDate = new Date(dateValue);
+        return isValid(itemDate) && itemDate >= monthStart && itemDate <= monthEnd;
       });
     } else if (dateFilterType === 'custom' && startDate && endDate) {
       // Filter by custom date range
@@ -74,8 +80,11 @@ const Reports = () => {
       const rangeEnd = endOfDay(endDate);
       
       return items.filter(item => {
-        const itemDate = new Date(item.createdAt || item.created_at || item.dealDate || item.deal_date);
-        return itemDate >= rangeStart && itemDate <= rangeEnd;
+        const dateValue = item.created_at || item.deal_date;
+        if (!dateValue) return false;
+        
+        const itemDate = new Date(dateValue);
+        return isValid(itemDate) && itemDate >= rangeStart && itemDate <= rangeEnd;
       });
     }
     
@@ -86,7 +95,7 @@ const Reports = () => {
   const filteredCustomers = useMemo(() => {
     let filtered = selectedBranch === 'all' 
       ? customers 
-      : customers.filter(c => c.branchId === selectedBranch);
+      : customers.filter(c => c.branch_id === selectedBranch);
     
     return filterDataByDate(filtered);
   }, [customers, selectedBranch, dateFilterType, timeFilter, selectedMonth, startDate, endDate]);
@@ -102,9 +111,9 @@ const Reports = () => {
   // Work Process Analytics
   const getWorkProcessStats = () => {
     const dealCustomers = filteredCustomers.filter(c => c.status === 'Deal');
-    const notStarted = dealCustomers.filter(c => !c.workStatus || c.workStatus === 'not_started').length;
-    const inProgress = dealCustomers.filter(c => c.workStatus === 'in_progress').length;
-    const completed = dealCustomers.filter(c => c.workStatus === 'completed').length;
+    const notStarted = dealCustomers.filter(c => !c.work_status || c.work_status === 'not_started').length;
+    const inProgress = dealCustomers.filter(c => c.work_status === 'in_progress').length;
+    const completed = dealCustomers.filter(c => c.work_status === 'completed').length;
     
     return {
       total: dealCustomers.length,
@@ -121,24 +130,24 @@ const Reports = () => {
   const getWorkDurationAnalysis = () => {
     const completedWork = filteredCustomers.filter(c => 
       c.status === 'Deal' && 
-      c.workStatus === 'completed' && 
-      c.workStartDate && 
-      c.workCompletedDate
+      c.work_status === 'completed' && 
+      c.work_start_date && 
+      c.work_completed_date
     );
 
     const durationData = completedWork.map(customer => {
-      const startDate = new Date(customer.workStartDate!);
-      const endDate = new Date(customer.workCompletedDate!);
+      const startDate = new Date(customer.work_start_date!);
+      const endDate = new Date(customer.work_completed_date!);
       const durationInDays = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
       
       return {
         id: customer.id,
         name: customer.name,
-        estimatedDays: customer.estimatedDays || 0,
+        estimatedDays: customer.estimated_days || 0,
         actualDays: durationInDays,
-        variance: durationInDays - (customer.estimatedDays || 0),
-        onTime: durationInDays <= (customer.estimatedDays || 0),
-        branchName: branches.find(b => b.id === customer.branchId)?.name || 'Unknown'
+        variance: durationInDays - (customer.estimated_days || 0),
+        onTime: durationInDays <= (customer.estimated_days || 0),
+        branchName: branches.find(b => b.id === customer.branch_id)?.name || 'Unknown'
       };
     });
 
@@ -164,9 +173,9 @@ const Reports = () => {
   // Survey Readiness Analysis
   const getSurveyReadinessStats = () => {
     const dealCustomers = filteredCustomers.filter(c => c.status === 'Deal');
-    const readyForSurvey = dealCustomers.filter(c => c.workStatus === 'completed');
-    const completedSurveys = filteredSurveys.filter(s => s.isCompleted);
-    const pendingSurveys = readyForSurvey.filter(c => !completedSurveys.find(s => s.customerId === c.id));
+    const readyForSurvey = dealCustomers.filter(c => c.work_status === 'completed');
+    const completedSurveys = filteredSurveys.filter(s => s.is_completed);
+    const pendingSurveys = readyForSurvey.filter(c => !completedSurveys.find(s => s.customer_id === c.id));
 
     return {
       totalDeal: dealCustomers.length,
@@ -184,7 +193,7 @@ const Reports = () => {
   // Data untuk sales performance chart
   const getSalesPerformanceData = () => {
     const salesPerformance = sales.map(salesPerson => {
-      let salesCustomers = filteredCustomers.filter(c => c.salesId === salesPerson.id);
+      let salesCustomers = filteredCustomers.filter(c => c.sales_id === salesPerson.id);
 
       const totalCustomers = salesCustomers.length;
       const prospek = salesCustomers.filter(c => c.status === 'Prospek').length;
@@ -202,7 +211,7 @@ const Reports = () => {
         Deal: deal,
         'Tidak Jadi': tidakJadi,
         'Conversion Rate': conversionRate,
-        branch: branches.find(b => b.id === salesPerson.branchId)?.name || 'Tidak ada cabang'
+        branch: branches.find(b => b.id === salesPerson.branch_id)?.name || 'Tidak ada cabang'
       };
     }).filter(sales => sales.totalCustomers > 0);
 
@@ -213,7 +222,7 @@ const Reports = () => {
 
   // Data untuk chart konversi pelanggan
   const conversionData = branches.map(branch => {
-    const branchCustomers = filteredCustomers.filter(c => c.branchId === branch.id);
+    const branchCustomers = filteredCustomers.filter(c => c.branch_id === branch.id);
     const total = branchCustomers.length;
     const prospek = branchCustomers.filter(c => c.status === 'Prospek').length;
     const followUp = branchCustomers.filter(c => c.status === 'Follow-up').length;
@@ -248,8 +257,11 @@ const Reports = () => {
       const monthKey = date.toISOString().slice(0, 7); // YYYY-MM format
       
       const monthCustomers = filteredCustomers.filter(customer => {
-        const customerDate = new Date(customer.createdAt);
-        return customerDate.toISOString().slice(0, 7) === monthKey;
+        const dateValue = customer.created_at;
+        if (!dateValue) return false;
+        
+        const customerDate = new Date(dateValue);
+        return isValid(customerDate) && customerDate.toISOString().slice(0, 7) === monthKey;
       });
 
       last6Months.push({
@@ -265,10 +277,10 @@ const Reports = () => {
 
   // Work Process Chart Data
   const workProcessData = branches.map(branch => {
-    const branchCustomers = filteredCustomers.filter(c => c.branchId === branch.id && c.status === 'Deal');
-    const notStarted = branchCustomers.filter(c => !c.workStatus || c.workStatus === 'not_started').length;
-    const inProgress = branchCustomers.filter(c => c.workStatus === 'in_progress').length;
-    const completed = branchCustomers.filter(c => c.workStatus === 'completed').length;
+    const branchCustomers = filteredCustomers.filter(c => c.branch_id === branch.id && c.status === 'Deal');
+    const notStarted = branchCustomers.filter(c => !c.work_status || c.work_status === 'not_started').length;
+    const inProgress = branchCustomers.filter(c => c.work_status === 'in_progress').length;
+    const completed = branchCustomers.filter(c => c.work_status === 'completed').length;
     
     return {
       branch: branch.code,
@@ -281,32 +293,32 @@ const Reports = () => {
 
   // Data untuk tabel detail survei per pelanggan
   const detailedSurveyData = React.useMemo(() => {
-    const completedSurveys = filteredSurveys.filter(survey => survey.isCompleted);
+    const completedSurveys = filteredSurveys.filter(survey => survey.is_completed);
     
     return completedSurveys.map(survey => {
-      const customer = customers.find(c => c.id === survey.customerId);
-      const branch = branches.find(b => b.id === customer?.branchId);
+      const customer = customers.find(c => c.id === survey.customer_id);
+      const branch = branches.find(b => b.id === customer?.branch_id);
       
       return {
         ...survey,
         customerName: customer?.name || 'Unknown',
         customerPhone: customer?.phone || '-',
         customerAddress: customer?.address || '-',
-        customerIdNumber: customer?.idNumber || '-',
+        customerIdNumber: customer?.id_number || '-',
         branchName: branch?.name || 'Unknown',
         branchCode: branch?.code || '-',
-        overallRating: ((survey.serviceTechnician + survey.serviceSales + survey.productQuality + survey.usageClarity) / 4).toFixed(1)
+        overallRating: ((survey.service_technician + survey.service_sales + survey.product_quality + survey.usage_clarity) / 4).toFixed(1)
       };
     }).filter(survey => {
       if (selectedBranch === 'all') return true;
-      const customer = customers.find(c => c.id === survey.customerId);
-      return customer?.branchId === selectedBranch;
+      const customer = customers.find(c => c.id === survey.customer_id);
+      return customer?.branch_id === selectedBranch;
     });
   }, [filteredSurveys, customers, branches, selectedBranch]);
 
   const calculateConversionRate = (branch?: string) => {
     const customers = branch 
-      ? filteredCustomers.filter(c => c.branchId === branch)
+      ? filteredCustomers.filter(c => c.branch_id === branch)
       : filteredCustomers;
     
     const total = customers.length;
@@ -437,7 +449,7 @@ const Reports = () => {
             </div>
             <div class="info-row">
               <span class="info-label">Tanggal Deal:</span>
-              <span>${new Date(survey.dealDate).toLocaleDateString('id-ID')}</span>
+              <span>${new Date(survey.deal_date).toLocaleDateString('id-ID')}</span>
             </div>
           </div>
 
@@ -451,26 +463,26 @@ const Reports = () => {
             <div class="rating-grid">
               <div class="rating-item">
                 <strong>Pelayanan Teknisi</strong><br>
-                <span class="rating-score">${survey.serviceTechnician}/10</span>
+                <span class="rating-score">${survey.service_technician}/10</span>
               </div>
               <div class="rating-item">
                 <strong>Pelayanan Sales/CS</strong><br>
-                <span class="rating-score">${survey.serviceSales}/10</span>
+                <span class="rating-score">${survey.service_sales}/10</span>
               </div>
               <div class="rating-item">
                 <strong>Kualitas Produk</strong><br>
-                <span class="rating-score">${survey.productQuality}/10</span>
+                <span class="rating-score">${survey.product_quality}/10</span>
               </div>
               <div class="rating-item">
                 <strong>Kejelasan Penggunaan</strong><br>
-                <span class="rating-score">${survey.usageClarity}/10</span>
+                <span class="rating-score">${survey.usage_clarity}/10</span>
               </div>
             </div>
             
             <div class="info-row">
               <span class="info-label">Persetujuan Harga:</span>
-              <span style="font-weight: bold; color: ${survey.priceApproval ? '#10b981' : '#ef4444'}">
-                ${survey.priceApproval ? 'Ya' : 'Tidak'}
+              <span style="font-weight: bold; color: ${survey.price_approval ? '#10b981' : '#ef4444'}">
+                ${survey.price_approval ? 'Ya' : 'Tidak'}
               </span>
             </div>
           </div>
@@ -518,7 +530,7 @@ const Reports = () => {
               <div><strong>Alamat:</strong> {survey.customerAddress}</div>
               <div><strong>No. KTP:</strong> {survey.customerIdNumber}</div>
               <div><strong>Cabang:</strong> {survey.branchName} ({survey.branchCode})</div>
-              <div><strong>Tanggal Deal:</strong> {new Date(survey.dealDate).toLocaleDateString('id-ID')}</div>
+              <div><strong>Tanggal Deal:</strong> {new Date(survey.deal_date).toLocaleDateString('id-ID')}</div>
             </div>
           </div>
 
@@ -534,26 +546,26 @@ const Reports = () => {
             <div className="grid grid-cols-2 gap-4">
               <div className="p-3 border rounded">
                 <div className="font-medium">Pelayanan Teknisi</div>
-                <div className="text-2xl font-bold text-blue-600">{survey.serviceTechnician}/10</div>
+                <div className="text-2xl font-bold text-blue-600">{survey.service_technician}/10</div>
               </div>
               <div className="p-3 border rounded">
                 <div className="font-medium">Pelayanan Sales/CS</div>
-                <div className="text-2xl font-bold text-green-600">{survey.serviceSales}/10</div>
+                <div className="text-2xl font-bold text-green-600">{survey.service_sales}/10</div>
               </div>
               <div className="p-3 border rounded">
                 <div className="font-medium">Kualitas Produk</div>
-                <div className="text-2xl font-bold text-purple-600">{survey.productQuality}/10</div>
+                <div className="text-2xl font-bold text-purple-600">{survey.product_quality}/10</div>
               </div>
               <div className="p-3 border rounded">
                 <div className="font-medium">Kejelasan Penggunaan</div>
-                <div className="text-2xl font-bold text-orange-600">{survey.usageClarity}/10</div>
+                <div className="text-2xl font-bold text-orange-600">{survey.usage_clarity}/10</div>
               </div>
             </div>
             
             <div className="mt-4">
               <strong>Persetujuan Harga: </strong>
-              <Badge variant={survey.priceApproval ? "default" : "destructive"}>
-                {survey.priceApproval ? 'Ya' : 'Tidak'}
+              <Badge variant={survey.price_approval ? "default" : "destructive"}>
+                {survey.price_approval ? 'Ya' : 'Tidak'}
               </Badge>
             </div>
           </div>
@@ -740,7 +752,7 @@ const Reports = () => {
           <div className="mt-4 p-3 bg-blue-50 rounded-lg">
             <p className="text-sm text-blue-800">
               <strong>Filter aktif:</strong> {getFilterDescription()} | 
-              <strong> Total data:</strong> {filteredCustomers.length} pelanggan, {filteredSurveys.filter(s => s.isCompleted).length} survei
+              <strong> Total data:</strong> {filteredCustomers.length} pelanggan, {filteredSurveys.filter(s => s.is_completed).length} survei
             </p>
           </div>
         </CardContent>
@@ -1219,7 +1231,7 @@ const Reports = () => {
                         <Badge variant="outline">{survey.branchCode}</Badge>
                       </TableCell>
                       <TableCell>
-                        {new Date(survey.dealDate).toLocaleDateString('id-ID')}
+                        {new Date(survey.deal_date).toLocaleDateString('id-ID')}
                       </TableCell>
                       <TableCell>
                         <div className="flex items-center space-x-1">
@@ -1229,35 +1241,35 @@ const Reports = () => {
                       </TableCell>
                       <TableCell>
                         <Badge 
-                          variant={survey.serviceTechnician >= 8 ? "default" : survey.serviceTechnician >= 6 ? "secondary" : "destructive"}
+                          variant={survey.service_technician >= 8 ? "default" : survey.service_technician >= 6 ? "secondary" : "destructive"}
                         >
-                          {survey.serviceTechnician}/10
+                          {survey.service_technician}/10
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge 
-                          variant={survey.serviceSales >= 8 ? "default" : survey.serviceSales >= 6 ? "secondary" : "destructive"}
+                          variant={survey.service_sales >= 8 ? "default" : survey.service_sales >= 6 ? "secondary" : "destructive"}
                         >
-                          {survey.serviceSales}/10
+                          {survey.service_sales}/10
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge 
-                          variant={survey.productQuality >= 8 ? "default" : survey.productQuality >= 6 ? "secondary" : "destructive"}
+                          variant={survey.product_quality >= 8 ? "default" : survey.product_quality >= 6 ? "secondary" : "destructive"}
                         >
-                          {survey.productQuality}/10
+                          {survey.product_quality}/10
                         </Badge>
                       </TableCell>
                       <TableCell>
                         <Badge 
-                          variant={survey.usageClarity >= 8 ? "default" : survey.usageClarity >= 6 ? "secondary" : "destructive"}
+                          variant={survey.usage_clarity >= 8 ? "default" : survey.usage_clarity >= 6 ? "secondary" : "destructive"}
                         >
-                          {survey.usageClarity}/10
+                          {survey.usage_clarity}/10
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <Badge variant={survey.priceApproval ? "default" : "destructive"}>
-                          {survey.priceApproval ? 'Ya' : 'Tidak'}
+                        <Badge variant={survey.price_approval ? "default" : "destructive"}>
+                          {survey.price_approval ? 'Ya' : 'Tidak'}
                         </Badge>
                       </TableCell>
                       <TableCell className="max-w-xs">
