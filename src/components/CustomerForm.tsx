@@ -16,10 +16,10 @@ const customerSchema = z.object({
   name: z.string().min(1, 'Nama lengkap harus diisi'),
   phone: z.string().min(1, 'Nomor HP/WA harus diisi'),
   address: z.string().min(1, 'Alamat harus diisi'),
-  birth_date: z.string().optional(),
-  id_number: z.string().optional(),
-  needs: z.string().optional(),
-  notes: z.string().optional(),
+  birth_date: z.string().optional().or(z.literal('')),
+  id_number: z.string().optional().or(z.literal('')),
+  needs: z.string().optional().or(z.literal('')),
+  notes: z.string().optional().or(z.literal('')),
   status: z.enum(['Prospek', 'Follow-up', 'Deal', 'Tidak Jadi']),
   branch_id: z.string().min(1, 'Cabang harus dipilih'),
   sales_id: z.string().min(1, 'Sales harus dipilih'),
@@ -58,7 +58,15 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
 
   const handleSubmit = (data: CustomerFormData) => {
     console.log('Submitting customer data:', data);
-    onSubmit(data);
+    // Convert empty strings to undefined for optional fields
+    const cleanedData = {
+      ...data,
+      birth_date: data.birth_date?.trim() || undefined,
+      id_number: data.id_number?.trim() || undefined,
+      needs: data.needs?.trim() || undefined,
+      notes: data.notes?.trim() || undefined,
+    };
+    onSubmit(cleanedData);
   };
 
   return (
