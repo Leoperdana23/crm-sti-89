@@ -101,11 +101,9 @@ const Survey = () => {
 Saya dari Tim ${branchName} ingin meminta sedikit waktunya untuk mengisi survei kepuasan layanan kami.
 Jawaban Bapak/Ibu sangat berharga untuk meningkatkan kualitas pelayanan kami ke depannya.
 
-Atas ketersediaan bapak/ibu mengisi link survei, kami memberikan apresiasi berupa *Gratis Perbaikan sebanyak 1x* dapat dipergunakan 2 bulan kedepan atau gift menarik selama ketersediaan ada.
-
 Berikut link survei ${surveyUrl}
 
-Terima kasih atas kerjasamanya.`;
+Atas ketersediaan bapak/ibu mengisi link survei kami ucapkan terima kasih atas kerjasamanya.`;
 
         const cleanPhone = customer.phone.replace(/\D/g, '');
         const whatsappPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
