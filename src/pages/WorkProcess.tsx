@@ -91,9 +91,9 @@ const WorkProcess = () => {
         await updateCustomer(selectedCustomer.id, {
           work_status: 'in_progress',
           work_start_date: new Date().toISOString(),
-          estimated_days: assignmentData.estimatedDays,
-          assigned_employees: assignmentData.assignedEmployees,
-          work_notes: assignmentData.notes
+          estimated_days: assignmentData.estimatedDays ? parseInt(assignmentData.estimatedDays) : undefined,
+          assigned_employees: assignmentData.employeeIds,
+          work_notes: assignmentData.workNotes
         });
         
         toast({
@@ -392,7 +392,7 @@ const WorkProcess = () => {
           setSelectedCustomer(null);
         }}
         onAssign={handleAssignmentComplete}
-        customer={selectedCustomer}
+        customerName={selectedCustomer?.name || ''}
       />
 
       {/* Complete Work Dialog */}
