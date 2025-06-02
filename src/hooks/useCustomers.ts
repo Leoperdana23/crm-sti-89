@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Customer } from '@/types/customer';
@@ -197,19 +198,46 @@ export const useCustomers = () => {
 
   const deleteCustomersByName = async (name: string) => {
     try {
-      const { error } = await supabase
+      // First, get all customers with the specified name
+      const { data: customersToDelete, error: fetchError } = await supabase
         .from('customers')
-        .delete()
+        .select('id')
         .ilike('name', name);
 
-      if (error) {
-        console.error('Error deleting customers by name:', error);
-        throw error;
+      if (fetchError) {
+        console.error('Error fetching customers by name:', fetchError);
+        throw fetchError;
       }
 
-      setCustomers(prev => prev.filter(customer => 
-        customer.name.toLowerCase() !== name.toLowerCase()
-      ));
+      if (customersToDelete && customersToDelete.length > 0) {
+        const customerIds = customersToDelete.map(customer => customer.id);
+
+        // First delete all related surveys
+        const { error: surveyError } = await supabase
+          .from('surveys')
+          .delete()
+          .in('customer_id', customerIds);
+
+        if (surveyError) {
+          console.error('Error deleting related surveys:', surveyError);
+          throw surveyError;
+        }
+
+        // Then delete the customers
+        const { error: customerError } = await supabase
+          .from('customers')
+          .delete()
+          .in('id', customerIds);
+
+        if (customerError) {
+          console.error('Error deleting customers by name:', customerError);
+          throw customerError;
+        }
+
+        setCustomers(prev => prev.filter(customer => 
+          customer.name.toLowerCase() !== name.toLowerCase()
+        ));
+      }
     } catch (error) {
       console.error('Error in deleteCustomersByName:', error);
       throw error;

@@ -197,13 +197,13 @@ export type Database = {
         Row: {
           address: string
           assigned_employees: string | null
-          birth_date: string
+          birth_date: string | null
           branch_id: string | null
           created_at: string
           deal_date: string | null
           estimated_days: number | null
           id: string
-          id_number: string
+          id_number: string | null
           name: string
           needs: string | null
           notes: string | null
@@ -220,13 +220,13 @@ export type Database = {
         Insert: {
           address: string
           assigned_employees?: string | null
-          birth_date: string
+          birth_date?: string | null
           branch_id?: string | null
           created_at?: string
           deal_date?: string | null
           estimated_days?: number | null
           id?: string
-          id_number: string
+          id_number?: string | null
           name: string
           needs?: string | null
           notes?: string | null
@@ -243,13 +243,13 @@ export type Database = {
         Update: {
           address?: string
           assigned_employees?: string | null
-          birth_date?: string
+          birth_date?: string | null
           branch_id?: string | null
           created_at?: string
           deal_date?: string | null
           estimated_days?: number | null
           id?: string
-          id_number?: string
+          id_number?: string | null
           name?: string
           needs?: string | null
           notes?: string | null
