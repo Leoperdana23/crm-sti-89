@@ -64,14 +64,14 @@ const Dashboard = () => {
   };
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-        <p className="text-gray-600 mt-1">Ringkasan kinerja dan analitik bisnis</p>
+    <div className="space-y-4 md:space-y-6">
+      <div className="mb-6 md:mb-8">
+        <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-2">Dashboard</h1>
+        <p className="text-sm md:text-base text-gray-600">Ringkasan kinerja dan analitik bisnis</p>
       </div>
 
       {/* Main Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4 lg:gap-6">
         <StatsCard
           title="Total Pelanggan"
           value={totalCustomers}
@@ -107,55 +107,55 @@ const Dashboard = () => {
       </div>
 
       {/* Work Process Overview */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <Clock className="h-5 w-5 text-blue-600" />
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-4 lg:gap-6">
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center space-x-2 text-sm md:text-base">
+              <Clock className="h-4 w-4 md:h-5 md:w-5 text-blue-600" />
               <span>Belum Mulai</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-blue-600">{workStatusData.notStarted}</div>
-            <p className="text-sm text-gray-600 mt-2">Deal belum mulai dikerjakan</p>
+            <div className="text-2xl md:text-3xl font-bold text-blue-600">{workStatusData.notStarted}</div>
+            <p className="text-xs md:text-sm text-gray-600 mt-2">Deal belum mulai dikerjakan</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <AlertCircle className="h-5 w-5 text-orange-600" />
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center space-x-2 text-sm md:text-base">
+              <AlertCircle className="h-4 w-4 md:h-5 md:w-5 text-orange-600" />
               <span>Sedang Dikerjakan</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-orange-600">{workStatusData.inProgress}</div>
-            <p className="text-sm text-gray-600 mt-2">Pekerjaan dalam progress</p>
+            <div className="text-2xl md:text-3xl font-bold text-orange-600">{workStatusData.inProgress}</div>
+            <p className="text-xs md:text-sm text-gray-600 mt-2">Pekerjaan dalam progress</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center space-x-2">
-              <CheckCircle className="h-5 w-5 text-green-600" />
+        <Card className="hover:shadow-lg transition-shadow duration-300">
+          <CardHeader className="pb-3">
+            <CardTitle className="flex items-center space-x-2 text-sm md:text-base">
+              <CheckCircle className="h-4 w-4 md:h-5 md:w-5 text-green-600" />
               <span>Selesai</span>
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-3xl font-bold text-green-600">{workStatusData.completed}</div>
-            <p className="text-sm text-gray-600 mt-2">Siap untuk survei</p>
+            <div className="text-2xl md:text-3xl font-bold text-green-600">{workStatusData.completed}</div>
+            <p className="text-xs md:text-sm text-gray-600 mt-2">Siap untuk survei</p>
           </CardContent>
         </Card>
       </div>
 
       {/* Charts */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
+        <Card className="hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
-            <CardTitle>Distribusi Status Pelanggan</CardTitle>
+            <CardTitle className="text-sm md:text-base lg:text-lg">Distribusi Status Pelanggan</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250} className="md:h-[300px]">
               <PieChart>
                 <Pie
                   data={statusData}
@@ -177,16 +177,16 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
-            <CardTitle>Performance per Cabang</CardTitle>
+            <CardTitle className="text-sm md:text-base lg:text-lg">Performance per Cabang</CardTitle>
           </CardHeader>
           <CardContent>
-            <ResponsiveContainer width="100%" height={300}>
+            <ResponsiveContainer width="100%" height={250} className="md:h-[300px]">
               <BarChart data={branchPerformance}>
                 <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" />
-                <YAxis />
+                <XAxis dataKey="name" fontSize={12} />
+                <YAxis fontSize={12} />
                 <Tooltip />
                 <Legend />
                 <Bar dataKey="prospek" stackId="a" fill="#3B82F6" name="Prospek" />
@@ -199,25 +199,25 @@ const Dashboard = () => {
       </div>
 
       {/* Recent Activity & Survey Status */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card>
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-4 md:gap-6">
+        <Card className="hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
-            <CardTitle>Pelanggan Terbaru</CardTitle>
+            <CardTitle className="text-sm md:text-base lg:text-lg">Pelanggan Terbaru</CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="space-y-4">
+            <div className="space-y-3 md:space-y-4">
               {recentCustomers.map((customer) => (
-                <div key={customer.id} className="flex items-center justify-between p-3 border rounded-lg">
-                  <div>
-                    <h4 className="font-medium">{customer.name}</h4>
-                    <p className="text-sm text-gray-600">{customer.phone}</p>
+                <div key={customer.id} className="flex flex-col sm:flex-row sm:items-center sm:justify-between p-3 border rounded-lg hover:bg-gray-50 transition-colors duration-200">
+                  <div className="mb-2 sm:mb-0">
+                    <h4 className="font-medium text-sm md:text-base">{customer.name}</h4>
+                    <p className="text-xs md:text-sm text-gray-600">{customer.phone}</p>
                   </div>
-                  <div className="text-right">
+                  <div className="flex flex-col sm:text-right">
                     <Badge variant={
                       customer.status === 'Deal' ? 'default' :
                       customer.status === 'Follow-up' ? 'secondary' :
                       customer.status === 'Prospek' ? 'outline' : 'destructive'
-                    }>
+                    } className="w-fit text-xs">
                       {customer.status}
                     </Badge>
                     <p className="text-xs text-gray-500 mt-1">
@@ -228,7 +228,7 @@ const Dashboard = () => {
               ))}
               
               {recentCustomers.length === 0 && (
-                <div className="text-center py-8 text-gray-500">
+                <div className="text-center py-6 md:py-8 text-gray-500">
                   Belum ada pelanggan terdaftar
                 </div>
               )}
@@ -236,28 +236,28 @@ const Dashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-lg transition-shadow duration-300">
           <CardHeader>
-            <CardTitle>Status Survei</CardTitle>
+            <CardTitle className="text-sm md:text-base lg:text-lg">Status Survei</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="space-y-4">
               <div className="flex justify-between items-center">
-                <span>Survei Selesai</span>
-                <span className="font-bold text-green-600">{surveyData.completed}</span>
+                <span className="text-sm md:text-base">Survei Selesai</span>
+                <span className="font-bold text-green-600 text-sm md:text-base">{surveyData.completed}</span>
               </div>
               <div className="flex justify-between items-center">
-                <span>Survei Tertunda</span>
-                <span className="font-bold text-orange-600">{surveyData.pending}</span>
+                <span className="text-sm md:text-base">Survei Tertunda</span>
+                <span className="font-bold text-orange-600 text-sm md:text-base">{surveyData.pending}</span>
               </div>
               <div className="mt-4">
-                <div className="flex justify-between text-sm mb-2">
+                <div className="flex justify-between text-xs md:text-sm mb-2">
                   <span>Progress Survei</span>
                   <span>{surveyData.completed + surveyData.pending > 0 ? Math.round((surveyData.completed / (surveyData.completed + surveyData.pending)) * 100) : 0}%</span>
                 </div>
                 <Progress 
                   value={surveyData.completed + surveyData.pending > 0 ? (surveyData.completed / (surveyData.completed + surveyData.pending)) * 100 : 0} 
-                  className="h-2"
+                  className="h-2 md:h-3"
                 />
               </div>
             </div>
@@ -266,33 +266,33 @@ const Dashboard = () => {
       </div>
 
       {/* Branch Performance Table */}
-      <Card>
+      <Card className="hover:shadow-lg transition-shadow duration-300">
         <CardHeader>
-          <CardTitle>Detail Performance Cabang</CardTitle>
+          <CardTitle className="text-sm md:text-base lg:text-lg">Detail Performance Cabang</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
-            <table className="w-full">
+            <table className="w-full min-w-[600px]">
               <thead>
                 <tr className="border-b">
-                  <th className="text-left p-2">Cabang</th>
-                  <th className="text-right p-2">Total</th>
-                  <th className="text-right p-2">Prospek</th>
-                  <th className="text-right p-2">Follow-up</th>
-                  <th className="text-right p-2">Deal</th>
-                  <th className="text-right p-2">Conversion Rate</th>
+                  <th className="text-left p-2 text-xs md:text-sm font-medium">Cabang</th>
+                  <th className="text-right p-2 text-xs md:text-sm font-medium">Total</th>
+                  <th className="text-right p-2 text-xs md:text-sm font-medium">Prospek</th>
+                  <th className="text-right p-2 text-xs md:text-sm font-medium">Follow-up</th>
+                  <th className="text-right p-2 text-xs md:text-sm font-medium">Deal</th>
+                  <th className="text-right p-2 text-xs md:text-sm font-medium">Conversion Rate</th>
                 </tr>
               </thead>
               <tbody>
                 {branchPerformance.map((branch) => (
-                  <tr key={branch.name} className="border-b">
-                    <td className="p-2 font-medium">{branch.name}</td>
-                    <td className="p-2 text-right">{branch.total}</td>
-                    <td className="p-2 text-right">{branch.prospek}</td>
-                    <td className="p-2 text-right">{branch.followUp}</td>
-                    <td className="p-2 text-right">{branch.deals}</td>
+                  <tr key={branch.name} className="border-b hover:bg-gray-50 transition-colors duration-200">
+                    <td className="p-2 font-medium text-xs md:text-sm">{branch.name}</td>
+                    <td className="p-2 text-right text-xs md:text-sm">{branch.total}</td>
+                    <td className="p-2 text-right text-xs md:text-sm">{branch.prospek}</td>
+                    <td className="p-2 text-right text-xs md:text-sm">{branch.followUp}</td>
+                    <td className="p-2 text-right text-xs md:text-sm">{branch.deals}</td>
                     <td className="p-2 text-right">
-                      <Badge variant={branch.conversionRate >= 50 ? 'default' : branch.conversionRate >= 25 ? 'secondary' : 'outline'}>
+                      <Badge variant={branch.conversionRate >= 50 ? 'default' : branch.conversionRate >= 25 ? 'secondary' : 'outline'} className="text-xs">
                         {branch.conversionRate}%
                       </Badge>
                     </td>

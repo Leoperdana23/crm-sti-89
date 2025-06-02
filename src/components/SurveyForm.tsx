@@ -42,16 +42,16 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ customer, onSubmit, onCancel })
     
     return (
       <div className="space-y-3">
-        <Label className="text-sm font-medium">{label}</Label>
+        <Label className="text-sm md:text-base font-medium">{label}</Label>
         <RadioGroup
           value={formData[field].toString()}
           onValueChange={(value) => setFormData(prev => ({ ...prev, [field]: parseInt(value) }))}
-          className="flex flex-wrap gap-2"
+          className="grid grid-cols-5 md:grid-cols-10 gap-2 md:gap-3"
         >
           {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
-            <div key={num} className="flex items-center space-x-1">
-              <RadioGroupItem value={num.toString()} id={`${field}-${num}`} />
-              <Label htmlFor={`${field}-${num}`} className="text-sm">{num}</Label>
+            <div key={num} className="flex flex-col items-center space-y-1">
+              <RadioGroupItem value={num.toString()} id={`${field}-${num}`} className="mx-auto" />
+              <Label htmlFor={`${field}-${num}`} className="text-xs md:text-sm cursor-pointer">{num}</Label>
             </div>
           ))}
         </RadioGroup>
@@ -60,69 +60,92 @@ const SurveyForm: React.FC<SurveyFormProps> = ({ customer, onSubmit, onCancel })
   };
 
   return (
-    <Card className="max-w-2xl mx-auto">
-      <CardHeader>
-        <CardTitle>Survei Kepuasan Pelanggan</CardTitle>
-        <p className="text-gray-600">Pelanggan: {customer.name}</p>
-      </CardHeader>
-      <CardContent>
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {renderRatingScale('service_technician', 'Pelayanan Teknisi (1-10)')}
-          {renderRatingScale('service_sales', 'Pelayanan Sales/CS (1-10)')}
-          {renderRatingScale('product_quality', 'Kualitas Produk (1-10)')}
-          {renderRatingScale('usage_clarity', 'Kejelasan Penggunaan (1-10)')}
-
-          <div className="space-y-3">
-            <Label className="text-sm font-medium">Harga Sesuai?</Label>
-            <RadioGroup
-              value={formData.price_approval.toString()}
-              onValueChange={(value) => setFormData(prev => ({ ...prev, price_approval: value === 'true' }))}
-              className="flex gap-4"
-            >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="true" id="price-yes" />
-                <Label htmlFor="price-yes">Ya, Sesuai</Label>
+    <div className="max-w-4xl mx-auto p-4">
+      <Card className="shadow-lg">
+        <CardHeader className="text-center bg-gradient-to-r from-blue-50 to-indigo-50">
+          <CardTitle className="text-lg md:text-xl lg:text-2xl">Survei Kepuasan Pelanggan</CardTitle>
+          <p className="text-sm md:text-base text-gray-600 mt-2">Pelanggan: <span className="font-semibold">{customer.name}</span></p>
+        </CardHeader>
+        <CardContent className="p-4 md:p-6">
+          <form onSubmit={handleSubmit} className="space-y-6 md:space-y-8">
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 md:gap-8">
+              <div className="space-y-6">
+                {renderRatingScale('service_technician', 'Pelayanan Teknisi (1-10)')}
+                {renderRatingScale('service_sales', 'Pelayanan Sales/CS (1-10)')}
               </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="false" id="price-no" />
-                <Label htmlFor="price-no">Tidak Sesuai</Label>
+              
+              <div className="space-y-6">
+                {renderRatingScale('product_quality', 'Kualitas Produk (1-10)')}
+                {renderRatingScale('usage_clarity', 'Kejelasan Penggunaan (1-10)')}
               </div>
-            </RadioGroup>
-          </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="testimonial">Testimoni</Label>
-            <Textarea
-              id="testimonial"
-              value={formData.testimonial}
-              onChange={(e) => setFormData(prev => ({ ...prev, testimonial: e.target.value }))}
-              placeholder="Bagikan pengalaman Anda dengan produk/layanan kami..."
-              rows={4}
-            />
-          </div>
+            <div className="border-t pt-6">
+              <div className="space-y-4">
+                <Label className="text-sm md:text-base font-medium">Harga Sesuai?</Label>
+                <RadioGroup
+                  value={formData.price_approval.toString()}
+                  onValueChange={(value) => setFormData(prev => ({ ...prev, price_approval: value === 'true' }))}
+                  className="grid grid-cols-1 sm:grid-cols-2 gap-4"
+                >
+                  <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-green-50 transition-colors">
+                    <RadioGroupItem value="true" id="price-yes" />
+                    <Label htmlFor="price-yes" className="text-sm md:text-base cursor-pointer flex-1">Ya, Sesuai</Label>
+                  </div>
+                  <div className="flex items-center space-x-3 p-3 border rounded-lg hover:bg-red-50 transition-colors">
+                    <RadioGroupItem value="false" id="price-no" />
+                    <Label htmlFor="price-no" className="text-sm md:text-base cursor-pointer flex-1">Tidak Sesuai</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="suggestions">Saran dan Kritik</Label>
-            <Textarea
-              id="suggestions"
-              value={formData.suggestions}
-              onChange={(e) => setFormData(prev => ({ ...prev, suggestions: e.target.value }))}
-              placeholder="Berikan saran atau kritik untuk perbaikan layanan kami..."
-              rows={4}
-            />
-          </div>
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              <div className="space-y-3">
+                <Label htmlFor="testimonial" className="text-sm md:text-base font-medium">Testimoni</Label>
+                <Textarea
+                  id="testimonial"
+                  value={formData.testimonial}
+                  onChange={(e) => setFormData(prev => ({ ...prev, testimonial: e.target.value }))}
+                  placeholder="Bagikan pengalaman Anda dengan produk/layanan kami..."
+                  rows={4}
+                  className="text-sm md:text-base"
+                />
+              </div>
 
-          <div className="flex space-x-4">
-            <Button type="submit" className="flex-1">
-              Simpan Survei
-            </Button>
-            <Button type="button" variant="outline" onClick={onCancel} className="flex-1">
-              Batal
-            </Button>
-          </div>
-        </form>
-      </CardContent>
-    </Card>
+              <div className="space-y-3">
+                <Label htmlFor="suggestions" className="text-sm md:text-base font-medium">Saran dan Kritik</Label>
+                <Textarea
+                  id="suggestions"
+                  value={formData.suggestions}
+                  onChange={(e) => setFormData(prev => ({ ...prev, suggestions: e.target.value }))}
+                  placeholder="Berikan saran atau kritik untuk perbaikan layanan kami..."
+                  rows={4}
+                  className="text-sm md:text-base"
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 md:gap-4 pt-6 border-t">
+              <Button 
+                type="submit" 
+                className="flex-1 bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 text-sm md:text-base py-2 md:py-3"
+              >
+                Simpan Survei
+              </Button>
+              <Button 
+                type="button" 
+                variant="outline" 
+                onClick={onCancel} 
+                className="flex-1 text-sm md:text-base py-2 md:py-3 hover:bg-gray-50"
+              >
+                Batal
+              </Button>
+            </div>
+          </form>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
