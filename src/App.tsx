@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -17,6 +18,7 @@ import Reports from '@/pages/Reports';
 import Users from '@/pages/Users';
 import RolePermissions from '@/pages/RolePermissions';
 import Attendance from '@/pages/Attendance';
+import DealHistory from '@/pages/DealHistory';
 import PublicSurvey from '@/pages/PublicSurvey';
 import Auth from '@/pages/Auth';
 import NotFound from '@/pages/NotFound';
@@ -42,6 +44,7 @@ function App() {
             <Route path="follow-up" element={<FollowUp />} />
             <Route path="work-process" element={<WorkProcess />} />
             <Route path="survey" element={<Survey />} />
+            <Route path="deal-history" element={<DealHistory />} />
             <Route path="sales" element={<Sales />} />
             <Route path="branches" element={<Branches />} />
             <Route path="resellers" element={<Resellers />} />
