@@ -1,14 +1,16 @@
+
 import React from 'react';
 import { Users, Building, TrendingUp, DollarSign, Clock, CheckCircle, AlertCircle } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
+import { ChartContainer, ChartTooltip, ChartTooltipContent, ChartLegend, ChartLegendContent } from '@/components/ui/chart';
 import StatsCard from '@/components/StatsCard';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useBranches } from '@/hooks/useBranches';
 import { useSales } from '@/hooks/useSales';
 import { useSurveys } from '@/hooks/useSurveys';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
 const Dashboard = () => {
   const { customers } = useCustomers();
@@ -24,10 +26,10 @@ const Dashboard = () => {
 
   // Data untuk chart
   const statusData = [
-    { name: 'Prospek', value: customers.filter(c => c.status === 'Prospek').length, color: '#3B82F6' },
-    { name: 'Follow-up', value: customers.filter(c => c.status === 'Follow-up').length, color: '#F59E0B' },
-    { name: 'Deal', value: customers.filter(c => c.status === 'Deal').length, color: '#10B981' },
-    { name: 'Tidak Jadi', value: customers.filter(c => c.status === 'Tidak Jadi').length, color: '#EF4444' },
+    { name: 'Prospek', value: customers.filter(c => c.status === 'Prospek').length, fill: '#3B82F6' },
+    { name: 'Follow-up', value: customers.filter(c => c.status === 'Follow-up').length, fill: '#F59E0B' },
+    { name: 'Deal', value: customers.filter(c => c.status === 'Deal').length, fill: '#10B981' },
+    { name: 'Tidak Jadi', value: customers.filter(c => c.status === 'Tidak Jadi').length, fill: '#EF4444' },
   ];
 
   // Performance data per cabang
@@ -61,6 +63,20 @@ const Dashboard = () => {
   const surveyData = {
     completed: surveys.filter(s => s.is_completed).length,
     pending: customers.filter(c => c.status === 'Deal' && c.work_status === 'completed').length - surveys.filter(s => s.is_completed).length
+  };
+
+  // Chart configurations
+  const statusChartConfig = {
+    prospek: { label: "Prospek", color: "#3B82F6" },
+    followup: { label: "Follow-up", color: "#F59E0B" },
+    deal: { label: "Deal", color: "#10B981" },
+    tidakjadi: { label: "Tidak Jadi", color: "#EF4444" },
+  };
+
+  const branchChartConfig = {
+    prospek: { label: "Prospek", color: "#3B82F6" },
+    followUp: { label: "Follow-up", color: "#F59E0B" },
+    deals: { label: "Deal", color: "#10B981" },
   };
 
   return (
@@ -154,26 +170,31 @@ const Dashboard = () => {
           <CardHeader>
             <CardTitle className="text-sm md:text-base lg:text-lg">Distribusi Status Pelanggan</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250} className="md:h-[300px]">
-              <PieChart>
-                <Pie
-                  data={statusData}
-                  cx="50%"
-                  cy="50%"
-                  labelLine={false}
-                  label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
-                  outerRadius={80}
-                  fill="#8884d8"
-                  dataKey="value"
-                >
-                  {statusData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={entry.color} />
-                  ))}
-                </Pie>
-                <Tooltip />
-              </PieChart>
-            </ResponsiveContainer>
+          <CardContent className="p-2 sm:p-4 md:p-6">
+            <ChartContainer
+              config={statusChartConfig}
+              className="h-[200px] sm:h-[250px] md:h-[300px] w-full"
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={statusData}
+                    cx="50%"
+                    cy="50%"
+                    labelLine={false}
+                    label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                    outerRadius="70%"
+                    fill="#8884d8"
+                    dataKey="value"
+                  >
+                    {statusData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={entry.fill} />
+                    ))}
+                  </Pie>
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                </PieChart>
+              </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
 
@@ -181,19 +202,31 @@ const Dashboard = () => {
           <CardHeader>
             <CardTitle className="text-sm md:text-base lg:text-lg">Performance per Cabang</CardTitle>
           </CardHeader>
-          <CardContent>
-            <ResponsiveContainer width="100%" height={250} className="md:h-[300px]">
-              <BarChart data={branchPerformance}>
-                <CartesianGrid strokeDasharray="3 3" />
-                <XAxis dataKey="name" fontSize={12} />
-                <YAxis fontSize={12} />
-                <Tooltip />
-                <Legend />
-                <Bar dataKey="prospek" stackId="a" fill="#3B82F6" name="Prospek" />
-                <Bar dataKey="followUp" stackId="a" fill="#F59E0B" name="Follow-up" />
-                <Bar dataKey="deals" stackId="a" fill="#10B981" name="Deal" />
-              </BarChart>
-            </ResponsiveContainer>
+          <CardContent className="p-2 sm:p-4 md:p-6">
+            <ChartContainer
+              config={branchChartConfig}
+              className="h-[200px] sm:h-[250px] md:h-[300px] w-full"
+            >
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={branchPerformance} margin={{ top: 5, right: 10, left: 10, bottom: 5 }}>
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <XAxis 
+                    dataKey="name" 
+                    fontSize={10}
+                    className="text-xs"
+                  />
+                  <YAxis 
+                    fontSize={10}
+                    className="text-xs"
+                  />
+                  <ChartTooltip content={<ChartTooltipContent />} />
+                  <ChartLegend content={<ChartLegendContent />} />
+                  <Bar dataKey="prospek" stackId="a" fill="#3B82F6" name="Prospek" />
+                  <Bar dataKey="followUp" stackId="a" fill="#F59E0B" name="Follow-up" />
+                  <Bar dataKey="deals" stackId="a" fill="#10B981" name="Deal" />
+                </BarChart>
+              </ResponsiveContainer>
+            </ChartContainer>
           </CardContent>
         </Card>
       </div>
