@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Plus, Users, Filter, Search, Calendar, Loader2, Trash } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -161,47 +162,52 @@ const Customers = () => {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-[400px]">
+      <div className="flex items-center justify-center min-h-[200px] md:min-h-[400px]">
         <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin" />
-          <span>Memuat data pelanggan...</span>
+          <Loader2 className="h-5 w-5 md:h-6 md:w-6 animate-spin" />
+          <span className="text-sm md:text-base">Memuat data pelanggan...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex justify-between items-center">
+    <div className="space-y-4 md:space-y-6">
+      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900">Data Pelanggan</h1>
-          <p className="text-gray-600 mt-1">Kelola data pelanggan dan prospek bisnis</p>
+          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Data Pelanggan</h1>
+          <p className="text-gray-600 mt-1 text-sm md:text-base">Kelola data pelanggan dan prospek bisnis</p>
         </div>
         
-        <div className="flex space-x-2">
+        <div className="flex flex-col sm:flex-row gap-2 sm:space-x-2">
           {testCustomersCount > 0 && (
             <Button 
               variant="destructive"
               onClick={handleDeleteTestCustomers}
+              size="sm"
+              className="w-full sm:w-auto"
             >
               <Trash className="h-4 w-4 mr-2" />
-              Hapus Data Test ({testCustomersCount})
+              <span className="hidden sm:inline">Hapus Data Test ({testCustomersCount})</span>
+              <span className="sm:hidden">Hapus Test ({testCustomersCount})</span>
             </Button>
           )}
           
           <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
             <DialogTrigger asChild>
               <Button 
-                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700"
+                className="bg-gradient-to-r from-blue-500 to-indigo-600 hover:from-blue-600 hover:to-indigo-700 w-full sm:w-auto"
                 onClick={() => setEditingCustomer(null)}
+                size="sm"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                Tambah Pelanggan
+                <span className="hidden sm:inline">Tambah Pelanggan</span>
+                <span className="sm:hidden">Tambah</span>
               </Button>
             </DialogTrigger>
-            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
+            <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
               <DialogHeader>
-                <DialogTitle>
+                <DialogTitle className="text-lg md:text-xl">
                   {editingCustomer ? 'Edit Pelanggan' : 'Tambah Pelanggan Baru'}
                 </DialogTitle>
               </DialogHeader>
@@ -219,41 +225,41 @@ const Customers = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+      <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-3 md:gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+            <CardTitle className="text-xs md:text-sm font-medium">Total</CardTitle>
+            <Users className="h-3 w-3 md:h-4 md:w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{stats.total}</div>
+            <div className="text-lg md:text-2xl font-bold">{stats.total}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Prospek</CardTitle>
-            <div className="h-4 w-4 bg-blue-500 rounded-full"></div>
+            <CardTitle className="text-xs md:text-sm font-medium">Prospek</CardTitle>
+            <div className="h-3 w-3 md:h-4 md:w-4 bg-blue-500 rounded-full"></div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{stats.prospek}</div>
+            <div className="text-lg md:text-2xl font-bold text-blue-600">{stats.prospek}</div>
           </CardContent>
         </Card>
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Follow-up</CardTitle>
-            <div className="h-4 w-4 bg-yellow-500 rounded-full"></div>
+            <CardTitle className="text-xs md:text-sm font-medium">Follow-up</CardTitle>
+            <div className="h-3 w-3 md:h-4 md:w-4 bg-yellow-500 rounded-full"></div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{stats.followUp}</div>
+            <div className="text-lg md:text-2xl font-bold text-yellow-600">{stats.followUp}</div>
           </CardContent>
         </Card>
-        <Card>
+        <Card className="col-span-2 md:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Deal</CardTitle>
-            <div className="h-4 w-4 bg-green-500 rounded-full"></div>
+            <CardTitle className="text-xs md:text-sm font-medium">Deal</CardTitle>
+            <div className="h-3 w-3 md:h-4 md:w-4 bg-green-500 rounded-full"></div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{stats.deal}</div>
+            <div className="text-lg md:text-2xl font-bold text-green-600">{stats.deal}</div>
             {stats.deal > 0 && (
               <div className="text-xs text-gray-500 mt-1">
                 Deal terbaru: {new Date(Math.max(...customers.filter(c => c.status === 'Deal' && c.deal_date).map(c => new Date(c.deal_date!).getTime()))).toLocaleDateString('id-ID')}
@@ -261,13 +267,13 @@ const Customers = () => {
             )}
           </CardContent>
         </Card>
-        <Card>
+        <Card className="col-span-2 md:col-span-3 lg:col-span-1">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Tidak Jadi</CardTitle>
-            <div className="h-4 w-4 bg-red-500 rounded-full"></div>
+            <CardTitle className="text-xs md:text-sm font-medium">Tidak Jadi</CardTitle>
+            <div className="h-3 w-3 md:h-4 md:w-4 bg-red-500 rounded-full"></div>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-red-600">{stats.tidakJadi}</div>
+            <div className="text-lg md:text-2xl font-bold text-red-600">{stats.tidakJadi}</div>
           </CardContent>
         </Card>
       </div>
@@ -275,25 +281,25 @@ const Customers = () => {
       {/* Search and Filter */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center space-x-2">
-            <Filter className="h-5 w-5" />
+          <CardTitle className="flex items-center space-x-2 text-base md:text-lg">
+            <Filter className="h-4 w-4 md:h-5 md:w-5" />
             <span>Filter & Pencarian</span>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
-            <div className="relative">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+            <div className="relative lg:col-span-2">
               <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
               <Input
                 placeholder="Cari nama, telepon, atau alamat..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
+                className="pl-10 text-sm"
               />
             </div>
             
             <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="text-sm">
                 <SelectValue placeholder="Status" />
               </SelectTrigger>
               <SelectContent>
@@ -306,7 +312,7 @@ const Customers = () => {
             </Select>
 
             <Select value={branchFilter} onValueChange={setBranchFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="text-sm">
                 <SelectValue placeholder="Cabang" />
               </SelectTrigger>
               <SelectContent>
@@ -320,7 +326,7 @@ const Customers = () => {
             </Select>
 
             <Select value={salesFilter} onValueChange={setSalesFilter}>
-              <SelectTrigger>
+              <SelectTrigger className="text-sm">
                 <SelectValue placeholder="Sales" />
               </SelectTrigger>
               <SelectContent>
@@ -332,7 +338,9 @@ const Customers = () => {
                 ))}
               </SelectContent>
             </Select>
-
+          </div>
+          
+          <div className="mt-4">
             <Button 
               variant="outline" 
               onClick={() => {
@@ -341,31 +349,33 @@ const Customers = () => {
                 setBranchFilter('all');
                 setSalesFilter('all');
               }}
+              size="sm"
+              className="w-full md:w-auto mb-4 md:mb-0"
             >
               Reset Filter
             </Button>
-          </div>
-          
-          <div className="mt-4 flex flex-wrap gap-2">
-            <Badge variant="secondary">
-              Menampilkan {filteredCustomers.length} dari {customers.length} pelanggan
-            </Badge>
-            {searchTerm && (
-              <Badge variant="outline">
-                Pencarian: "{searchTerm}"
+            
+            <div className="flex flex-wrap gap-2 mt-2 md:mt-4">
+              <Badge variant="secondary" className="text-xs">
+                Menampilkan {filteredCustomers.length} dari {customers.length} pelanggan
               </Badge>
-            )}
-            {statusFilter !== 'all' && (
-              <Badge variant="outline">
-                Status: {statusFilter}
-              </Badge>
-            )}
+              {searchTerm && (
+                <Badge variant="outline" className="text-xs">
+                  Pencarian: "{searchTerm}"
+                </Badge>
+              )}
+              {statusFilter !== 'all' && (
+                <Badge variant="outline" className="text-xs">
+                  Status: {statusFilter}
+                </Badge>
+              )}
+            </div>
           </div>
         </CardContent>
       </Card>
 
       {/* Customer List */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
         {filteredCustomers.map((customer) => (
           <CustomerCard
             key={customer.id}
@@ -380,20 +390,20 @@ const Customers = () => {
 
       {filteredCustomers.length === 0 && (
         <Card>
-          <CardContent className="text-center py-12">
-            <Users className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">
+          <CardContent className="text-center py-8 md:py-12">
+            <Users className="h-8 w-8 md:h-12 md:w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-base md:text-lg font-medium text-gray-900 mb-2">
               {searchTerm || statusFilter !== 'all' || branchFilter !== 'all' 
                 ? 'Tidak ada pelanggan yang sesuai filter' 
                 : 'Belum ada pelanggan'}
             </h3>
-            <p className="text-gray-600 mb-4">
+            <p className="text-sm md:text-base text-gray-600 mb-4">
               {searchTerm || statusFilter !== 'all' || branchFilter !== 'all'
                 ? 'Coba ubah kriteria pencarian atau filter Anda'
                 : 'Mulai dengan menambahkan pelanggan pertama Anda'}
             </p>
             {!(searchTerm || statusFilter !== 'all' || branchFilter !== 'all') && (
-              <Button onClick={() => setIsFormOpen(true)}>
+              <Button onClick={() => setIsFormOpen(true)} size="sm">
                 <Plus className="h-4 w-4 mr-2" />
                 Tambah Pelanggan
               </Button>

@@ -8,6 +8,20 @@ import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { getRoleLabel } from '@/utils/permissionLabels';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupContent,
+  SidebarHeader,
+  SidebarInset,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
 
 const Layout = () => {
   const location = useLocation();
@@ -72,22 +86,15 @@ const Layout = () => {
   // Filter navigation based on user permissions
   const navigation = allNavigation.filter(item => {
     const hasAccess = hasPermission(item.permission, 'view');
-    console.log(`Menu ${item.name} (${item.permission}): ${hasAccess ? 'ALLOWED' : 'DENIED'} for role ${userRole}`);
     return hasAccess;
   });
-
-  console.log('Current user role:', userRole);
-  console.log('User info:', userInfo);
-  console.log('Filtered navigation items:', navigation.map(n => n.name));
 
   const handleLogout = async () => {
     try {
       await signOut();
-      // Force page refresh after logout
       window.location.href = '/auth';
     } catch (error) {
       console.error('Logout error:', error);
-      // Force refresh even if there's an error
       window.location.href = '/auth';
     }
   };
@@ -97,85 +104,96 @@ const Layout = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
         <div className="flex items-center space-x-2">
           <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-          <span>Memuat hak akses...</span>
+          <span className="text-sm md:text-base">Memuat hak akses...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50">
-      <div className="flex">
-        {/* Sidebar */}
-        <div className="w-64 bg-white shadow-xl border-r border-gray-200">
-          <div className="flex flex-col h-screen">
-            <div className="p-6 border-b border-gray-200">
-              <h1 className="text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
-                CRM PT SLASH TEKNOLOGI INDONESIA
-              </h1>
-            </div>
-            
-            <nav className="flex-1 p-4 space-y-2">
-              {navigation.map((item) => {
-                const Icon = item.icon;
-                const isActive = location.pathname === item.href;
-                
-                return (
-                  <Link
-                    key={item.name}
-                    to={item.href}
-                    className={cn(
-                      "flex items-center px-4 py-3 text-sm font-medium rounded-lg transition-all duration-200",
-                      isActive
-                        ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
-                        : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
-                    )}
-                  >
-                    <Icon className="mr-3 h-5 w-5" />
-                    {item.name}
-                  </Link>
-                );
-              })}
-            </nav>
-            
-            <div className="p-4 border-t border-gray-200 space-y-3">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center">
-                  <Users className="h-4 w-4 text-white" />
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-gray-900">
-                    {userInfo.name}
-                  </p>
-                  <p className="text-xs text-gray-500">
-                    {userInfo.email}
-                  </p>
-                  <p className="text-xs text-blue-600 font-medium">
-                    {getRoleLabel(userInfo.role)}
-                  </p>
-                </div>
+    <SidebarProvider>
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex w-full">
+        <Sidebar className="border-r border-gray-200">
+          <SidebarHeader className="border-b border-gray-200 p-4 md:p-6">
+            <h1 className="text-sm md:text-lg lg:text-xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
+              CRM PT SLASH TEKNOLOGI INDONESIA
+            </h1>
+          </SidebarHeader>
+          
+          <SidebarContent>
+            <SidebarGroup>
+              <SidebarGroupContent>
+                <SidebarMenu className="space-y-1 md:space-y-2">
+                  {navigation.map((item) => {
+                    const Icon = item.icon;
+                    const isActive = location.pathname === item.href;
+                    
+                    return (
+                      <SidebarMenuItem key={item.name}>
+                        <SidebarMenuButton 
+                          asChild 
+                          isActive={isActive}
+                          className={cn(
+                            "flex items-center px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm font-medium rounded-lg transition-all duration-200 w-full",
+                            isActive
+                              ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg"
+                              : "text-gray-700 hover:bg-blue-50 hover:text-blue-600"
+                          )}
+                        >
+                          <Link to={item.href} className="flex items-center w-full">
+                            <Icon className="mr-2 md:mr-3 h-4 w-4 md:h-5 md:w-5 flex-shrink-0" />
+                            <span className="truncate">{item.name}</span>
+                          </Link>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    );
+                  })}
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </SidebarContent>
+          
+          <SidebarFooter className="border-t border-gray-200 p-3 md:p-4 space-y-3">
+            <div className="flex items-center space-x-2 md:space-x-3">
+              <div className="w-6 h-6 md:w-8 md:h-8 bg-gradient-to-r from-blue-500 to-indigo-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <Users className="h-3 w-3 md:h-4 md:w-4 text-white" />
               </div>
-              <Button
-                onClick={handleLogout}
-                variant="outline"
-                size="sm"
-                className="w-full justify-start"
-              >
-                <LogOut className="mr-2 h-4 w-4" />
-                Keluar
-              </Button>
+              <div className="min-w-0 flex-1">
+                <p className="text-xs md:text-sm font-medium text-gray-900 truncate">
+                  {userInfo.name}
+                </p>
+                <p className="text-xs text-gray-500 truncate">
+                  {userInfo.email}
+                </p>
+                <p className="text-xs text-blue-600 font-medium">
+                  {getRoleLabel(userInfo.role)}
+                </p>
+              </div>
+            </div>
+            <Button
+              onClick={handleLogout}
+              variant="outline"
+              size="sm"
+              className="w-full justify-start text-xs md:text-sm"
+            >
+              <LogOut className="mr-2 h-3 w-3 md:h-4 md:w-4" />
+              Keluar
+            </Button>
+          </SidebarFooter>
+        </Sidebar>
+
+        <SidebarInset className="flex-1">
+          <header className="flex h-12 md:h-16 shrink-0 items-center gap-2 border-b border-gray-200 px-4 bg-white/80 backdrop-blur-sm">
+            <SidebarTrigger className="text-gray-600 hover:text-gray-900" />
+          </header>
+          <div className="flex-1 overflow-auto">
+            <div className="p-4 md:p-6 lg:p-8">
+              <Outlet />
             </div>
           </div>
-        </div>
-
-        {/* Main Content */}
-        <div className="flex-1 overflow-auto">
-          <div className="p-8">
-            <Outlet />
-          </div>
-        </div>
+        </SidebarInset>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
