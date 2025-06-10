@@ -1,45 +1,63 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { MessageSquare, Cake, Users } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { MessageSquare, Cake, Users, Filter } from 'lucide-react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useResellers } from '@/hooks/useResellers';
 
 const Birthday = () => {
   const { customers } = useCustomers();
   const { data: resellers = [] } = useResellers();
+  const [selectedMonth, setSelectedMonth] = useState<string>('current');
 
-  // Get customers having birthday this month
-  const getThisMonthBirthdayCustomers = () => {
+  const months = [
+    { value: 'current', label: 'Bulan Ini' },
+    { value: '1', label: 'Januari' },
+    { value: '2', label: 'Februari' },
+    { value: '3', label: 'Maret' },
+    { value: '4', label: 'April' },
+    { value: '5', label: 'Mei' },
+    { value: '6', label: 'Juni' },
+    { value: '7', label: 'Juli' },
+    { value: '8', label: 'Agustus' },
+    { value: '9', label: 'September' },
+    { value: '10', label: 'Oktober' },
+    { value: '11', label: 'November' },
+    { value: '12', label: 'Desember' }
+  ];
+
+  // Get customers having birthday in selected month
+  const getFilteredBirthdayCustomers = () => {
     const today = new Date();
-    const currentMonth = today.getMonth() + 1; // getMonth() returns 0-11
+    const targetMonth = selectedMonth === 'current' ? today.getMonth() + 1 : parseInt(selectedMonth);
 
     return customers.filter(customer => {
       const birthDate = new Date(customer.birth_date);
       const birthMonth = birthDate.getMonth() + 1;
       
-      return birthMonth === currentMonth;
+      return birthMonth === targetMonth;
     });
   };
 
-  // Get resellers having birthday this month
-  const getThisMonthBirthdayResellers = () => {
+  // Get resellers having birthday in selected month
+  const getFilteredBirthdayResellers = () => {
     const today = new Date();
-    const currentMonth = today.getMonth() + 1;
+    const targetMonth = selectedMonth === 'current' ? today.getMonth() + 1 : parseInt(selectedMonth);
 
     return resellers.filter(reseller => {
       if (!reseller.birth_date) return false;
       const birthDate = new Date(reseller.birth_date);
       const birthMonth = birthDate.getMonth() + 1;
       
-      return birthMonth === currentMonth && reseller.is_active;
+      return birthMonth === targetMonth && reseller.is_active;
     });
   };
 
-  const birthdayCustomers = getThisMonthBirthdayCustomers();
-  const birthdayResellers = getThisMonthBirthdayResellers();
+  const birthdayCustomers = getFilteredBirthdayCustomers();
+  const birthdayResellers = getFilteredBirthdayResellers();
 
   const handleWhatsApp = (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
@@ -63,17 +81,51 @@ const Birthday = () => {
     });
   };
 
-  const getCurrentMonthName = () => {
-    const today = new Date();
-    return today.toLocaleDateString('id-ID', { month: 'long' });
+  const getDisplayMonthName = () => {
+    if (selectedMonth === 'current') {
+      const today = new Date();
+      return today.toLocaleDateString('id-ID', { month: 'long' });
+    }
+    
+    const monthIndex = parseInt(selectedMonth) - 1;
+    const monthNames = ['Januari', 'Februari', 'Maret', 'April', 'Mei', 'Juni', 
+                       'Juli', 'Agustus', 'September', 'Oktober', 'November', 'Desember'];
+    return monthNames[monthIndex];
   };
 
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Ulang Tahun Bulan {getCurrentMonthName()}</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Ulang Tahun</h1>
         <p className="text-gray-600 mt-1">Kelola ucapan ulang tahun untuk pelanggan dan reseller</p>
       </div>
+
+      {/* Month Filter */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center text-lg">
+            <Filter className="h-5 w-5 mr-2 text-blue-600" />
+            Filter Berdasarkan Bulan
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center space-x-4">
+            <label className="text-sm font-medium text-gray-700">Pilih Bulan:</label>
+            <Select value={selectedMonth} onValueChange={setSelectedMonth}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Pilih bulan" />
+              </SelectTrigger>
+              <SelectContent>
+                {months.map((month) => (
+                  <SelectItem key={month.value} value={month.value}>
+                    {month.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Birthday Section - Combined for Customers and Resellers */}
       {(birthdayCustomers.length > 0 || birthdayResellers.length > 0) ? (
@@ -81,7 +133,7 @@ const Birthday = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Cake className="h-5 w-5 mr-2 text-pink-600" />
-              Ulang Tahun Bulan {getCurrentMonthName()} ({birthdayCustomers.length + birthdayResellers.length})
+              Ulang Tahun Bulan {getDisplayMonthName()} ({birthdayCustomers.length + birthdayResellers.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -181,8 +233,8 @@ const Birthday = () => {
         <Card>
           <CardContent className="text-center py-12">
             <Cake className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Ulang Tahun Bulan Ini</h3>
-            <p className="text-gray-600">Tidak ada pelanggan atau reseller yang berulang tahun di bulan {getCurrentMonthName()}.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Ulang Tahun</h3>
+            <p className="text-gray-600">Tidak ada pelanggan atau reseller yang berulang tahun di bulan {getDisplayMonthName()}.</p>
           </CardContent>
         </Card>
       )}
