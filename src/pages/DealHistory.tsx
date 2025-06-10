@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { Calendar, MessageCircle, Users, Filter, Phone, MapPin, Clock, Building } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -18,26 +17,38 @@ const DealHistory = () => {
   const { sales } = useSales();
   const [branchFilter, setBranchFilter] = useState('all');
 
-  // Kategorisasi pelanggan berdasarkan lama deal
+  // Kategorisasi pelanggan berdasarkan periode deal date
   const categorizedDeals = useMemo(() => {
     const now = new Date();
+    const oneMonthAgo = subMonths(now, 1);
+    const threeMonthsAgo = subMonths(now, 3);
+    const twelveMonthsAgo = subMonths(now, 12);
     
-    const dealsWithAge = customers
+    const dealsData = customers
       .filter(customer => customer.status === 'Deal' && customer.deal_date)
-      .map(customer => {
-        const dealDate = new Date(customer.deal_date!);
-        const monthsAge = differenceInMonths(now, dealDate);
-        return { ...customer, monthsAge };
-      })
       .filter(customer => {
         const matchesBranch = branchFilter === 'all' || customer.branch_id === branchFilter;
         return matchesBranch;
       });
 
     return {
-      oneMonth: dealsWithAge.filter(customer => customer.monthsAge <= 1),
-      threeMonths: dealsWithAge.filter(customer => customer.monthsAge > 1 && customer.monthsAge <= 3),
-      twelveMonths: dealsWithAge.filter(customer => customer.monthsAge > 3 && customer.monthsAge <= 12)
+      // Deal dalam 1 bulan terakhir (deal_date >= 1 bulan yang lalu)
+      oneMonth: dealsData.filter(customer => {
+        const dealDate = new Date(customer.deal_date!);
+        return isAfter(dealDate, oneMonthAgo);
+      }),
+      
+      // Deal dalam 1-3 bulan (deal_date antara 1-3 bulan yang lalu)
+      threeMonths: dealsData.filter(customer => {
+        const dealDate = new Date(customer.deal_date!);
+        return isBefore(dealDate, oneMonthAgo) && isAfter(dealDate, threeMonthsAgo);
+      }),
+      
+      // Deal dalam 3-12 bulan (deal_date antara 3-12 bulan yang lalu)
+      twelveMonths: dealsData.filter(customer => {
+        const dealDate = new Date(customer.deal_date!);
+        return isBefore(dealDate, threeMonthsAgo) && isAfter(dealDate, twelveMonthsAgo);
+      })
     };
   }, [customers, branchFilter]);
 
@@ -79,7 +90,7 @@ const DealHistory = () => {
         <div>
           <h1 className="text-2xl md:text-3xl font-bold text-gray-900">History Deal Pelanggan</h1>
           <p className="text-gray-600 mt-1 text-sm md:text-base">
-            Data pelanggan yang sudah deal berdasarkan kategori waktu
+            Data pelanggan yang sudah deal berdasarkan periode tanggal deal
           </p>
         </div>
       </div>
@@ -116,39 +127,43 @@ const DealHistory = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Deal 1 Bulan</CardTitle>
+            <CardTitle className="text-sm font-medium">Deal 1 Bulan Terakhir</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{categorizedDeals.oneMonth.length}</div>
+            <p className="text-xs text-muted-foreground">Pelanggan yang deal dalam 1 bulan terakhir</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Deal 3 Bulan</CardTitle>
+            <CardTitle className="text-sm font-medium">Deal 1-3 Bulan</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{categorizedDeals.threeMonths.length}</div>
+            <p className="text-xs text-muted-foreground">Pelanggan yang deal 1-3 bulan lalu</p>
           </CardContent>
         </Card>
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Deal 12 Bulan</CardTitle>
+            <CardTitle className="text-sm font-medium">Deal 3-12 Bulan</CardTitle>
             <Users className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{categorizedDeals.twelveMonths.length}</div>
+            <p className="text-xs text-muted-foreground">Pelanggan yang deal 3-12 bulan lalu</p>
           </CardContent>
         </Card>
       </div>
 
-      {/* Section 1: Pelanggan Deal 1 Bulan */}
+      {/* Section 1: Pelanggan Deal 1 Bulan Terakhir */}
       <Card>
         <CardHeader>
           <CardTitle className="text-lg font-semibold">Pelanggan Deal 1 Bulan Terakhir</CardTitle>
+          <p className="text-sm text-gray-600">Deal dari {format(subMonths(new Date(), 1), 'dd MMM yyyy', { locale: id })} sampai sekarang</p>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -200,10 +215,11 @@ const DealHistory = () => {
         </CardContent>
       </Card>
 
-      {/* Section 2: Pelanggan Deal 3 Bulan */}
+      {/* Section 2: Pelanggan Deal 1-3 Bulan */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">Pelanggan Deal 3 Bulan</CardTitle>
+          <CardTitle className="text-lg font-semibold">Pelanggan Deal 1-3 Bulan</CardTitle>
+          <p className="text-sm text-gray-600">Deal dari {format(subMonths(new Date(), 3), 'dd MMM yyyy', { locale: id })} sampai {format(subMonths(new Date(), 1), 'dd MMM yyyy', { locale: id })}</p>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -250,17 +266,18 @@ const DealHistory = () => {
             </Table>
             {categorizedDeals.threeMonths.length === 0 && (
               <div className="text-center py-8">
-                <p className="text-gray-500">Tidak ada pelanggan deal dalam 3 bulan</p>
+                <p className="text-gray-500">Tidak ada pelanggan deal dalam periode 1-3 bulan</p>
               </div>
             )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Section 3: Pelanggan Deal 12 Bulan */}
+      {/* Section 3: Pelanggan Deal 3-12 Bulan */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg font-semibold">Pelanggan Deal 12 Bulan</CardTitle>
+          <CardTitle className="text-lg font-semibold">Pelanggan Deal 3-12 Bulan</CardTitle>
+          <p className="text-sm text-gray-600">Deal dari {format(subMonths(new Date(), 12), 'dd MMM yyyy', { locale: id })} sampai {format(subMonths(new Date(), 3), 'dd MMM yyyy', { locale: id })}</p>
         </CardHeader>
         <CardContent>
           <div className="overflow-x-auto">
@@ -311,7 +328,7 @@ const DealHistory = () => {
             </Table>
             {categorizedDeals.twelveMonths.length === 0 && (
               <div className="text-center py-8">
-                <p className="text-gray-500">Tidak ada pelanggan deal dalam 12 bulan</p>
+                <p className="text-gray-500">Tidak ada pelanggan deal dalam periode 3-12 bulan</p>
               </div>
             )}
           </div>
