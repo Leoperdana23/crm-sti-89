@@ -56,7 +56,7 @@ const PublicSurvey = () => {
             Data Garansi Resmi
           </h1>
           <p className="text-sm md:text-base lg:text-lg text-gray-600 max-w-2xl mx-auto">
-            Mohon lengkapi data diri anda untuk mendapatkan garansi barang 1 tahun ganti baru.
+            Mohon lengkapi data diri anda untuk mendapatkan garansi barang 1 tahun ganti baru. Pastikan data diri anda sesuai kartu identitas.
           </p>
         </div>
         
