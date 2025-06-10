@@ -53,10 +53,10 @@ const PublicSurvey = () => {
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
-            Survei Kepuasan Pelanggan
+            Data Garansi Resmi
           </h1>
           <p className="text-sm md:text-base lg:text-lg text-gray-600 max-w-2xl mx-auto">
-            Kami menghargai feedback Anda untuk meningkatkan kualitas layanan
+            Mohon lengkapi data diri anda untuk mendapatkan garansi barang 1 tahun ganti baru.
           </p>
         </div>
         
