@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/useAuth';
@@ -62,49 +61,53 @@ export const useUserPermissions = () => {
   };
 
   const getDefaultPermissions = (role: string): UserPermissions => {
-    const basePermissions = {
+    // Staff permissions - only the specified menus
+    const staffPermissions = {
       'dashboard': { can_view: true, can_create: false, can_edit: false, can_delete: false },
       'customers': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+      'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: false },
       'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: false },
       'work_process': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-      'survey': { can_view: true, can_create: true, can_edit: true, can_delete: false }
+      'survey': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+      'deal_history': { can_view: true, can_create: false, can_edit: false, can_delete: false },
+      'birthday': { can_view: true, can_create: false, can_edit: false, can_delete: false },
     };
 
     if (role === 'super_admin') {
       return {
-        ...basePermissions,
+        ...staffPermissions,
         'dashboard': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'customers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'work_process': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'survey': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'deal_history': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'birthday': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'sales': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'branches': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-        'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'users': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'role_permissions': { can_view: true, can_create: true, can_edit: true, can_delete: true }
       };
     } else if (role === 'admin') {
       return {
-        ...basePermissions,
+        ...staffPermissions,
         'sales': { can_view: true, can_create: true, can_edit: true, can_delete: false },
         'branches': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-        'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'users': { can_view: true, can_create: true, can_edit: true, can_delete: false }
       };
     } else if (role === 'manager') {
       return {
-        ...basePermissions,
+        ...staffPermissions,
         'branches': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-        'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true }
       };
     }
 
-    // Default for staff
-    return basePermissions;
+    // Default for staff - only the specified menus
+    return staffPermissions;
   };
 
   const fetchUserPermissions = async () => {
