@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, LogOut, UserCog, Settings, Shield, Wrench, Store, History } from 'lucide-react';
+import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, LogOut, UserCog, Settings, Shield, Wrench, Store, History, Cake } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
@@ -73,6 +72,7 @@ const Layout = () => {
     { name: 'Dashboard', href: '/', icon: BarChart3, permission: 'dashboard', color: 'text-blue-600' },
     { name: 'Pelanggan', href: '/customers', icon: Users, permission: 'customers', color: 'text-green-600' },
     { name: 'Follow-Up', href: '/follow-up', icon: UserCheck, permission: 'follow_up', color: 'text-yellow-600' },
+    { name: 'Ulang Tahun', href: '/birthday', icon: Cake, permission: 'follow_up', color: 'text-pink-600' },
     { name: 'Proses Pekerjaan', href: '/work-process', icon: Wrench, permission: 'work_process', color: 'text-orange-600' },
     { name: 'History Deal', href: '/deal-history', icon: History, permission: 'customers', color: 'text-cyan-600' },
     { name: 'Survei', href: '/survey', icon: MessageSquare, permission: 'survey', color: 'text-purple-600' },
