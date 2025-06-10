@@ -11,39 +11,35 @@ const Birthday = () => {
   const { customers } = useCustomers();
   const { data: resellers = [] } = useResellers();
 
-  // Get customers having birthday today
-  const getTodayBirthdayCustomers = () => {
+  // Get customers having birthday this month
+  const getThisMonthBirthdayCustomers = () => {
     const today = new Date();
-    const todayMonth = today.getMonth() + 1; // getMonth() returns 0-11
-    const todayDay = today.getDate();
+    const currentMonth = today.getMonth() + 1; // getMonth() returns 0-11
 
     return customers.filter(customer => {
       const birthDate = new Date(customer.birth_date);
       const birthMonth = birthDate.getMonth() + 1;
-      const birthDay = birthDate.getDate();
       
-      return birthMonth === todayMonth && birthDay === todayDay;
+      return birthMonth === currentMonth;
     });
   };
 
-  // Get resellers having birthday today
-  const getTodayBirthdayResellers = () => {
+  // Get resellers having birthday this month
+  const getThisMonthBirthdayResellers = () => {
     const today = new Date();
-    const todayMonth = today.getMonth() + 1;
-    const todayDay = today.getDate();
+    const currentMonth = today.getMonth() + 1;
 
     return resellers.filter(reseller => {
       if (!reseller.birth_date) return false;
       const birthDate = new Date(reseller.birth_date);
       const birthMonth = birthDate.getMonth() + 1;
-      const birthDay = birthDate.getDate();
       
-      return birthMonth === todayMonth && birthDay === todayDay && reseller.is_active;
+      return birthMonth === currentMonth && reseller.is_active;
     });
   };
 
-  const birthdayCustomers = getTodayBirthdayCustomers();
-  const birthdayResellers = getTodayBirthdayResellers();
+  const birthdayCustomers = getThisMonthBirthdayCustomers();
+  const birthdayResellers = getThisMonthBirthdayResellers();
 
   const handleWhatsApp = (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
@@ -59,10 +55,23 @@ const Birthday = () => {
     window.open(`https://wa.me/${whatsappPhone}?text=${encodedMessage}`, '_blank');
   };
 
+  const formatBirthDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString('id-ID', { 
+      day: 'numeric', 
+      month: 'long' 
+    });
+  };
+
+  const getCurrentMonthName = () => {
+    const today = new Date();
+    return today.toLocaleDateString('id-ID', { month: 'long' });
+  };
+
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900">Ulang Tahun Hari Ini</h1>
+        <h1 className="text-3xl font-bold text-gray-900">Ulang Tahun Bulan {getCurrentMonthName()}</h1>
         <p className="text-gray-600 mt-1">Kelola ucapan ulang tahun untuk pelanggan dan reseller</p>
       </div>
 
@@ -72,7 +81,7 @@ const Birthday = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Cake className="h-5 w-5 mr-2 text-pink-600" />
-              Ulang Tahun Hari Ini ({birthdayCustomers.length + birthdayResellers.length})
+              Ulang Tahun Bulan {getCurrentMonthName()} ({birthdayCustomers.length + birthdayResellers.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -91,6 +100,7 @@ const Birthday = () => {
                     </h3>
                     <p className="text-sm text-gray-600">{customer.phone}</p>
                     <p className="text-sm text-gray-600">{customer.address}</p>
+                    <p className="text-sm text-pink-600 font-medium">Ulang tahun: {formatBirthDate(customer.birth_date)}</p>
                   </div>
                   <Badge className="bg-pink-100 text-pink-800">
                     {customer.status}
@@ -137,6 +147,7 @@ const Birthday = () => {
                       <p className="text-sm text-gray-600">{reseller.email}</p>
                     )}
                     <p className="text-sm text-gray-600">{reseller.address}</p>
+                    <p className="text-sm text-pink-600 font-medium">Ulang tahun: {formatBirthDate(reseller.birth_date!)}</p>
                   </div>
                   <Badge className="bg-green-100 text-green-800">
                     {reseller.is_active ? 'Aktif' : 'Tidak Aktif'}
@@ -170,8 +181,8 @@ const Birthday = () => {
         <Card>
           <CardContent className="text-center py-12">
             <Cake className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Ulang Tahun Hari Ini</h3>
-            <p className="text-gray-600">Tidak ada pelanggan atau reseller yang berulang tahun hari ini.</p>
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Ulang Tahun Bulan Ini</h3>
+            <p className="text-gray-600">Tidak ada pelanggan atau reseller yang berulang tahun di bulan {getCurrentMonthName()}.</p>
           </CardContent>
         </Card>
       )}
