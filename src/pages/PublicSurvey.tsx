@@ -8,7 +8,7 @@ import { AlertCircle } from 'lucide-react';
 
 const PublicSurvey = () => {
   const { token } = useParams<{ token: string }>();
-  const { survey, customer, loading, error, updateSurvey } = usePublicSurvey(token || '');
+  const { survey, customer, loading, error, updateCustomer, updateSurvey } = usePublicSurvey(token || '');
 
   const handleSurveySubmit = async (surveyData: any) => {
     try {
@@ -63,8 +63,9 @@ const PublicSurvey = () => {
         <div className="bg-white rounded-lg shadow-xl p-4 md:p-6 lg:p-8">
           <PublicSurveyForm
             survey={survey}
-            customerName={customer.name}
+            customer={customer}
             onSubmit={handleSurveySubmit}
+            onUpdateCustomer={updateCustomer}
             isCompleted={survey.is_completed}
           />
         </div>

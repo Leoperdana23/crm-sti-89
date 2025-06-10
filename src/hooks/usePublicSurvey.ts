@@ -20,8 +20,11 @@ export const usePublicSurvey = (token: string) => {
           .select(`
             *,
             customers (
+              id,
               name,
-              phone
+              phone,
+              birth_date,
+              id_number
             )
           `)
           .eq('survey_token', token)
@@ -66,6 +69,35 @@ export const usePublicSurvey = (token: string) => {
     }
   }, [token]);
 
+  const updateCustomer = async (customerData: { name: string; birth_date?: string; id_number?: string }) => {
+    try {
+      if (!survey) return;
+
+      const { error } = await supabase
+        .from('customers')
+        .update({
+          name: customerData.name,
+          birth_date: customerData.birth_date || null,
+          id_number: customerData.id_number || null
+        })
+        .eq('id', survey.customer_id);
+
+      if (error) {
+        console.error('Error updating customer:', error);
+        throw error;
+      }
+
+      // Update local customer state
+      setCustomer(prev => ({
+        ...prev,
+        ...customerData
+      }));
+    } catch (error) {
+      console.error('Error in updateCustomer:', error);
+      throw error;
+    }
+  };
+
   const updateSurvey = async (updatedData: Partial<Survey>) => {
     try {
       const { error } = await supabase
@@ -107,6 +139,7 @@ export const usePublicSurvey = (token: string) => {
     customer,
     loading,
     error,
+    updateCustomer,
     updateSurvey
   };
 };
