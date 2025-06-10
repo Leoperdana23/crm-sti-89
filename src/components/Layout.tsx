@@ -67,18 +67,18 @@ const Layout = () => {
 
   const userInfo = getCurrentUserInfo();
 
-  // Define all navigation items with their permission mappings
+  // Define all navigation items with their permission mappings - reordered according to user request
   const allNavigation = [
     { name: 'Dashboard', href: '/', icon: BarChart3, permission: 'dashboard', color: 'text-blue-600' },
     { name: 'Pelanggan', href: '/customers', icon: Users, permission: 'customers', color: 'text-green-600' },
+    { name: 'Reseller', href: '/resellers', icon: Store, permission: 'resellers', color: 'text-pink-600' },
     { name: 'Follow-Up', href: '/follow-up', icon: UserCheck, permission: 'follow_up', color: 'text-yellow-600' },
-    { name: 'Ulang Tahun', href: '/birthday', icon: Cake, permission: 'follow_up', color: 'text-pink-600' },
     { name: 'Proses Pekerjaan', href: '/work-process', icon: Wrench, permission: 'work_process', color: 'text-orange-600' },
-    { name: 'History Deal', href: '/deal-history', icon: History, permission: 'customers', color: 'text-cyan-600' },
     { name: 'Survei', href: '/survey', icon: MessageSquare, permission: 'survey', color: 'text-purple-600' },
+    { name: 'History Deal', href: '/deal-history', icon: History, permission: 'customers', color: 'text-cyan-600' },
+    { name: 'Ulang Tahun', href: '/birthday', icon: Cake, permission: 'follow_up', color: 'text-pink-600' },
     { name: 'Karyawan', href: '/sales', icon: UserCog, permission: 'sales', color: 'text-indigo-600' },
     { name: 'Cabang', href: '/branches', icon: Building, permission: 'branches', color: 'text-teal-600' },
-    { name: 'Reseller', href: '/resellers', icon: Store, permission: 'resellers', color: 'text-pink-600' },
     { name: 'Laporan', href: '/reports', icon: FileText, permission: 'reports', color: 'text-red-600' },
     { name: 'Master User', href: '/users', icon: Settings, permission: 'users', color: 'text-gray-600' },
     { name: 'Hak Akses Role', href: '/role-permissions', icon: Shield, permission: 'role_permissions', color: 'text-emerald-600' },
