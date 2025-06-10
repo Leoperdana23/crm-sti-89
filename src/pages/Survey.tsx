@@ -97,13 +97,14 @@ const Survey = () => {
         const branch = branches.find(b => b.id === customer.branch_id);
         const branchName = branch?.name || 'Tim Kami';
         
-        const message = `Assalamualaikum Bapak/Ibu ${customer.name},
-Saya dari Tim ${branchName} ingin meminta sedikit waktunya untuk mengisi survei kepuasan layanan kami.
+        const message = `Assalamualaikum Bapak/Ibu ${customer.name} 
+Saya dari Tim ${branchName} mengucapkan selamat karena Bapak/Ibu mendapatkan proteksi garansi barang ganti baru selama 1 tahun.
+Mohon untuk lengkapi data diri untuk klaim garansi ganti baru jika ada kerusakan barang, dan mohon bantu kami untuk mengisi survei kepuasan layanan kami.
 Jawaban Bapak/Ibu sangat berharga untuk meningkatkan kualitas pelayanan kami ke depannya.
 
-Berikut link survei ${surveyUrl}
+Berikut link data diri dan survei ${surveyUrl}
 
-Atas ketersediaan bapak/ibu mengisi link survei kami ucapkan terima kasih atas kerjasamanya.`;
+Atas ketersediaan bapak/ibu mengisidata dan survei kami ucapkan terima kasih atas kerjasamanya.`;
 
         const cleanPhone = customer.phone.replace(/\D/g, '');
         const whatsappPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
