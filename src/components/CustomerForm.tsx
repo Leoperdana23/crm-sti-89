@@ -13,11 +13,13 @@ import { useBranches } from '@/hooks/useBranches';
 import { useSales } from '@/hooks/useSales';
 
 const customerSchema = z.object({
+  customer_type: z.enum(['customer', 'reseller']),
   name: z.string().min(1, 'Nama lengkap harus diisi'),
   phone: z.string().min(1, 'Nomor HP/WA harus diisi'),
   address: z.string().min(1, 'Alamat harus diisi'),
   birth_date: z.string().optional().or(z.literal('')),
   id_number: z.string().optional().or(z.literal('')),
+  email: z.string().optional().or(z.literal('')),
   needs: z.string().optional().or(z.literal('')),
   notes: z.string().optional().or(z.literal('')),
   status: z.enum(['Prospek', 'Follow-up', 'Deal', 'Tidak Jadi']),
@@ -40,11 +42,13 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
   const form = useForm<CustomerFormData>({
     resolver: zodResolver(customerSchema),
     defaultValues: {
+      customer_type: 'customer',
       name: customer?.name || '',
       phone: customer?.phone || '',
       address: customer?.address || '',
       birth_date: customer?.birth_date || '',
       id_number: customer?.id_number || '',
+      email: '',
       needs: customer?.needs || '',
       notes: customer?.notes || '',
       status: customer?.status || 'Prospek',
@@ -52,6 +56,8 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
       sales_id: customer?.sales_id || '',
     },
   });
+
+  const customerType = form.watch('customer_type');
 
   console.log('Form errors:', form.formState.errors);
   console.log('Form values:', form.getValues());
@@ -63,6 +69,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
       ...data,
       birth_date: data.birth_date?.trim() || undefined,
       id_number: data.id_number?.trim() || undefined,
+      email: data.email?.trim() || undefined,
       needs: data.needs?.trim() || undefined,
       notes: data.notes?.trim() || undefined,
     };
@@ -72,6 +79,28 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+        <FormField
+          control={form.control}
+          name="customer_type"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Jenis Pelanggan *</FormLabel>
+              <Select onValueChange={field.onChange} value={field.value}>
+                <FormControl>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih jenis pelanggan" />
+                  </SelectTrigger>
+                </FormControl>
+                <SelectContent>
+                  <SelectItem value="customer">Customer</SelectItem>
+                  <SelectItem value="reseller">Reseller</SelectItem>
+                </SelectContent>
+              </Select>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
@@ -130,6 +159,22 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
           />
         </div>
 
+        {customerType === 'reseller' && (
+          <FormField
+            control={form.control}
+            name="email"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Email</FormLabel>
+                <FormControl>
+                  <Input type="email" placeholder="email@example.com" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
+
         <FormField
           control={form.control}
           name="address"
@@ -170,29 +215,31 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
             )}
           />
 
-          <FormField
-            control={form.control}
-            name="status"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Status *</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
-                  <FormControl>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pilih status" />
-                    </SelectTrigger>
-                  </FormControl>
-                  <SelectContent>
-                    <SelectItem value="Prospek">Prospek</SelectItem>
-                    <SelectItem value="Follow-up">Follow-up</SelectItem>
-                    <SelectItem value="Deal">Deal</SelectItem>
-                    <SelectItem value="Tidak Jadi">Tidak Jadi</SelectItem>
-                  </SelectContent>
-                </Select>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+          {customerType === 'customer' && (
+            <FormField
+              control={form.control}
+              name="status"
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel>Status *</FormLabel>
+                  <Select onValueChange={field.onChange} value={field.value}>
+                    <FormControl>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Pilih status" />
+                      </SelectTrigger>
+                    </FormControl>
+                    <SelectContent>
+                      <SelectItem value="Prospek">Prospek</SelectItem>
+                      <SelectItem value="Follow-up">Follow-up</SelectItem>
+                      <SelectItem value="Deal">Deal</SelectItem>
+                      <SelectItem value="Tidak Jadi">Tidak Jadi</SelectItem>
+                    </SelectContent>
+                  </Select>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          )}
 
           <FormField
             control={form.control}
@@ -220,19 +267,21 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
           />
         </div>
 
-        <FormField
-          control={form.control}
-          name="needs"
-          render={({ field }) => (
-            <FormItem>
-              <FormLabel>Kebutuhan</FormLabel>
-              <FormControl>
-                <Textarea placeholder="Deskripsi singkat kebutuhan pelanggan" {...field} />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+        {customerType === 'customer' && (
+          <FormField
+            control={form.control}
+            name="needs"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Kebutuhan</FormLabel>
+                <FormControl>
+                  <Textarea placeholder="Deskripsi singkat kebutuhan pelanggan" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        )}
 
         <FormField
           control={form.control}

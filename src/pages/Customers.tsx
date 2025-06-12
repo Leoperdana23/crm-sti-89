@@ -17,6 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const Customers = () => {
   const { customers, loading, addCustomer, updateCustomer, deleteCustomer, deleteCustomersByName } = useCustomers();
+  const { createReseller } = useCreateReseller();
   const { branches } = useBranches();
   const { sales } = useSales();
   const { toast } = useToast();
@@ -45,22 +46,48 @@ const Customers = () => {
 
   const handleSubmit = async (data: any) => {
     try {
-      if (editingCustomer) {
-        await updateCustomer(editingCustomer.id, data);
+      console.log('Submitting data:', data);
+      
+      if (data.customer_type === 'reseller') {
+        // Save as reseller
+        const resellerData = {
+          name: data.name,
+          phone: data.phone,
+          address: data.address,
+          birth_date: data.birth_date || undefined,
+          email: data.email || undefined,
+          id_number: data.id_number || undefined,
+          notes: data.notes || undefined,
+          branch_id: data.branch_id,
+          is_active: true
+        };
+        
+        await createReseller.mutateAsync(resellerData);
         toast({
           title: "Berhasil",
-          description: "Data pelanggan berhasil diperbarui",
+          description: "Reseller baru berhasil ditambahkan",
         });
       } else {
-        await addCustomer(data);
-        toast({
-          title: "Berhasil",
-          description: "Pelanggan baru berhasil ditambahkan",
-        });
+        // Save as customer (existing logic)
+        if (editingCustomer) {
+          await updateCustomer(editingCustomer.id, data);
+          toast({
+            title: "Berhasil",
+            description: "Data pelanggan berhasil diperbarui",
+          });
+        } else {
+          await addCustomer(data);
+          toast({
+            title: "Berhasil",
+            description: "Pelanggan baru berhasil ditambahkan",
+          });
+        }
       }
+      
       setIsFormOpen(false);
       setEditingCustomer(null);
     } catch (error) {
+      console.error('Error submitting form:', error);
       toast({
         title: "Error",
         description: "Terjadi kesalahan. Silakan coba lagi.",
@@ -208,7 +235,7 @@ const Customers = () => {
             <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto mx-4">
               <DialogHeader>
                 <DialogTitle className="text-lg md:text-xl">
-                  {editingCustomer ? 'Edit Pelanggan' : 'Tambah Pelanggan Baru'}
+                  {editingCustomer ? 'Edit Pelanggan' : 'Tambah Pelanggan/Reseller Baru'}
                 </DialogTitle>
               </DialogHeader>
               <CustomerForm
