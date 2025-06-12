@@ -330,45 +330,6 @@ export const useCustomers = () => {
     },
   });
 
-  const deleteCustomersByName = async (name: string) => {
-    console.log('Deleting customers by name:', name);
-    
-    const { error } = await supabase
-      .from('customers')
-      .delete()
-      .eq('name', name);
-
-    if (error) {
-      console.error('Error deleting customers by name:', error);
-      throw error;
-    }
-
-    console.log('Customers deleted successfully by name');
-    queryClient.invalidateQueries({ queryKey: ['customers'] });
-  };
-
-  const cancelWorkProcess = async (customerId: string) => {
-    console.log('Canceling work process for customer:', customerId);
-    
-    const { error } = await supabase
-      .from('customers')
-      .update({ 
-        work_status: 'not_started',
-        work_start_date: null,
-        work_completed_date: null,
-        work_notes: null
-      })
-      .eq('id', customerId);
-
-    if (error) {
-      console.error('Error canceling work process:', error);
-      throw error;
-    }
-
-    console.log('Work process canceled successfully');
-    queryClient.invalidateQueries({ queryKey: ['customers'] });
-  };
-
   return {
     customers: query.data || fallbackCustomers,
     loading: query.isLoading,
