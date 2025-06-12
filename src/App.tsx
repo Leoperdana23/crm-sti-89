@@ -23,6 +23,7 @@ import DealHistory from '@/pages/DealHistory';
 import PublicSurvey from '@/pages/PublicSurvey';
 import PublicCatalog from '@/pages/PublicCatalog';
 import Auth from '@/pages/Auth';
+import ResellerAuth from '@/pages/ResellerAuth';
 import NotFound from '@/pages/NotFound';
 import ProductCatalog from '@/pages/ProductCatalog';
 import Orders from '@/pages/Orders';
@@ -36,6 +37,7 @@ function App() {
       <Router>
         <Routes>
           <Route path="/auth" element={<Auth />} />
+          <Route path="/reseller-login" element={<ResellerAuth />} />
           <Route path="/survey/:token" element={<PublicSurvey />} />
           <Route path="/public-survey/:token" element={<PublicSurvey />} />
           <Route path="/catalog/:token" element={<PublicCatalog />} />
