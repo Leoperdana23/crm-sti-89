@@ -1,8 +1,16 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Branch, CreateBranchData } from '@/types/branch';
+import { Branch } from '@/types/branch';
 import { useToast } from '@/hooks/use-toast';
+
+// Define the missing type
+export interface CreateBranchData {
+  name: string;
+  code: string;
+  address?: string;
+  phone?: string;
+  manager_name?: string;
+}
 
 // Fallback sample data
 const fallbackBranches: Branch[] = [
@@ -39,7 +47,7 @@ const fallbackBranches: Branch[] = [
 ];
 
 export const useBranches = () => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['branches'],
     queryFn: async () => {
       try {
@@ -70,6 +78,13 @@ export const useBranches = () => {
       }
     },
   });
+
+  return {
+    branches: query.data || fallbackBranches,
+    loading: query.isLoading,
+    error: query.error,
+    ...query
+  };
 };
 
 export const useCreateBranch = () => {

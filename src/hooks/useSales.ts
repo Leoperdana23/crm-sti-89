@@ -1,8 +1,18 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Sales, CreateSalesData } from '@/types/sales';
+import { Sales } from '@/types/sales';
 import { useToast } from '@/hooks/use-toast';
+
+// Define the missing type
+export interface CreateSalesData {
+  name: string;
+  code: string;
+  email?: string;
+  phone?: string;
+  password_hash?: string;
+  branch_id: string;
+  is_active?: boolean;
+}
 
 // Fallback sample data
 const fallbackSales: Sales[] = [
@@ -16,12 +26,7 @@ const fallbackSales: Sales[] = [
     branch_id: 'branch-1',
     is_active: true,
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    branches: {
-      id: 'branch-1',
-      name: 'Jakarta Pusat',
-      code: 'JKT'
-    }
+    updated_at: new Date().toISOString()
   },
   {
     id: 'sales-2',
@@ -33,12 +38,7 @@ const fallbackSales: Sales[] = [
     branch_id: 'branch-2',
     is_active: true,
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    branches: {
-      id: 'branch-2',
-      name: 'Surabaya',
-      code: 'SBY'
-    }
+    updated_at: new Date().toISOString()
   },
   {
     id: 'sales-3',
@@ -50,17 +50,12 @@ const fallbackSales: Sales[] = [
     branch_id: 'branch-3',
     is_active: true,
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    branches: {
-      id: 'branch-3',
-      name: 'Bandung',
-      code: 'BDG'
-    }
+    updated_at: new Date().toISOString()
   }
 ];
 
 export const useSales = () => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['sales'],
     queryFn: async () => {
       try {
@@ -99,6 +94,13 @@ export const useSales = () => {
       }
     },
   });
+
+  return {
+    sales: query.data || fallbackSales,
+    loading: query.isLoading,
+    error: query.error,
+    ...query
+  };
 };
 
 export const useCreateSales = () => {

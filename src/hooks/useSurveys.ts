@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -49,7 +48,7 @@ const fallbackSurveys: Survey[] = [
 ];
 
 export const useSurveys = () => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['surveys'],
     queryFn: async () => {
       try {
@@ -86,6 +85,13 @@ export const useSurveys = () => {
       }
     },
   });
+
+  return {
+    surveys: query.data || fallbackSurveys,
+    loading: query.isLoading,
+    error: query.error,
+    ...query
+  };
 };
 
 export const useCreateSurvey = () => {
