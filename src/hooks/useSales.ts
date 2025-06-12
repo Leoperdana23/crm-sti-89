@@ -33,7 +33,19 @@ export const useSales = () => {
     },
   });
 
-  const addSalesMutation = useMutation({
+  return {
+    sales: query.data || [],
+    loading: query.isLoading,
+    error: query.error,
+    ...query
+  };
+};
+
+export const useCreateSales = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
     mutationFn: async (salesData: Omit<Sales, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('sales')
@@ -63,9 +75,14 @@ export const useSales = () => {
       });
     },
   });
+};
 
-  const updateSalesMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Sales> }) => {
+export const useUpdateSales = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<Sales>) => {
       const { data, error } = await supabase
         .from('sales')
         .update(updates)
@@ -95,8 +112,13 @@ export const useSales = () => {
       });
     },
   });
+};
 
-  const deleteSalesMutation = useMutation({
+export const useDeleteSales = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('sales')
@@ -123,15 +145,4 @@ export const useSales = () => {
       });
     },
   });
-
-  return {
-    sales: query.data || [],
-    loading: query.isLoading,
-    error: query.error,
-    addSales: addSalesMutation.mutateAsync,
-    updateSales: (id: string, updates: Partial<Sales>) => 
-      updateSalesMutation.mutateAsync({ id, updates }),
-    deleteSales: deleteSalesMutation.mutateAsync,
-    ...query
-  };
 };

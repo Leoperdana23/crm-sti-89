@@ -33,7 +33,19 @@ export const useBranches = () => {
     },
   });
 
-  const addBranchMutation = useMutation({
+  return {
+    branches: query.data || [],
+    loading: query.isLoading,
+    error: query.error,
+    ...query
+  };
+};
+
+export const useCreateBranch = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
     mutationFn: async (branchData: Omit<Branch, 'id' | 'created_at' | 'updated_at'>) => {
       const { data, error } = await supabase
         .from('branches')
@@ -63,9 +75,14 @@ export const useBranches = () => {
       });
     },
   });
+};
 
-  const updateBranchMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Branch> }) => {
+export const useUpdateBranch = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<Branch>) => {
       const { data, error } = await supabase
         .from('branches')
         .update(updates)
@@ -95,8 +112,13 @@ export const useBranches = () => {
       });
     },
   });
+};
 
-  const deleteBranchMutation = useMutation({
+export const useDeleteBranch = () => {
+  const { toast } = useToast();
+  const queryClient = useQueryClient();
+
+  return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase
         .from('branches')
@@ -123,15 +145,4 @@ export const useBranches = () => {
       });
     },
   });
-
-  return {
-    branches: query.data || [],
-    loading: query.isLoading,
-    error: query.error,
-    addBranch: addBranchMutation.mutateAsync,
-    updateBranch: (id: string, updates: Partial<Branch>) => 
-      updateBranchMutation.mutateAsync({ id, updates }),
-    deleteBranch: deleteBranchMutation.mutateAsync,
-    ...query
-  };
 };
