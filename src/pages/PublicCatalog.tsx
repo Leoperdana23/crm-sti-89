@@ -211,7 +211,8 @@ const PublicCatalog = () => {
     currentPage * PRODUCTS_PER_PAGE
   );
 
-  const hasFilters = searchTerm || categoryFilter !== 'all';
+  // Fix: Ensure hasFilters is properly typed as boolean
+  const hasFilters = Boolean(searchTerm || categoryFilter !== 'all');
 
   if (isLoading) {
     return (
