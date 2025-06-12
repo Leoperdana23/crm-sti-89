@@ -14,8 +14,15 @@ export const useOrders = () => {
         .from('orders')
         .select(`
           *,
-          order_items (
-            *
+          order_items (*),
+          resellers!catalog_tokens(
+            id,
+            name,
+            branch_id,
+            branches(
+              id,
+              name
+            )
           )
         `)
         .order('created_at', { ascending: false });
@@ -152,6 +159,62 @@ export const useUpdateOrderStatus = () => {
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Gagal memperbarui status pesanan',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useDeleteOrder = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (orderId: string) => {
+      console.log('Deleting order with ID:', orderId);
+
+      // Check if order exists
+      const { data: existingOrder, error: checkError } = await supabase
+        .from('orders')
+        .select('id')
+        .eq('id', orderId)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking order existence:', checkError);
+        throw checkError;
+      }
+
+      if (!existingOrder) {
+        console.error('Order not found with ID:', orderId);
+        throw new Error(`Pesanan dengan ID ${orderId} tidak ditemukan`);
+      }
+
+      // Delete the order (order_items will be deleted automatically due to CASCADE)
+      const { error } = await supabase
+        .from('orders')
+        .delete()
+        .eq('id', orderId);
+
+      if (error) {
+        console.error('Error deleting order:', error);
+        throw error;
+      }
+
+      console.log('Order deleted successfully');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      toast({
+        title: 'Sukses',
+        description: 'Pesanan berhasil dihapus',
+      });
+    },
+    onError: (error) => {
+      console.error('Error in useDeleteOrder:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Gagal menghapus pesanan',
         variant: 'destructive',
       });
     },

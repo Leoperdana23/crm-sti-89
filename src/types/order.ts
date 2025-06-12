@@ -1,4 +1,3 @@
-
 export interface Order {
   id: string;
   customer_name: string;
@@ -11,6 +10,15 @@ export interface Order {
   expedisi: string | null;
   created_at: string;
   updated_at: string;
+  reseller?: {
+    id: string;
+    name: string;
+    branch_id: string;
+    branches: {
+      id: string;
+      name: string;
+    };
+  };
 }
 
 export interface OrderItem {

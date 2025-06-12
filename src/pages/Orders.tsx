@@ -1,22 +1,27 @@
-
 import React, { useState } from 'react';
-import { Search, Package, Phone, User, Calendar, Edit, MessageCircle, Filter, MapPin, Truck } from 'lucide-react';
+import { Search, Package, Phone, User, Calendar, Edit, MessageCircle, Filter, MapPin, Truck, Trash2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
-import { useOrders } from '@/hooks/useOrders';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { useOrders, useDeleteOrder } from '@/hooks/useOrders';
+import { useBranches } from '@/hooks/useBranches';
 import { Order, OrderItem } from '@/types/order';
 import OrderStatusDialog from '@/components/OrderStatusDialog';
 
 const Orders = () => {
   const { data: orders, isLoading, error } = useOrders();
+  const { branches } = useBranches();
+  const deleteMutation = useDeleteOrder();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [branchFilter, setBranchFilter] = useState('all');
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
+  const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -67,6 +72,15 @@ const Orders = () => {
     window.open(whatsappUrl, '_blank');
   };
 
+  const handleDeleteOrder = async (orderId: string) => {
+    try {
+      await deleteMutation.mutateAsync(orderId);
+      setDeleteOrderId(null);
+    } catch (error) {
+      console.error('Error deleting order:', error);
+    }
+  };
+
   const filteredOrders = orders?.filter(order => {
     const matchesSearch = 
       order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -75,7 +89,11 @@ const Orders = () => {
     
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     
-    return matchesSearch && matchesStatus;
+    // For branch filter, we need to check if the order's catalog_token belongs to a reseller from the selected branch
+    const matchesBranch = branchFilter === 'all' || 
+      (order.reseller && order.reseller.branch_id === branchFilter);
+    
+    return matchesSearch && matchesStatus && matchesBranch;
   }) || [];
 
   if (isLoading) {
@@ -133,6 +151,21 @@ const Orders = () => {
                 />
               </div>
               
+              <Select value={branchFilter} onValueChange={setBranchFilter}>
+                <SelectTrigger className="w-full sm:w-48">
+                  <Filter className="h-4 w-4 mr-2" />
+                  <SelectValue placeholder="Semua Cabang" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Cabang</SelectItem>
+                  {branches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              
               <Select value={statusFilter} onValueChange={setStatusFilter}>
                 <SelectTrigger className="w-full sm:w-48">
                   <Filter className="h-4 w-4 mr-2" />
@@ -161,6 +194,7 @@ const Orders = () => {
                 order={order} 
                 onEditStatus={handleEditStatus}
                 onWhatsAppFollowUp={handleWhatsAppFollowUp}
+                onDelete={setDeleteOrderId}
               />
             ))}
           </div>
@@ -169,20 +203,21 @@ const Orders = () => {
             <CardContent className="text-center py-12">
               <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
               <h3 className="text-xl font-medium text-gray-700 mb-2">
-                {searchTerm || statusFilter !== 'all' 
+                {searchTerm || statusFilter !== 'all' || branchFilter !== 'all'
                   ? 'Pesanan tidak ditemukan' 
                   : 'Belum ada pesanan'}
               </h3>
               <p className="text-gray-500 mb-4">
-                {searchTerm || statusFilter !== 'all'
+                {searchTerm || statusFilter !== 'all' || branchFilter !== 'all'
                   ? 'Coba ubah kata kunci atau filter pencarian Anda'
                   : 'Pesanan akan muncul di sini setelah pelanggan melakukan pemesanan'}
               </p>
-              {(searchTerm || statusFilter !== 'all') && (
+              {(searchTerm || statusFilter !== 'all' || branchFilter !== 'all') && (
                 <Button 
                   onClick={() => {
                     setSearchTerm('');
                     setStatusFilter('all');
+                    setBranchFilter('all');
                   }}
                   variant="outline"
                 >
@@ -205,6 +240,27 @@ const Orders = () => {
           order={selectedOrder}
         />
       )}
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!deleteOrderId} onOpenChange={() => setDeleteOrderId(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Hapus Pesanan</AlertDialogTitle>
+            <AlertDialogDescription>
+              Apakah Anda yakin ingin menghapus pesanan ini? Tindakan ini tidak dapat dibatalkan dan akan menghapus semua data pesanan termasuk item-itemnya.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Batal</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => deleteOrderId && handleDeleteOrder(deleteOrderId)}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              Hapus
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 };
@@ -213,9 +269,10 @@ interface OrderCardProps {
   order: Order & { order_items: OrderItem[] };
   onEditStatus: (order: Order) => void;
   onWhatsAppFollowUp: (order: Order) => void;
+  onDelete: (orderId: string) => void;
 }
 
-const OrderCard = ({ order, onEditStatus, onWhatsAppFollowUp }: OrderCardProps) => {
+const OrderCard = ({ order, onEditStatus, onWhatsAppFollowUp, onDelete }: OrderCardProps) => {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -296,6 +353,15 @@ const OrderCard = ({ order, onEditStatus, onWhatsAppFollowUp }: OrderCardProps) 
               >
                 <Edit className="h-3 w-3" />
                 Edit Status
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onDelete(order.id)}
+                className="flex items-center gap-1 text-red-600 hover:text-red-700 hover:bg-red-50"
+              >
+                <Trash2 className="h-3 w-3" />
+                Hapus
               </Button>
               {(order.status === 'ready' || order.status === 'completed') && (
                 <Button
