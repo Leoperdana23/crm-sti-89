@@ -86,7 +86,7 @@ const getCurrentAuthenticatedUser = () => {
 };
 
 // Helper function to clean product data for database insertion
-const cleanProductData = (productData: CreateProductData) => {
+const cleanProductData = (productData: CreateProductData | Partial<CreateProductData>) => {
   const cleanData: any = { ...productData };
   
   // Convert empty strings to null for UUID fields
