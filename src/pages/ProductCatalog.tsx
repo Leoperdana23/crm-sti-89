@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { Product } from '@/types/product';
 
 const ProductCatalog = () => {
-  const { products, loading } = useProducts();
+  const { data: products, isLoading } = useProducts();
   const { data: categories } = useProductCategories();
   const { user } = useAuth();
   const [searchTerm, setSearchTerm] = useState('');
@@ -55,7 +55,7 @@ const ProductCatalog = () => {
     }).format(price);
   };
 
-  if (loading) {
+  if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[200px] md:min-h-[400px]">
         <div className="flex items-center space-x-2">
