@@ -34,6 +34,12 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
       permission: null
     },
     {
+      to: '/orders',
+      icon: ShoppingCart,
+      label: 'Daftar Pesanan',
+      permission: 'order_view'
+    },
+    {
       to: '/customers',
       icon: Users,
       label: 'Pelanggan',
@@ -44,18 +50,6 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
       icon: UserCheck,
       label: 'Reseller',
       permission: 'reseller_view'
-    },
-    {
-      to: '/product-catalog',
-      icon: Package,
-      label: 'Katalog Produk',
-      permission: 'product_management'
-    },
-    {
-      to: '/orders',
-      icon: ShoppingCart,
-      label: 'Daftar Pesanan',
-      permission: 'order_view'
     },
     {
       to: '/follow-up',
@@ -80,6 +74,12 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
       icon: FileText,
       label: 'Survei',
       permission: 'survey_view'
+    },
+    {
+      to: '/catalog',
+      icon: Package,
+      label: 'Katalog Produk',
+      permission: 'product_management'
     },
     {
       to: '/deal-history',
