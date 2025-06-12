@@ -6,12 +6,15 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import BranchForm from '@/components/BranchForm';
-import { useBranches } from '@/hooks/useBranches';
+import { useBranches, useCreateBranch, useUpdateBranch, useDeleteBranch } from '@/hooks/useBranches';
 import { Branch } from '@/types/branch';
 import { useToast } from '@/hooks/use-toast';
 
 const Branches = () => {
-  const { branches, loading, addBranch, updateBranch, deleteBranch } = useBranches();
+  const { branches, loading } = useBranches();
+  const createBranchMutation = useCreateBranch();
+  const updateBranchMutation = useUpdateBranch();
+  const deleteBranchMutation = useDeleteBranch();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingBranch, setEditingBranch] = useState<Branch | null>(null);
@@ -19,13 +22,13 @@ const Branches = () => {
   const handleSubmit = async (data: any) => {
     try {
       if (editingBranch) {
-        await updateBranch(editingBranch.id, data);
+        await updateBranchMutation.mutateAsync({ id: editingBranch.id, ...data });
         toast({
           title: "Berhasil",
           description: "Data cabang berhasil diperbarui",
         });
       } else {
-        await addBranch(data);
+        await createBranchMutation.mutateAsync(data);
         toast({
           title: "Berhasil",
           description: "Cabang baru berhasil ditambahkan",
@@ -50,7 +53,7 @@ const Branches = () => {
   const handleDelete = async (id: string) => {
     if (confirm('Yakin ingin menghapus cabang ini?')) {
       try {
-        await deleteBranch(id);
+        await deleteBranchMutation.mutateAsync(id);
         toast({
           title: "Berhasil",
           description: "Cabang berhasil dihapus",

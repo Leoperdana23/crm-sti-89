@@ -31,9 +31,7 @@ const fallbackCustomers: Customer[] = [
     assigned_employees: [],
     interactions: [],
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    branches: { id: 'branch-1', name: 'Jakarta Pusat', code: 'JKT' },
-    sales: { id: 'sales-1', name: 'Ahmad Rizki', code: 'AR001' }
+    updated_at: new Date().toISOString()
   },
   {
     id: '2',
@@ -57,9 +55,7 @@ const fallbackCustomers: Customer[] = [
     assigned_employees: [],
     interactions: [],
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    branches: { id: 'branch-1', name: 'Jakarta Pusat', code: 'JKT' },
-    sales: { id: 'sales-1', name: 'Ahmad Rizki', code: 'AR001' }
+    updated_at: new Date().toISOString()
   },
   {
     id: '3',
@@ -83,9 +79,7 @@ const fallbackCustomers: Customer[] = [
     assigned_employees: ['dev-1', 'dev-2'],
     interactions: [],
     created_at: new Date().toISOString(),
-    updated_at: new Date().toISOString(),
-    branches: { id: 'branch-1', name: 'Jakarta Pusat', code: 'JKT' },
-    sales: { id: 'sales-1', name: 'Ahmad Rizki', code: 'AR001' }
+    updated_at: new Date().toISOString()
   }
 ];
 

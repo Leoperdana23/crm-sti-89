@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -86,10 +87,42 @@ export const useSurveys = () => {
     },
   });
 
+  const getAverageRatings = () => {
+    const surveys = query.data || fallbackSurveys;
+    const completedSurveys = surveys.filter(s => s.is_completed);
+    
+    if (completedSurveys.length === 0) {
+      return {
+        product_quality: 0,
+        service_sales: 0,
+        service_technician: 0,
+        usage_clarity: 0,
+        total: 0
+      };
+    }
+
+    const totals = completedSurveys.reduce((acc, survey) => ({
+      product_quality: acc.product_quality + survey.product_quality,
+      service_sales: acc.service_sales + survey.service_sales,
+      service_technician: acc.service_technician + survey.service_technician,
+      usage_clarity: acc.usage_clarity + survey.usage_clarity,
+    }), { product_quality: 0, service_sales: 0, service_technician: 0, usage_clarity: 0 });
+
+    const count = completedSurveys.length;
+    return {
+      product_quality: Math.round((totals.product_quality / count) * 10) / 10,
+      service_sales: Math.round((totals.service_sales / count) * 10) / 10,
+      service_technician: Math.round((totals.service_technician / count) * 10) / 10,
+      usage_clarity: Math.round((totals.usage_clarity / count) * 10) / 10,
+      total: count
+    };
+  };
+
   return {
     surveys: query.data || fallbackSurveys,
     loading: query.isLoading,
     error: query.error,
+    getAverageRatings,
     ...query
   };
 };

@@ -5,14 +5,17 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Input } from '@/components/ui/input';
 import { Plus, Search, Users } from 'lucide-react';
-import { useSales } from '@/hooks/useSales';
+import { useSales, useCreateSales, useUpdateSales, useDeleteSales } from '@/hooks/useSales';
 import { Sales as SalesType } from '@/types/sales';
 import SalesForm from '@/components/SalesForm';
 import SalesCard from '@/components/SalesCard';
 import { useToast } from '@/hooks/use-toast';
 
 const Sales = () => {
-  const { sales, loading, addSales, updateSales, deleteSales } = useSales();
+  const { sales, loading } = useSales();
+  const createSalesMutation = useCreateSales();
+  const updateSalesMutation = useUpdateSales();
+  const deleteSalesMutation = useDeleteSales();
   const { toast } = useToast();
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSales, setEditingSales] = useState<SalesType | null>(null);
@@ -27,18 +30,19 @@ const Sales = () => {
   const handleSubmit = async (data: any) => {
     try {
       if (editingSales) {
-        await updateSales(editingSales.id, {
+        await updateSalesMutation.mutateAsync({
+          id: editingSales.id,
           ...data,
-          isActive: true,
+          is_active: true,
         });
         toast({
           title: "Berhasil",
           description: "Data sales berhasil diupdate",
         });
       } else {
-        await addSales({
+        await createSalesMutation.mutateAsync({
           ...data,
-          isActive: true,
+          is_active: true,
         });
         toast({
           title: "Berhasil",
@@ -65,7 +69,7 @@ const Sales = () => {
     if (!deletingSales) return;
 
     try {
-      await deleteSales(deletingSales.id);
+      await deleteSalesMutation.mutateAsync(deletingSales.id);
       toast({
         title: "Berhasil",
         description: "Sales berhasil dihapus",
