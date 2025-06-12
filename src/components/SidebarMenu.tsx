@@ -13,8 +13,7 @@ import {
   TrendingUp, 
   Building, 
   BarChart3, 
-  Shield, 
-  Clock 
+  Shield 
 } from 'lucide-react';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import MenuItem from './MenuItem';
@@ -116,12 +115,6 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
       icon: Shield,
       label: 'Hak Akses Role',
       permission: 'role_permission_view'
-    },
-    {
-      to: '/attendance',
-      icon: Clock,
-      label: 'Absensi',
-      permission: 'attendance_view'
     }
   ];
 

@@ -22,8 +22,6 @@ import PublicSurvey from '@/pages/PublicSurvey';
 import WorkProcess from '@/pages/WorkProcess';
 import Birthday from '@/pages/Birthday';
 import DealHistory from '@/pages/DealHistory';
-import Attendance from '@/pages/Attendance';
-import AttendanceApp from '@/pages/AttendanceApp';
 import RolePermissions from '@/pages/RolePermissions';
 import NotFound from '@/pages/NotFound';
 import Layout from '@/components/Layout';
@@ -149,18 +147,6 @@ function App() {
                 <Layout>
                   <DealHistory />
                 </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/attendance" element={
-              <ProtectedRoute>
-                <Layout>
-                  <Attendance />
-                </Layout>
-              </ProtectedRoute>
-            } />
-            <Route path="/attendance-app" element={
-              <ProtectedRoute>
-                <AttendanceApp />
               </ProtectedRoute>
             } />
             <Route path="/role-permissions" element={

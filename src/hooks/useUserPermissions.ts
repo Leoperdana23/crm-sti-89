@@ -90,8 +90,7 @@ export const useUserPermissions = () => {
         'branch_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'reports_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'user_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-        'role_permission_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-        'attendance_view': { can_view: true, can_create: true, can_edit: true, can_delete: true }
+        'role_permission_view': { can_view: true, can_create: true, can_edit: true, can_delete: true }
       };
     } else if (role === 'admin') {
       return {
@@ -100,16 +99,14 @@ export const useUserPermissions = () => {
         'sales_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
         'branch_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
         'reports_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-        'user_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-        'attendance_view': { can_view: true, can_create: true, can_edit: true, can_delete: false }
+        'user_view': { can_view: true, can_create: true, can_edit: true, can_delete: false }
       };
     } else if (role === 'manager') {
       return {
         ...staffPermissions,
         'product_management': { can_view: true, can_create: false, can_edit: false, can_delete: false },
         'branch_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-        'reports_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-        'attendance_view': { can_view: true, can_create: true, can_edit: true, can_delete: false }
+        'reports_view': { can_view: true, can_create: true, can_edit: true, can_delete: true }
       };
     }
 
