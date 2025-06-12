@@ -520,6 +520,8 @@ export type Database = {
           created_at: string
           customer_name: string
           customer_phone: string
+          delivery_method: string | null
+          expedisi: string | null
           id: string
           notes: string | null
           status: string
@@ -531,6 +533,8 @@ export type Database = {
           created_at?: string
           customer_name: string
           customer_phone: string
+          delivery_method?: string | null
+          expedisi?: string | null
           id?: string
           notes?: string | null
           status?: string
@@ -542,6 +546,8 @@ export type Database = {
           created_at?: string
           customer_name?: string
           customer_phone?: string
+          delivery_method?: string | null
+          expedisi?: string | null
           id?: string
           notes?: string | null
           status?: string

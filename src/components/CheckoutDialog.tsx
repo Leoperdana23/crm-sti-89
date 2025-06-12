@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2, ShoppingCart } from 'lucide-react';
 import { useCreateOrder } from '@/hooks/useOrders';
 import { Product } from '@/types/product';
@@ -26,6 +27,8 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, onOrderSuccess }:
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [notes, setNotes] = useState('');
+  const [deliveryMethod, setDeliveryMethod] = useState('pickup');
+  const [expedisi, setExpedisi] = useState('');
   
   const createOrderMutation = useCreateOrder();
 
@@ -51,11 +54,17 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, onOrderSuccess }:
       return;
     }
 
+    if (deliveryMethod === 'delivery' && !expedisi.trim()) {
+      return;
+    }
+
     const orderData = {
       customer_name: customerName.trim(),
       customer_phone: customerPhone.trim(),
       catalog_token: catalogToken,
       total_amount: getTotalAmount(),
+      delivery_method: deliveryMethod,
+      expedisi: deliveryMethod === 'delivery' ? expedisi.trim() : undefined,
       notes: notes.trim() || undefined,
     };
 
@@ -76,6 +85,8 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, onOrderSuccess }:
       setCustomerName('');
       setCustomerPhone('');
       setNotes('');
+      setDeliveryMethod('pickup');
+      setExpedisi('');
     } catch (error) {
       console.error('Failed to create order:', error);
     }
@@ -134,6 +145,35 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, onOrderSuccess }:
                 className="mt-1"
               />
             </div>
+
+            {/* Delivery Method */}
+            <div>
+              <Label htmlFor="deliveryMethod" className="text-sm">Metode Pengambilan *</Label>
+              <Select value={deliveryMethod} onValueChange={setDeliveryMethod}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Pilih metode pengambilan" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="pickup">Diambil di Toko</SelectItem>
+                  <SelectItem value="delivery">Dikirim</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Expedisi field - only show when delivery is selected */}
+            {deliveryMethod === 'delivery' && (
+              <div>
+                <Label htmlFor="expedisi" className="text-sm">Expedisi *</Label>
+                <Input
+                  id="expedisi"
+                  value={expedisi}
+                  onChange={(e) => setExpedisi(e.target.value)}
+                  placeholder="Masukkan nama expedisi (JNE, TIKI, dll)"
+                  required
+                  className="mt-1"
+                />
+              </div>
+            )}
             
             <div>
               <Label htmlFor="notes" className="text-sm">Catatan (Opsional)</Label>
@@ -162,7 +202,12 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, onOrderSuccess }:
             <Button
               type="submit"
               className="flex-1 bg-green-600 hover:bg-green-700"
-              disabled={createOrderMutation.isPending || !customerName.trim() || !customerPhone.trim()}
+              disabled={
+                createOrderMutation.isPending || 
+                !customerName.trim() || 
+                !customerPhone.trim() ||
+                (deliveryMethod === 'delivery' && !expedisi.trim())
+              }
             >
               {createOrderMutation.isPending ? (
                 <>

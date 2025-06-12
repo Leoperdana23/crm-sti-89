@@ -7,6 +7,8 @@ export interface Order {
   status: string;
   total_amount: number;
   notes: string | null;
+  delivery_method: string;
+  expedisi: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -27,6 +29,8 @@ export interface CreateOrderData {
   customer_phone: string;
   catalog_token: string;
   total_amount: number;
+  delivery_method: string;
+  expedisi?: string;
   notes?: string;
 }
 

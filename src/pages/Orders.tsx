@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { Search, Package, Phone, User, Calendar, Clock, Filter } from 'lucide-react';
+import { Search, Package, Phone, User, Calendar, Edit, MessageCircle, Filter, MapPin, Truck } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,11 +9,14 @@ import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import { useOrders } from '@/hooks/useOrders';
 import { Order, OrderItem } from '@/types/order';
+import OrderStatusDialog from '@/components/OrderStatusDialog';
 
 const Orders = () => {
   const { data: orders, isLoading, error } = useOrders();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
+  const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
 
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -38,6 +41,7 @@ const Orders = () => {
       pending: { label: 'Menunggu', variant: 'secondary' as const },
       confirmed: { label: 'Dikonfirmasi', variant: 'default' as const },
       processing: { label: 'Diproses', variant: 'default' as const },
+      ready: { label: 'Siap', variant: 'default' as const },
       completed: { label: 'Selesai', variant: 'default' as const },
       cancelled: { label: 'Dibatalkan', variant: 'destructive' as const },
     };
@@ -48,6 +52,19 @@ const Orders = () => {
         {config.label}
       </Badge>
     );
+  };
+
+  const handleEditStatus = (order: Order) => {
+    setSelectedOrder(order);
+    setIsStatusDialogOpen(true);
+  };
+
+  const handleWhatsAppFollowUp = (order: Order) => {
+    const message = `Halo ${order.customer_name}, pesanan Anda dengan ID #${order.id.slice(-8)} sudah siap. Silakan untuk mengambil/menunggu pengiriman pesanan Anda. Terima kasih!`;
+    const phoneNumber = order.customer_phone.replace(/\D/g, '');
+    const formattedPhone = phoneNumber.startsWith('0') ? '62' + phoneNumber.slice(1) : phoneNumber;
+    const whatsappUrl = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`;
+    window.open(whatsappUrl, '_blank');
   };
 
   const filteredOrders = orders?.filter(order => {
@@ -126,6 +143,7 @@ const Orders = () => {
                   <SelectItem value="pending">Menunggu</SelectItem>
                   <SelectItem value="confirmed">Dikonfirmasi</SelectItem>
                   <SelectItem value="processing">Diproses</SelectItem>
+                  <SelectItem value="ready">Siap</SelectItem>
                   <SelectItem value="completed">Selesai</SelectItem>
                   <SelectItem value="cancelled">Dibatalkan</SelectItem>
                 </SelectContent>
@@ -138,7 +156,12 @@ const Orders = () => {
         {filteredOrders.length > 0 ? (
           <div className="space-y-4">
             {filteredOrders.map((order) => (
-              <OrderCard key={order.id} order={order} />
+              <OrderCard 
+                key={order.id} 
+                order={order} 
+                onEditStatus={handleEditStatus}
+                onWhatsAppFollowUp={handleWhatsAppFollowUp}
+              />
             ))}
           </div>
         ) : (
@@ -170,15 +193,29 @@ const Orders = () => {
           </Card>
         )}
       </div>
+
+      {/* Status Edit Dialog */}
+      {selectedOrder && (
+        <OrderStatusDialog
+          isOpen={isStatusDialogOpen}
+          onClose={() => {
+            setIsStatusDialogOpen(false);
+            setSelectedOrder(null);
+          }}
+          order={selectedOrder}
+        />
+      )}
     </div>
   );
 };
 
 interface OrderCardProps {
   order: Order & { order_items: OrderItem[] };
+  onEditStatus: (order: Order) => void;
+  onWhatsAppFollowUp: (order: Order) => void;
 }
 
-const OrderCard = ({ order }: OrderCardProps) => {
+const OrderCard = ({ order, onEditStatus, onWhatsAppFollowUp }: OrderCardProps) => {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -202,6 +239,7 @@ const OrderCard = ({ order }: OrderCardProps) => {
       pending: { label: 'Menunggu', variant: 'secondary' as const },
       confirmed: { label: 'Dikonfirmasi', variant: 'default' as const },
       processing: { label: 'Diproses', variant: 'default' as const },
+      ready: { label: 'Siap', variant: 'default' as const },
       completed: { label: 'Selesai', variant: 'default' as const },
       cancelled: { label: 'Dibatalkan', variant: 'destructive' as const },
     };
@@ -214,25 +252,62 @@ const OrderCard = ({ order }: OrderCardProps) => {
     );
   };
 
+  const getDeliveryIcon = (method: string) => {
+    return method === 'delivery' ? <Truck className="h-4 w-4" /> : <MapPin className="h-4 w-4" />;
+  };
+
+  const getDeliveryLabel = (method: string) => {
+    return method === 'delivery' ? 'Dikirim' : 'Diambil';
+  };
+
   return (
     <Card>
       <CardHeader className="pb-3">
         <div className="flex items-start justify-between">
-          <div>
-            <CardTitle className="text-lg flex items-center gap-2">
+          <div className="flex-1">
+            <CardTitle className="text-lg flex items-center gap-2 mb-2">
               <span className="text-gray-500 font-mono text-sm">#{order.id.slice(-8)}</span>
               {getStatusBadge(order.status)}
             </CardTitle>
-            <div className="flex items-center gap-4 mt-2 text-sm text-gray-600">
+            <div className="flex items-center gap-4 text-sm text-gray-600">
               <div className="flex items-center gap-1">
                 <Calendar className="h-4 w-4" />
                 {formatDate(order.created_at)}
               </div>
+              <div className="flex items-center gap-1">
+                {getDeliveryIcon(order.delivery_method)}
+                {getDeliveryLabel(order.delivery_method)}
+                {order.delivery_method === 'delivery' && order.expedisi && (
+                  <span className="text-xs">({order.expedisi})</span>
+                )}
+              </div>
             </div>
           </div>
           <div className="text-right">
-            <div className="text-2xl font-bold text-green-600">
+            <div className="text-2xl font-bold text-green-600 mb-2">
               {formatPrice(order.total_amount)}
+            </div>
+            <div className="flex gap-2">
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => onEditStatus(order)}
+                className="flex items-center gap-1"
+              >
+                <Edit className="h-3 w-3" />
+                Edit Status
+              </Button>
+              {(order.status === 'ready' || order.status === 'completed') && (
+                <Button
+                  size="sm"
+                  variant="default"
+                  onClick={() => onWhatsAppFollowUp(order)}
+                  className="flex items-center gap-1 bg-green-600 hover:bg-green-700"
+                >
+                  <MessageCircle className="h-3 w-3" />
+                  WA Follow Up
+                </Button>
+              )}
             </div>
           </div>
         </div>

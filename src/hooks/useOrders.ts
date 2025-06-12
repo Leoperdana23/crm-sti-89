@@ -92,3 +92,44 @@ export const useCreateOrder = () => {
     },
   });
 };
+
+export const useUpdateOrderStatus = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
+      console.log('Updating order status:', orderId, status);
+
+      const { data, error } = await supabase
+        .from('orders')
+        .update({ status, updated_at: new Date().toISOString() })
+        .eq('id', orderId)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating order status:', error);
+        throw error;
+      }
+
+      console.log('Order status updated successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      toast({
+        title: 'Sukses',
+        description: 'Status pesanan berhasil diperbarui',
+      });
+    },
+    onError: (error) => {
+      console.error('Error in useUpdateOrderStatus:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal memperbarui status pesanan',
+        variant: 'destructive',
+      });
+    },
+  });
+};

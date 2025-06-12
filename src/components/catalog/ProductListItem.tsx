@@ -1,18 +1,22 @@
 
-import React from 'react';
-import { Package, Plus, Minus } from 'lucide-react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Badge } from '@/components/ui/badge';
+import { Plus, Minus, Edit2, Check, X } from 'lucide-react';
 import { Product } from '@/types/product';
 
 interface ProductListItemProps {
   product: Product;
   quantity: number;
-  onAdd: () => void;
-  onRemove: () => void;
+  onQuantityChange: (productId: string, quantity: number) => void;
 }
 
-const ProductListItem = ({ product, quantity, onAdd, onRemove }: ProductListItemProps) => {
+const ProductListItem = ({ product, quantity, onQuantityChange }: ProductListItemProps) => {
+  const [isEditingQty, setIsEditingQty] = useState(false);
+  const [editQty, setEditQty] = useState(quantity.toString());
+
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -22,15 +26,49 @@ const ProductListItem = ({ product, quantity, onAdd, onRemove }: ProductListItem
   };
 
   const displayPrice = product.reseller_price || product.price;
-  const hasDiscount = product.reseller_price && product.reseller_price < product.price;
-  const categoryName = product.product_categories?.name || 'Uncategorized';
+
+  const handleQuantityIncrease = () => {
+    onQuantityChange(product.id, quantity + 1);
+  };
+
+  const handleQuantityDecrease = () => {
+    if (quantity > 0) {
+      onQuantityChange(product.id, quantity - 1);
+    }
+  };
+
+  const handleQtyEdit = () => {
+    setEditQty(quantity.toString());
+    setIsEditingQty(true);
+  };
+
+  const handleQtyConfirm = () => {
+    const newQty = parseInt(editQty) || 0;
+    if (newQty >= 0) {
+      onQuantityChange(product.id, newQty);
+    }
+    setIsEditingQty(false);
+  };
+
+  const handleQtyCancel = () => {
+    setEditQty(quantity.toString());
+    setIsEditingQty(false);
+  };
+
+  const handleQtyKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === 'Enter') {
+      handleQtyConfirm();
+    } else if (e.key === 'Escape') {
+      handleQtyCancel();
+    }
+  };
 
   return (
-    <Card className="shadow-sm border-0 bg-white">
-      <CardContent className="p-3">
-        <div className="flex items-start space-x-3">
+    <Card className="hover:shadow-md transition-shadow">
+      <CardContent className="p-4">
+        <div className="flex items-start gap-4">
           {/* Product Image */}
-          <div className="relative w-16 h-16 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
+          <div className="w-16 h-16 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
             {product.image_url ? (
               <img 
                 src={product.image_url} 
@@ -38,79 +76,114 @@ const ProductListItem = ({ product, quantity, onAdd, onRemove }: ProductListItem
                 className="w-full h-full object-cover"
               />
             ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                <Package className="h-6 w-6 text-gray-400" />
+              <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                No Image
               </div>
             )}
           </div>
-          
+
           {/* Product Info */}
           <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-start">
-              <div className="flex-1 pr-2">
-                {/* Product Name */}
-                <h3 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-1">
-                  {product.name}
-                </h3>
-                
-                {/* Category */}
-                <p className="text-xs text-gray-500 mb-1">
-                  {categoryName}
-                </p>
-
-                {/* Price */}
-                <div className="flex items-baseline space-x-1 mb-1">
-                  <span className="text-base font-bold text-gray-900">
-                    {formatPrice(displayPrice)}
-                  </span>
-                  {hasDiscount && (
-                    <span className="text-xs text-gray-400 line-through">
-                      {formatPrice(product.price)}
-                    </span>
-                  )}
-                </div>
-
-                {/* Description */}
-                {product.description && (
-                  <p className="text-xs text-gray-600 line-clamp-2">
-                    {product.description}
-                  </p>
-                )}
-              </div>
-              
-              {/* Add/Remove Controls */}
-              <div className="flex flex-col items-end justify-center h-full ml-2">
-                {quantity === 0 ? (
-                  <Button
-                    onClick={onAdd}
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg font-medium text-xs h-7 w-8"
-                  >
-                    +
-                  </Button>
-                ) : (
-                  <div className="flex items-center bg-green-600 rounded-lg overflow-hidden">
-                    <Button
-                      size="sm"
-                      onClick={onRemove}
-                      className="bg-green-600 hover:bg-green-700 text-white w-6 h-6 p-0 rounded-none"
-                    >
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <span className="text-white font-semibold px-2 py-1 bg-green-600 text-xs min-w-[28px] text-center">
-                      {quantity}
-                    </span>
-                    <Button
-                      size="sm"
-                      onClick={onAdd}
-                      className="bg-green-600 hover:bg-green-700 text-white w-6 h-6 p-0 rounded-none"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
-              </div>
+            <h3 className="font-medium text-sm text-gray-900 truncate">
+              {product.name}
+            </h3>
+            
+            {product.description && (
+              <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+                {product.description}
+              </p>
+            )}
+            
+            <div className="flex items-center gap-2 mt-2">
+              <span className="font-bold text-green-600 text-sm">
+                {formatPrice(displayPrice)}
+              </span>
+              <Badge variant="outline" className="text-xs">
+                {product.unit}
+              </Badge>
+              {product.reseller_price && (
+                <Badge variant="secondary" className="text-xs">
+                  Harga Reseller
+                </Badge>
+              )}
             </div>
+          </div>
+
+          {/* Quantity Controls */}
+          <div className="flex flex-col items-end gap-2">
+            <div className="flex items-center gap-1">
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 w-8 p-0"
+                onClick={handleQuantityDecrease}
+                disabled={quantity === 0}
+              >
+                <Minus className="h-3 w-3" />
+              </Button>
+              
+              {isEditingQty ? (
+                <div className="flex items-center gap-1">
+                  <Input
+                    type="number"
+                    min="0"
+                    value={editQty}
+                    onChange={(e) => setEditQty(e.target.value)}
+                    onKeyDown={handleQtyKeyPress}
+                    className="w-16 h-8 text-center text-sm"
+                    autoFocus
+                  />
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
+                    onClick={handleQtyConfirm}
+                  >
+                    <Check className="h-3 w-3 text-green-600" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
+                    onClick={handleQtyCancel}
+                  >
+                    <X className="h-3 w-3 text-red-600" />
+                  </Button>
+                </div>
+              ) : (
+                <div className="flex items-center gap-1">
+                  <span 
+                    className="w-12 h-8 flex items-center justify-center text-sm font-medium border rounded cursor-pointer hover:bg-gray-50"
+                    onClick={handleQtyEdit}
+                  >
+                    {quantity}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-6 w-6 p-0"
+                    onClick={handleQtyEdit}
+                  >
+                    <Edit2 className="h-3 w-3 text-gray-500" />
+                  </Button>
+                </div>
+              )}
+              
+              <Button
+                size="sm"
+                variant="outline"
+                className="h-8 w-8 p-0"
+                onClick={handleQuantityIncrease}
+              >
+                <Plus className="h-3 w-3" />
+              </Button>
+            </div>
+            
+            {quantity > 0 && (
+              <span className="text-xs text-gray-600">
+                Total: {formatPrice(displayPrice * quantity)}
+              </span>
+            )}
           </div>
         </div>
       </CardContent>
