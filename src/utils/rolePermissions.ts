@@ -26,18 +26,28 @@ export const createRolePermissionsData = (permissions: Permission[]) => {
         canEdit = permission.name !== 'role_permissions';
         canDelete = permission.name !== 'role_permissions' && permission.name !== 'users';
       } else if (role === 'manager') {
-        // Manager gets access to all menus except user and role management
+        // Manager gets access to operational menus but not user/role management
         const managerRestrictedModules = ['users', 'role_permissions'];
         hasAccess = !managerRestrictedModules.includes(permission.name);
         canCreate = hasAccess;
         canEdit = hasAccess;
         canDelete = hasAccess && !['sales', 'branches'].includes(permission.name);
       } else if (role === 'staff') {
-        // Staff only gets access to dashboard, customers, follow-up, work process, and survey
-        const staffModules = ['dashboard', 'customers', 'follow_up', 'work_process', 'survey'];
-        hasAccess = staffModules.includes(permission.name);
-        canCreate = hasAccess && ['customers', 'follow_up', 'survey'].includes(permission.name);
-        canEdit = hasAccess && ['customers', 'follow_up', 'survey'].includes(permission.name);
+        // Staff gets access to basic operational menus
+        const staffAllowedModules = [
+          'dashboard', 
+          'orders', 
+          'customers', 
+          'resellers', 
+          'follow_up', 
+          'birthday', 
+          'work_process', 
+          'survey', 
+          'product_catalog'
+        ];
+        hasAccess = staffAllowedModules.includes(permission.name);
+        canCreate = hasAccess && ['orders', 'customers', 'resellers', 'follow_up', 'work_process', 'survey'].includes(permission.name);
+        canEdit = hasAccess && ['orders', 'customers', 'resellers', 'follow_up', 'work_process', 'survey'].includes(permission.name);
         canDelete = false; // Staff cannot delete anything
       }
 

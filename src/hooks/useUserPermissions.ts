@@ -141,12 +141,6 @@ export const useUserPermissions = () => {
       return true;
     }
 
-    // Special handling for birthday menu (no permission required)
-    if (permissionName === 'birthday') {
-      console.log('Birthday menu - access granted (no permission required)');
-      return true;
-    }
-
     const permission = permissions[permissionName];
     if (!permission) {
       console.log(`No permission found for: ${permissionName}`);

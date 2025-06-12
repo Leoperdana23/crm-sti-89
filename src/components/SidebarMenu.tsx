@@ -121,8 +121,8 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
   return (
     <nav className="space-y-1">
       {menuItems.map((item) => {
-        // Show item if no permission required or user has permission
-        if (item.permission && !hasPermission(item.permission)) {
+        // Show item if user has permission to view it
+        if (!hasPermission(item.permission, 'view')) {
           return null;
         }
 
