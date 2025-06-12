@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, Package, CheckCircle, User, LogOut } from 'lucide-react';
+import { Search, Package, CheckCircle, User, LogOut, History } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
@@ -11,6 +11,7 @@ import CheckoutDialog from '@/components/CheckoutDialog';
 import SearchAndFilter from '@/components/catalog/SearchAndFilter';
 import ProductGrid from '@/components/catalog/ProductGrid';
 import CartButton from '@/components/catalog/CartButton';
+import OrderHistoryDialog from '@/components/OrderHistoryDialog';
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -34,6 +35,7 @@ const PublicCatalog = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const [cart, setCart] = useState<CartItem[]>([]);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
   const [orderSuccess, setOrderSuccess] = useState(false);
 
   useEffect(() => {
@@ -277,6 +279,15 @@ const PublicCatalog = () => {
             <div className="flex items-center gap-2">
               {session ? (
                 <div className="flex items-center gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setIsOrderHistoryOpen(true)}
+                    className="flex items-center gap-1"
+                  >
+                    <History className="h-3 w-3" />
+                    <span className="hidden sm:inline">History</span>
+                  </Button>
                   <div className="flex items-center gap-1 text-sm text-gray-600">
                     <User className="h-4 w-4" />
                     <span className="hidden sm:inline">{session.name}</span>
@@ -355,6 +366,13 @@ const PublicCatalog = () => {
         catalogToken={token || ''}
         resellerSession={session}
         onOrderSuccess={handleOrderSuccess}
+      />
+
+      {/* Order History Dialog */}
+      <OrderHistoryDialog
+        isOpen={isOrderHistoryOpen}
+        onClose={() => setIsOrderHistoryOpen(false)}
+        catalogToken={token}
       />
     </div>
   );
