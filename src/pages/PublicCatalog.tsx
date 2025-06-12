@@ -1,11 +1,11 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Search, Filter, Package, Grid, List, SlidersHorizontal, Plus, Minus, ShoppingCart } from 'lucide-react';
-import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
+import { Search, Package, ShoppingCart, Plus, Minus } from 'lucide-react';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
 import {
   Pagination,
@@ -35,7 +35,6 @@ const PublicCatalog = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
-  const [viewMode, setViewMode] = useState<'grid' | 'list'>('list');
   const [currentPage, setCurrentPage] = useState(1);
   const [cart, setCart] = useState<CartItem[]>([]);
 
@@ -232,19 +231,19 @@ const PublicCatalog = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="max-w-md mx-auto px-4 py-4">
+        <div className="w-full max-w-sm mx-auto px-3 py-3">
           <div className="flex items-center justify-between">
-            <h1 className="text-xl font-bold text-gray-900">Katalog Produk</h1>
+            <h1 className="text-lg font-bold text-gray-900">Katalog Produk</h1>
             <Search className="h-5 w-5 text-gray-400" />
           </div>
         </div>
       </div>
 
-      <div className="max-w-md mx-auto px-4 py-4 space-y-4">
+      <div className="w-full max-w-sm mx-auto px-3 py-3 space-y-3">
         {/* Search and Filter Bar */}
         <Card className="shadow-sm border-0">
-          <CardContent className="p-4">
-            <div className="flex flex-col gap-4">
+          <CardContent className="p-3">
+            <div className="flex flex-col gap-3">
               {/* Search */}
               <div className="relative">
                 <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
@@ -255,17 +254,17 @@ const PublicCatalog = () => {
                     setSearchTerm(e.target.value);
                     setCurrentPage(1);
                   }}
-                  className="pl-10 border-gray-200 focus:border-green-500 focus:ring-green-500"
+                  className="pl-10 border-gray-200 focus:border-green-500 focus:ring-green-500 text-sm"
                 />
               </div>
               
               {/* Filters */}
-              <div className="flex gap-2 overflow-x-auto pb-2">
+              <div className="flex gap-2">
                 <Select value={categoryFilter} onValueChange={(value) => {
                   setCategoryFilter(value);
                   setCurrentPage(1);
                 }}>
-                  <SelectTrigger className="w-32 shrink-0">
+                  <SelectTrigger className="flex-1 text-sm">
                     <SelectValue placeholder="Semua" />
                   </SelectTrigger>
                   <SelectContent>
@@ -279,7 +278,7 @@ const PublicCatalog = () => {
                 </Select>
 
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-32 shrink-0">
+                  <SelectTrigger className="flex-1 text-sm">
                     <SelectValue placeholder="Nama" />
                   </SelectTrigger>
                   <SelectContent>
@@ -296,7 +295,7 @@ const PublicCatalog = () => {
         {/* Product List */}
         {paginatedProducts.length > 0 ? (
           <>
-            <div className="space-y-3">
+            <div className="space-y-2">
               {paginatedProducts.map((product) => (
                 <ProductListItem 
                   key={product.id} 
@@ -310,7 +309,7 @@ const PublicCatalog = () => {
 
             {/* Pagination */}
             {totalPages > 1 && (
-              <div className="flex justify-center mt-8">
+              <div className="flex justify-center mt-6">
                 <Pagination>
                   <PaginationContent>
                     <PaginationItem>
@@ -324,7 +323,7 @@ const PublicCatalog = () => {
                       />
                     </PaginationItem>
                     
-                    {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
+                    {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
                       const page = i + 1;
                       return (
                         <PaginationItem key={page}>
@@ -335,6 +334,7 @@ const PublicCatalog = () => {
                               setCurrentPage(page);
                             }}
                             isActive={currentPage === page}
+                            className="text-sm"
                           >
                             {page}
                           </PaginationLink>
@@ -359,14 +359,14 @@ const PublicCatalog = () => {
           </>
         ) : (
           <Card className="shadow-sm border-0">
-            <CardContent className="text-center py-12">
-              <Package className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-              <h3 className="text-xl font-medium text-gray-700 mb-2">
+            <CardContent className="text-center py-8">
+              <Package className="h-12 w-12 text-gray-300 mx-auto mb-3" />
+              <h3 className="text-lg font-medium text-gray-700 mb-2">
                 {searchTerm || categoryFilter !== 'all' 
                   ? 'Produk tidak ditemukan' 
                   : 'Belum ada produk'}
               </h3>
-              <p className="text-gray-500 mb-4">
+              <p className="text-gray-500 mb-3 text-sm">
                 {searchTerm || categoryFilter !== 'all'
                   ? 'Coba ubah kata kunci atau filter pencarian Anda'
                   : 'Produk akan segera ditambahkan'}
@@ -379,7 +379,7 @@ const PublicCatalog = () => {
                     setCurrentPage(1);
                   }}
                   variant="outline"
-                  className="border-green-200 text-green-600 hover:bg-green-50"
+                  className="border-green-200 text-green-600 hover:bg-green-50 text-sm"
                 >
                   Reset Pencarian
                 </Button>
@@ -391,23 +391,23 @@ const PublicCatalog = () => {
 
       {/* Fixed Cart Button */}
       {getTotalItems() > 0 && (
-        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4">
-          <div className="bg-green-600 text-white rounded-xl px-6 py-4 flex items-center justify-between shadow-lg">
-            <div className="flex items-center space-x-3">
-              <div className="bg-green-700 rounded-full p-2">
-                <ShoppingCart className="h-5 w-5" />
+        <div className="fixed bottom-3 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-sm px-3">
+          <div className="bg-green-600 text-white rounded-xl px-4 py-3 flex items-center justify-between shadow-lg">
+            <div className="flex items-center space-x-2">
+              <div className="bg-green-700 rounded-full p-1.5">
+                <ShoppingCart className="h-4 w-4" />
               </div>
               <div>
                 <div className="font-semibold text-sm">
                   {getTotalItems()} item
                 </div>
-                <div className="text-xs opacity-90 truncate max-w-32">
+                <div className="text-xs opacity-90 truncate max-w-24">
                   {cart.map(item => item.product.name).join(', ')}
                 </div>
               </div>
             </div>
             <div className="text-right">
-              <div className="font-bold text-lg">
+              <div className="font-bold text-base">
                 {formatPrice(getTotalPrice())}
               </div>
             </div>
@@ -440,10 +440,10 @@ const ProductListItem = ({ product, quantity, onAdd, onRemove }: ProductListItem
 
   return (
     <Card className="shadow-sm border-0 bg-white">
-      <CardContent className="p-4">
-        <div className="flex items-start space-x-4">
+      <CardContent className="p-3">
+        <div className="flex items-start space-x-3">
           {/* Product Image */}
-          <div className="relative w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
+          <div className="relative w-16 h-16 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
             {product.image_url ? (
               <img 
                 src={product.image_url} 
@@ -452,7 +452,7 @@ const ProductListItem = ({ product, quantity, onAdd, onRemove }: ProductListItem
               />
             ) : (
               <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                <Package className="h-8 w-8 text-gray-400" />
+                <Package className="h-6 w-6 text-gray-400" />
               </div>
             )}
           </div>
@@ -462,22 +462,22 @@ const ProductListItem = ({ product, quantity, onAdd, onRemove }: ProductListItem
             <div className="flex justify-between items-start">
               <div className="flex-1 pr-2">
                 {/* Product Name */}
-                <h3 className="font-semibold text-gray-900 text-base mb-1 line-clamp-1">
+                <h3 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-1">
                   {product.name}
                 </h3>
                 
                 {/* Category */}
-                <p className="text-sm text-gray-500 mb-2">
+                <p className="text-xs text-gray-500 mb-1">
                   {categoryName}
                 </p>
 
                 {/* Price */}
-                <div className="flex items-baseline space-x-2 mb-2">
-                  <span className="text-lg font-bold text-gray-900">
+                <div className="flex items-baseline space-x-1 mb-1">
+                  <span className="text-base font-bold text-gray-900">
                     {formatPrice(displayPrice)}
                   </span>
                   {hasDiscount && (
-                    <span className="text-sm text-gray-400 line-through">
+                    <span className="text-xs text-gray-400 line-through">
                       {formatPrice(product.price)}
                     </span>
                   )}
@@ -485,19 +485,19 @@ const ProductListItem = ({ product, quantity, onAdd, onRemove }: ProductListItem
 
                 {/* Description */}
                 {product.description && (
-                  <p className="text-sm text-gray-600 line-clamp-2">
+                  <p className="text-xs text-gray-600 line-clamp-2">
                     {product.description}
                   </p>
                 )}
               </div>
               
               {/* Add/Remove Controls */}
-              <div className="flex flex-col items-end justify-center h-full">
+              <div className="flex flex-col items-end justify-center h-full ml-2">
                 {quantity === 0 ? (
                   <Button
                     onClick={onAdd}
                     size="sm"
-                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm h-9"
+                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg font-medium text-xs h-7 w-8"
                   >
                     +
                   </Button>
@@ -506,19 +506,19 @@ const ProductListItem = ({ product, quantity, onAdd, onRemove }: ProductListItem
                     <Button
                       size="sm"
                       onClick={onRemove}
-                      className="bg-green-600 hover:bg-green-700 text-white w-8 h-8 p-0 rounded-none"
+                      className="bg-green-600 hover:bg-green-700 text-white w-6 h-6 p-0 rounded-none"
                     >
-                      <Minus className="h-4 w-4" />
+                      <Minus className="h-3 w-3" />
                     </Button>
-                    <span className="text-white font-semibold px-3 py-2 bg-green-600 text-sm min-w-[40px] text-center">
+                    <span className="text-white font-semibold px-2 py-1 bg-green-600 text-xs min-w-[28px] text-center">
                       {quantity}
                     </span>
                     <Button
                       size="sm"
                       onClick={onAdd}
-                      className="bg-green-600 hover:bg-green-700 text-white w-8 h-8 p-0 rounded-none"
+                      className="bg-green-600 hover:bg-green-700 text-white w-6 h-6 p-0 rounded-none"
                     >
-                      <Plus className="h-4 w-4" />
+                      <Plus className="h-3 w-3" />
                     </Button>
                   </div>
                 )}
