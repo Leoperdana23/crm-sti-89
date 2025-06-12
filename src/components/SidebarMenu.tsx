@@ -27,7 +27,7 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
 
   const menuItems = [
     {
-      to: '/',
+      to: '/dashboard',
       icon: Home,
       label: 'Dashboard',
       permission: null
