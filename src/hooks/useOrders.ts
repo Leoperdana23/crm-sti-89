@@ -99,23 +99,41 @@ export const useUpdateOrderStatus = () => {
 
   return useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
-      console.log('Updating order status:', orderId, status);
+      console.log('Updating order status for ID:', orderId, 'to status:', status);
 
+      // First check if the order exists
+      const { data: existingOrder, error: checkError } = await supabase
+        .from('orders')
+        .select('id, status')
+        .eq('id', orderId)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking order existence:', checkError);
+        throw checkError;
+      }
+
+      if (!existingOrder) {
+        console.error('Order not found with ID:', orderId);
+        throw new Error(`Pesanan dengan ID ${orderId} tidak ditemukan`);
+      }
+
+      console.log('Found existing order:', existingOrder);
+
+      // Now update the order
       const { data, error } = await supabase
         .from('orders')
-        .update({ status, updated_at: new Date().toISOString() })
+        .update({ 
+          status, 
+          updated_at: new Date().toISOString() 
+        })
         .eq('id', orderId)
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error('Error updating order status:', error);
         throw error;
-      }
-
-      if (!data) {
-        console.error('No order found with ID:', orderId);
-        throw new Error('Order not found');
       }
 
       console.log('Order status updated successfully:', data);
@@ -132,7 +150,7 @@ export const useUpdateOrderStatus = () => {
       console.error('Error in useUpdateOrderStatus:', error);
       toast({
         title: 'Error',
-        description: 'Gagal memperbarui status pesanan',
+        description: error instanceof Error ? error.message : 'Gagal memperbarui status pesanan',
         variant: 'destructive',
       });
     },
