@@ -77,7 +77,6 @@ export const useUserPermissions = () => {
 
     if (role === 'super_admin') {
       return {
-        ...staffPermissions,
         'dashboard': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'customer_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'reseller_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
@@ -161,55 +160,8 @@ export const useUserPermissions = () => {
       const defaultPermissions = getDefaultPermissions(actualRole);
       console.log('Setting default permissions for role:', actualRole, defaultPermissions);
 
-      // Try to fetch role permissions from database
-      try {
-        const { data: rolePermissions, error } = await supabase
-          .from('role_permissions')
-          .select(`
-            can_view,
-            can_create,
-            can_edit,
-            can_delete,
-            permissions:permission_id (
-              name
-            )
-          `)
-          .eq('role', actualRole);
-
-        if (error) {
-          console.log('Error fetching role permissions, using defaults:', error.message);
-          setPermissions(defaultPermissions);
-          return;
-        }
-
-        console.log('Role permissions from database:', rolePermissions);
-
-        // If database has permissions, merge them with defaults
-        if (rolePermissions && rolePermissions.length > 0) {
-          const dbPermissions: UserPermissions = {};
-          rolePermissions.forEach(rp => {
-            if (rp.permissions && 'name' in rp.permissions) {
-              dbPermissions[rp.permissions.name] = {
-                can_view: rp.can_view,
-                can_create: rp.can_create,
-                can_edit: rp.can_edit,
-                can_delete: rp.can_delete
-              };
-            }
-          });
-          
-          // Merge database permissions with defaults (defaults as fallback)
-          const finalPermissions = { ...defaultPermissions, ...dbPermissions };
-          console.log('Using merged permissions:', finalPermissions);
-          setPermissions(finalPermissions);
-        } else {
-          console.log('No database permissions found, using defaults:', defaultPermissions);
-          setPermissions(defaultPermissions);
-        }
-      } catch (permError) {
-        console.log('Error fetching role permissions, using defaults:', permError);
-        setPermissions(defaultPermissions);
-      }
+      // For now, just use default permissions since database doesn't have permissions configured
+      setPermissions(defaultPermissions);
     } catch (error) {
       console.error('Error fetching user permissions:', error);
       // Set basic permissions for staff as fallback
