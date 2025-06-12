@@ -159,21 +159,19 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
           />
         </div>
 
-        {customerType === 'reseller' && (
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input type="email" placeholder="email@example.com" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email {customerType === 'reseller' ? '*' : ''}</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="email@example.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
@@ -254,9 +252,9 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    {sales.map((sale) => (
-                      <SelectItem key={sale.id} value={sale.id}>
-                        {sale.name} ({sale.code})
+                    {sales.map((salesPerson) => (
+                      <SelectItem key={salesPerson.id} value={salesPerson.id}>
+                        {salesPerson.name} ({salesPerson.code})
                       </SelectItem>
                     ))}
                   </SelectContent>
