@@ -33,10 +33,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const mockUser = {
             id: 'test-user-id',
             email: 'test@example.com',
+            aud: 'authenticated',
+            role: 'authenticated',
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            email_confirmed_at: new Date().toISOString(),
+            last_sign_in_at: new Date().toISOString(),
+            app_metadata: {
+              provider: 'email',
+              providers: ['email']
+            },
             user_metadata: {
               role: 'super_admin',
               full_name: 'Test User'
-            }
+            },
+            identities: [],
+            factors: []
           } as User;
           setUser(mockUser);
         }
@@ -46,10 +58,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const mockUser = {
           id: 'test-user-id',
           email: 'test@example.com',
+          aud: 'authenticated',
+          role: 'authenticated',
+          created_at: new Date().toISOString(),
+          updated_at: new Date().toISOString(),
+          email_confirmed_at: new Date().toISOString(),
+          last_sign_in_at: new Date().toISOString(),
+          app_metadata: {
+            provider: 'email',
+            providers: ['email']
+          },
           user_metadata: {
             role: 'super_admin',
             full_name: 'Test User'
-          }
+          },
+          identities: [],
+          factors: []
         } as User;
         setUser(mockUser);
       } finally {
