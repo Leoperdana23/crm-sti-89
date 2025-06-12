@@ -45,7 +45,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
                 <SelectValue placeholder="Pilih cabang" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Cabang</SelectItem>
+                <SelectItem value="all">Semua Cabang</SelectItem>
                 {branches.map((branch) => (
                   <SelectItem key={branch.id} value={branch.id}>
                     {branch.name}

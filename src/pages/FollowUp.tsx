@@ -16,7 +16,7 @@ const FollowUp = () => {
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
   
   // Filter states
-  const [selectedBranch, setSelectedBranch] = useState<string>('');
+  const [selectedBranch, setSelectedBranch] = useState<string>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -27,7 +27,7 @@ const FollowUp = () => {
   const filterCustomers = (customerList: any[]) => {
     return customerList.filter(customer => {
       // Filter by branch
-      if (selectedBranch && customer.branch_id !== selectedBranch) {
+      if (selectedBranch && selectedBranch !== 'all' && customer.branch_id !== selectedBranch) {
         return false;
       }
 
@@ -101,7 +101,7 @@ const FollowUp = () => {
   };
 
   const clearFilters = () => {
-    setSelectedBranch('');
+    setSelectedBranch('all');
     setStartDate('');
     setEndDate('');
   };
@@ -131,7 +131,7 @@ const FollowUp = () => {
           customers={filteredProspekCustomers}
           type="prospect"
           emptyMessage={
-            selectedBranch || startDate || endDate 
+            selectedBranch !== 'all' || startDate || endDate 
               ? "Tidak ada prospek baru sesuai filter" 
               : "Tidak ada prospek baru"
           }
@@ -145,7 +145,7 @@ const FollowUp = () => {
           customers={filteredFollowUpCustomers}
           type="followup"
           emptyMessage={
-            selectedBranch || startDate || endDate 
+            selectedBranch !== 'all' || startDate || endDate 
               ? "Tidak ada follow-up aktif sesuai filter" 
               : "Tidak ada follow-up aktif"
           }
