@@ -85,6 +85,33 @@ const getCurrentAuthenticatedUser = () => {
   return null;
 };
 
+// Helper function to clean product data for database insertion
+const cleanProductData = (productData: CreateProductData) => {
+  const cleanData: any = { ...productData };
+  
+  // Convert empty strings to null for UUID fields
+  if (cleanData.category_id === '' || cleanData.category_id === undefined) {
+    cleanData.category_id = null;
+  }
+  
+  // Convert empty strings to null for optional text fields
+  if (cleanData.description === '') {
+    cleanData.description = null;
+  }
+  
+  if (cleanData.image_url === '') {
+    cleanData.image_url = null;
+  }
+  
+  // Set default values for numeric fields
+  if (cleanData.reseller_price === 0 || cleanData.reseller_price === '') {
+    cleanData.reseller_price = null;
+  }
+  
+  console.log('Cleaned product data:', cleanData);
+  return cleanData;
+};
+
 export const useCreateProduct = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -102,10 +129,13 @@ export const useCreateProduct = () => {
 
       console.log('Current authenticated user:', currentUser);
 
+      // Clean the product data to handle empty UUIDs and strings
+      const cleanedData = cleanProductData(productData);
+
       return withAuth(async () => {
         const { data, error } = await supabase
           .from('products')
-          .insert(productData)
+          .insert(cleanedData)
           .select()
           .single();
 
@@ -151,10 +181,13 @@ export const useUpdateProduct = () => {
         throw new Error('User tidak terautentikasi');
       }
 
+      // Clean the update data to handle empty UUIDs and strings
+      const cleanedUpdates = cleanProductData(updates);
+
       return withAuth(async () => {
         const { data, error } = await supabase
           .from('products')
-          .update(updates)
+          .update(cleanedUpdates)
           .eq('id', id)
           .select()
           .single();

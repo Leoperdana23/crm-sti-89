@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
@@ -58,13 +59,25 @@ const ProductForm = ({ isOpen, onClose, product }: ProductFormProps) => {
 
   const onSubmit = async (data: CreateProductData) => {
     try {
+      console.log('Form data before submission:', data);
+      
+      // Ensure category_id is either a valid UUID or empty string (will be converted to null)
+      const processedData = {
+        ...data,
+        // Convert 0 values to proper numbers or null
+        price: Number(data.price) || 0,
+        reseller_price: data.reseller_price ? Number(data.reseller_price) : 0,
+      };
+      
+      console.log('Processed form data:', processedData);
+
       if (product) {
         await updateProductMutation.mutateAsync({
           id: product.id,
-          ...data,
+          ...processedData,
         });
       } else {
-        await createProductMutation.mutateAsync(data);
+        await createProductMutation.mutateAsync(processedData);
       }
       onClose();
     } catch (error) {
@@ -120,13 +133,14 @@ const ProductForm = ({ isOpen, onClose, product }: ProductFormProps) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Kategori</FormLabel>
-                  <Select onValueChange={field.onChange} defaultValue={field.value}>
+                  <Select onValueChange={field.onChange} value={field.value || ""}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih kategori" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
+                      <SelectItem value="">Tanpa Kategori</SelectItem>
                       {categories?.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
