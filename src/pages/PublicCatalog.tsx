@@ -1,17 +1,16 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { Search, Package, CheckCircle, User, LogOut, History } from 'lucide-react';
+import { Package, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Product, ProductCategory } from '@/types/product';
 import { useResellerAuth } from '@/hooks/useResellerAuth';
 import CheckoutDialog from '@/components/CheckoutDialog';
-import SearchAndFilter from '@/components/catalog/SearchAndFilter';
-import ProductGrid from '@/components/catalog/ProductGrid';
 import CartButton from '@/components/catalog/CartButton';
 import OrderHistoryDialog from '@/components/OrderHistoryDialog';
+import CatalogHeader from '@/components/PublicCatalog/CatalogHeader';
+import CatalogContent from '@/components/PublicCatalog/CatalogContent';
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -266,91 +265,33 @@ const PublicCatalog = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Header */}
-      <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="w-full max-w-sm mx-auto px-3 py-3">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <h1 className="text-lg font-bold text-gray-900">Katalog Produk</h1>
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
-            
-            {/* User Menu */}
-            <div className="flex items-center gap-2">
-              {session ? (
-                <div className="flex items-center gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => setIsOrderHistoryOpen(true)}
-                    className="flex items-center gap-1"
-                  >
-                    <History className="h-3 w-3" />
-                    <span className="hidden sm:inline">History</span>
-                  </Button>
-                  <div className="flex items-center gap-1 text-sm text-gray-600">
-                    <User className="h-4 w-4" />
-                    <span className="hidden sm:inline">{session.name}</span>
-                  </div>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={handleLogout}
-                    className="flex items-center gap-1"
-                  >
-                    <LogOut className="h-3 w-3" />
-                    <span className="hidden sm:inline">Logout</span>
-                  </Button>
-                </div>
-              ) : (
-                <Button
-                  size="sm"
-                  onClick={handleLogin}
-                  className="bg-green-600 hover:bg-green-700"
-                >
-                  Login
-                </Button>
-              )}
-            </div>
-          </div>
-        </div>
-      </div>
+      <CatalogHeader
+        session={session}
+        onHistoryClick={() => setIsOrderHistoryOpen(true)}
+        onLogout={handleLogout}
+        onLogin={handleLogin}
+      />
 
-      <div className="w-full max-w-sm mx-auto px-3 py-3 space-y-3">
-        {/* Order Success Message */}
-        {orderSuccess && (
-          <div className="bg-green-100 border border-green-300 rounded-lg p-3 flex items-center gap-2">
-            <CheckCircle className="h-5 w-5 text-green-600" />
-            <span className="text-green-800 text-sm font-medium">Pesanan berhasil dibuat!</span>
-          </div>
-        )}
+      <CatalogContent
+        orderSuccess={orderSuccess}
+        searchTerm={searchTerm}
+        onSearchChange={handleSearchChange}
+        categoryFilter={categoryFilter}
+        onCategoryChange={handleCategoryChange}
+        sortBy={sortBy}
+        onSortChange={setSortBy}
+        categories={categories}
+        paginatedProducts={paginatedProducts}
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        getProductQuantity={getProductQuantity}
+        onAddToCart={addToCart}
+        onRemoveFromCart={removeFromCart}
+        onResetSearch={handleResetSearch}
+        hasFilters={hasFilters}
+      />
 
-        {/* Search and Filter */}
-        <SearchAndFilter
-          searchTerm={searchTerm}
-          onSearchChange={handleSearchChange}
-          categoryFilter={categoryFilter}
-          onCategoryChange={handleCategoryChange}
-          sortBy={sortBy}
-          onSortChange={setSortBy}
-          categories={categories}
-        />
-
-        {/* Product Grid */}
-        <ProductGrid
-          products={paginatedProducts}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          getProductQuantity={getProductQuantity}
-          onAddToCart={addToCart}
-          onRemoveFromCart={removeFromCart}
-          onResetSearch={handleResetSearch}
-          hasFilters={hasFilters}
-        />
-      </div>
-
-      {/* Fixed Cart Button */}
       <CartButton
         cart={cart}
         totalItems={getTotalItems()}
@@ -358,7 +299,6 @@ const PublicCatalog = () => {
         onClick={() => setIsCheckoutOpen(true)}
       />
 
-      {/* Checkout Dialog */}
       <CheckoutDialog
         isOpen={isCheckoutOpen}
         onClose={() => setIsCheckoutOpen(false)}
@@ -368,7 +308,6 @@ const PublicCatalog = () => {
         onOrderSuccess={handleOrderSuccess}
       />
 
-      {/* Order History Dialog */}
       <OrderHistoryDialog
         isOpen={isOrderHistoryOpen}
         onClose={() => setIsOrderHistoryOpen(false)}
