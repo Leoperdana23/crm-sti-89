@@ -37,6 +37,24 @@ const ProductGrid = ({
   onResetSearch,
   hasFilters
 }: ProductGridProps) => {
+  const handleQuantityChange = (productId: string, quantity: number) => {
+    const product = products.find(p => p.id === productId);
+    if (!product) return;
+
+    const currentQty = getProductQuantity(productId);
+    if (quantity > currentQty) {
+      // Add to cart
+      for (let i = currentQty; i < quantity; i++) {
+        onAddToCart(product);
+      }
+    } else if (quantity < currentQty) {
+      // Remove from cart
+      for (let i = currentQty; i > quantity; i--) {
+        onRemoveFromCart(productId);
+      }
+    }
+  };
+
   if (products.length === 0) {
     return (
       <Card className="shadow-sm border-0">
@@ -72,8 +90,7 @@ const ProductGrid = ({
             key={product.id} 
             product={product} 
             quantity={getProductQuantity(product.id)}
-            onAdd={() => onAddToCart(product)}
-            onRemove={() => onRemoveFromCart(product.id)}
+            onQuantityChange={handleQuantityChange}
           />
         ))}
       </div>

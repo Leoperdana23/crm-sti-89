@@ -106,11 +106,16 @@ export const useUpdateOrderStatus = () => {
         .update({ status, updated_at: new Date().toISOString() })
         .eq('id', orderId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error updating order status:', error);
         throw error;
+      }
+
+      if (!data) {
+        console.error('No order found with ID:', orderId);
+        throw new Error('Order not found');
       }
 
       console.log('Order status updated successfully:', data);
