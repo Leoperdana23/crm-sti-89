@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Order, OrderItem, CreateOrderData, CreateOrderItemData } from '@/types/order';
@@ -202,7 +203,7 @@ export const useDeleteOrder = () => {
     mutationFn: async (orderId: string) => {
       console.log('Deleting order with ID:', orderId);
 
-      // Check if order exists
+      // First check if order exists
       const { data: existingOrder, error: checkError } = await supabase
         .from('orders')
         .select('id')
@@ -219,18 +220,32 @@ export const useDeleteOrder = () => {
         throw new Error(`Pesanan dengan ID ${orderId} tidak ditemukan`);
       }
 
-      // Delete the order (order_items will be deleted automatically due to CASCADE)
-      const { error } = await supabase
+      console.log('Order found, proceeding with deletion');
+
+      // Delete order items first (although CASCADE should handle this)
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', orderId);
+
+      if (itemsError) {
+        console.error('Error deleting order items:', itemsError);
+        // Don't throw error here, continue with order deletion
+      }
+
+      // Delete the order
+      const { error: orderError } = await supabase
         .from('orders')
         .delete()
         .eq('id', orderId);
 
-      if (error) {
-        console.error('Error deleting order:', error);
-        throw error;
+      if (orderError) {
+        console.error('Error deleting order:', orderError);
+        throw orderError;
       }
 
       console.log('Order deleted successfully');
+      return orderId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
@@ -238,6 +253,7 @@ export const useDeleteOrder = () => {
         title: 'Sukses',
         description: 'Pesanan berhasil dihapus',
       });
+      console.log('Delete operation completed successfully');
     },
     onError: (error) => {
       console.error('Error in useDeleteOrder:', error);
