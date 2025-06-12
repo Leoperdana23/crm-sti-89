@@ -101,26 +101,7 @@ export const useUpdateOrderStatus = () => {
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
       console.log('Updating order status for ID:', orderId, 'to status:', status);
 
-      // First check if the order exists
-      const { data: existingOrder, error: checkError } = await supabase
-        .from('orders')
-        .select('id, status')
-        .eq('id', orderId)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Error checking order existence:', checkError);
-        throw checkError;
-      }
-
-      if (!existingOrder) {
-        console.error('Order not found with ID:', orderId);
-        throw new Error(`Pesanan dengan ID ${orderId} tidak ditemukan`);
-      }
-
-      console.log('Found existing order:', existingOrder);
-
-      // Now update the order
+      // Update the order status
       const { data, error } = await supabase
         .from('orders')
         .update({ 
@@ -129,11 +110,16 @@ export const useUpdateOrderStatus = () => {
         })
         .eq('id', orderId)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error updating order status:', error);
         throw error;
+      }
+
+      if (!data) {
+        console.error('Order not found with ID:', orderId);
+        throw new Error(`Pesanan dengan ID ${orderId} tidak ditemukan`);
       }
 
       console.log('Order status updated successfully:', data);
