@@ -2,6 +2,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
+import { withAuth } from '@/utils/supabaseAuth';
 
 export interface CatalogToken {
   id: string;
@@ -51,18 +52,20 @@ export const useCatalogTokens = () => {
     queryKey: ['catalog-tokens'],
     queryFn: async () => {
       console.log('Fetching catalog tokens...');
-      const { data, error } = await supabase
-        .from('catalog_tokens')
-        .select('*')
-        .order('created_at', { ascending: false });
+      return withAuth(async () => {
+        const { data, error } = await supabase
+          .from('catalog_tokens')
+          .select('*')
+          .order('created_at', { ascending: false });
 
-      if (error) {
-        console.error('Error fetching catalog tokens:', error);
-        throw error;
-      }
+        if (error) {
+          console.error('Error fetching catalog tokens:', error);
+          throw error;
+        }
 
-      console.log('Catalog tokens fetched successfully:', data);
-      return data as CatalogToken[];
+        console.log('Catalog tokens fetched successfully:', data);
+        return data as CatalogToken[];
+      });
     },
   });
 };
@@ -94,19 +97,21 @@ export const useCreateCatalogToken = () => {
 
       console.log('Inserting token data:', insertData);
 
-      const { data, error } = await supabase
-        .from('catalog_tokens')
-        .insert(insertData)
-        .select()
-        .single();
+      return withAuth(async () => {
+        const { data, error } = await supabase
+          .from('catalog_tokens')
+          .insert(insertData)
+          .select()
+          .single();
 
-      if (error) {
-        console.error('Error creating catalog token:', error);
-        throw error;
-      }
+        if (error) {
+          console.error('Error creating catalog token:', error);
+          throw error;
+        }
 
-      console.log('Catalog token created successfully:', data);
-      return data;
+        console.log('Catalog token created successfully:', data);
+        return data;
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['catalog-tokens'] });
@@ -141,17 +146,19 @@ export const useDeleteCatalogToken = () => {
         throw new Error('User tidak terautentikasi');
       }
 
-      const { error } = await supabase
-        .from('catalog_tokens')
-        .delete()
-        .eq('id', tokenId);
+      return withAuth(async () => {
+        const { error } = await supabase
+          .from('catalog_tokens')
+          .delete()
+          .eq('id', tokenId);
 
-      if (error) {
-        console.error('Error deleting catalog token:', error);
-        throw error;
-      }
+        if (error) {
+          console.error('Error deleting catalog token:', error);
+          throw error;
+        }
 
-      console.log('Catalog token deleted successfully');
+        console.log('Catalog token deleted successfully');
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['catalog-tokens'] });
