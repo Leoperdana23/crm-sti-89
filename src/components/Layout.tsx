@@ -1,12 +1,14 @@
+
 import React from 'react';
-import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
-import { Users, UserCheck, MessageSquare, BarChart3, Building, FileText, LogOut, UserCog, Settings, Shield, Wrench, Store, History, Cake, Package } from 'lucide-react';
+import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { Users, LogOut } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { getRoleLabel } from '@/utils/permissionLabels';
+import SidebarMenu from '@/components/SidebarMenu';
 import {
   Sidebar,
   SidebarContent,
@@ -15,9 +17,6 @@ import {
   SidebarGroupContent,
   SidebarHeader,
   SidebarInset,
-  SidebarMenu,
-  SidebarMenuButton,
-  SidebarMenuItem,
   SidebarProvider,
   SidebarTrigger,
 } from '@/components/ui/sidebar';
@@ -26,7 +25,7 @@ const Layout = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
-  const { hasPermission, userRole, loading } = useUserPermissions();
+  const { userRole, loading } = useUserPermissions();
 
   // Get current user info for display
   const getCurrentUserInfo = () => {
@@ -67,30 +66,6 @@ const Layout = () => {
 
   const userInfo = getCurrentUserInfo();
 
-  // Define all navigation items with their permission mappings - reordered according to user request
-  const allNavigation = [
-    { name: 'Dashboard', href: '/', icon: BarChart3, permission: 'dashboard', color: 'text-blue-600' },
-    { name: 'Pelanggan', href: '/customers', icon: Users, permission: 'customers', color: 'text-green-600' },
-    { name: 'Reseller', href: '/resellers', icon: Store, permission: 'resellers', color: 'text-pink-600' },
-    { name: 'Katalog Produk', href: '/product-catalog', icon: Package, permission: 'product_catalog', color: 'text-purple-600' },
-    { name: 'Follow-Up', href: '/follow-up', icon: UserCheck, permission: 'follow_up', color: 'text-yellow-600' },
-    { name: 'Proses Pekerjaan', href: '/work-process', icon: Wrench, permission: 'work_process', color: 'text-orange-600' },
-    { name: 'Survei', href: '/survey', icon: MessageSquare, permission: 'survey', color: 'text-purple-600' },
-    { name: 'History Deal', href: '/deal-history', icon: History, permission: 'customers', color: 'text-cyan-600' },
-    { name: 'Ulang Tahun', href: '/birthday', icon: Cake, permission: 'follow_up', color: 'text-pink-600' },
-    { name: 'Karyawan', href: '/sales', icon: UserCog, permission: 'sales', color: 'text-indigo-600' },
-    { name: 'Cabang', href: '/branches', icon: Building, permission: 'branches', color: 'text-teal-600' },
-    { name: 'Laporan', href: '/reports', icon: FileText, permission: 'reports', color: 'text-red-600' },
-    { name: 'Master User', href: '/users', icon: Settings, permission: 'users', color: 'text-gray-600' },
-    { name: 'Hak Akses Role', href: '/role-permissions', icon: Shield, permission: 'role_permissions', color: 'text-emerald-600' },
-  ];
-
-  // Filter navigation based on user permissions
-  const navigation = allNavigation.filter(item => {
-    const hasAccess = hasPermission(item.permission, 'view');
-    return hasAccess;
-  });
-
   const handleLogout = async () => {
     try {
       await signOut();
@@ -125,39 +100,7 @@ const Layout = () => {
           <SidebarContent>
             <SidebarGroup>
               <SidebarGroupContent>
-                <SidebarMenu className="space-y-1 md:space-y-2">
-                  {navigation.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = location.pathname === item.href;
-                    
-                    return (
-                      <SidebarMenuItem key={item.name}>
-                        <SidebarMenuButton 
-                          asChild 
-                          isActive={isActive}
-                          className={cn(
-                            "group flex items-center px-3 py-2 md:px-4 md:py-3 text-xs md:text-sm font-medium rounded-xl transition-all duration-300 w-full transform hover:scale-105",
-                            isActive
-                              ? "bg-gradient-to-r from-blue-500 to-indigo-600 text-white shadow-lg shadow-blue-500/25"
-                              : "text-gray-700 hover:bg-gradient-to-r hover:from-blue-50 hover:to-indigo-50 hover:text-blue-700 hover:shadow-md"
-                          )}
-                        >
-                          <Link to={item.href} className="flex items-center w-full">
-                            <div className={cn(
-                              "mr-2 md:mr-3 h-4 w-4 md:h-5 md:w-5 flex-shrink-0 transition-all duration-300",
-                              isActive 
-                                ? "text-white transform rotate-12" 
-                                : `${item.color} group-hover:scale-110 group-hover:rotate-6`
-                            )}>
-                              <Icon className="w-full h-full" />
-                            </div>
-                            <span className="truncate">{item.name}</span>
-                          </Link>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    );
-                  })}
-                </SidebarMenu>
+                <SidebarMenu />
               </SidebarGroupContent>
             </SidebarGroup>
           </SidebarContent>
