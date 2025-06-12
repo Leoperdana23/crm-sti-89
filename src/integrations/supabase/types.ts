@@ -849,6 +849,10 @@ export type Database = {
         Args: { email_input: string; password_input: string }
         Returns: Json
       }
+      generate_short_token: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
