@@ -27,7 +27,7 @@ import AttendanceApp from '@/pages/AttendanceApp';
 import RolePermissions from '@/pages/RolePermissions';
 import NotFound from '@/pages/NotFound';
 import Layout from '@/components/Layout';
-import { ProtectedRoute } from '@/components/ProtectedRoute';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import './App.css';
 
 const queryClient = new QueryClient();
