@@ -19,6 +19,42 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // Check for existing session
     const getSession = async () => {
       try {
+        // First check for app user in localStorage
+        const appUser = localStorage.getItem('appUser');
+        if (appUser) {
+          try {
+            const parsedAppUser = JSON.parse(appUser);
+            console.log('App user found in localStorage:', parsedAppUser.email);
+            const mockUser = {
+              id: parsedAppUser.id || 'test-user-id',
+              email: parsedAppUser.email || 'test@example.com',
+              aud: 'authenticated',
+              role: 'authenticated',
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+              email_confirmed_at: new Date().toISOString(),
+              last_sign_in_at: new Date().toISOString(),
+              app_metadata: {
+                provider: 'email',
+                providers: ['email']
+              },
+              user_metadata: {
+                role: parsedAppUser.user_metadata?.role || 'super_admin',
+                full_name: parsedAppUser.user_metadata?.full_name || 'Test User'
+              },
+              identities: [],
+              factors: []
+            } as User;
+            setUser(mockUser);
+            setLoading(false);
+            return;
+          } catch (error) {
+            console.error('Error parsing app user:', error);
+            localStorage.removeItem('appUser');
+          }
+        }
+
+        // Check for regular Supabase session
         const { data: { session }, error } = await supabase.auth.getSession();
         if (error) {
           console.log('Auth error:', error);
@@ -96,11 +132,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const signOut = async () => {
     try {
       await supabase.auth.signOut();
+      localStorage.removeItem('appUser');
+      localStorage.removeItem('salesUser');
       setUser(null);
+      window.location.href = '/auth';
     } catch (error) {
       console.error('Sign out error:', error);
       // Force sign out even if there's an error
+      localStorage.removeItem('appUser');
+      localStorage.removeItem('salesUser');
       setUser(null);
+      window.location.href = '/auth';
     }
   };
 

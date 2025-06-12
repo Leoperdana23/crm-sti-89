@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { useAppAuth } from '@/hooks/useAppAuth';
+import { useAuth } from '@/hooks/useAuth';
 import { Loader2 } from 'lucide-react';
 
 const Auth = () => {
@@ -17,17 +18,18 @@ const Auth = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const { authenticateAppUser } = useAppAuth();
+  const { user } = useAuth();
 
   useEffect(() => {
     // Check if user is already logged in
     const checkUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        navigate('/');
+      if (session || user) {
+        navigate('/dashboard');
       }
     };
     checkUser();
-  }, [navigate]);
+  }, [navigate, user]);
 
   const handleAppUserAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -47,7 +49,9 @@ const Auth = () => {
         // Store app user info in localStorage for simple session management
         localStorage.setItem('appUser', JSON.stringify(result.user));
         console.log('=== APP USER LOGIN SUCCESS ===');
-        navigate('/');
+        
+        // Force redirect to dashboard
+        window.location.href = '/dashboard';
       }
     } catch (error: any) {
       console.error('=== APP USER LOGIN ERROR ===', error);
