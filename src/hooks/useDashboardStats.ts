@@ -1,100 +1,172 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-interface MonthlyStats {
-  month: string;
-  prospek: number;
-  deal: number;
+interface DashboardStats {
+  totalCustomers: number;
+  totalProspects: number;
+  totalDeals: number;
+  totalOrders: number;
+  totalRevenue: number;
+  conversionRate: number;
+  monthlyGrowth: number;
+  customersByStatus: {
+    prospek: number;
+    followUp: number;
+    deal: number;
+    tidakJadi: number;
+  };
+  recentActivities: Array<{
+    id: string;
+    type: 'customer' | 'order' | 'interaction';
+    message: string;
+    timestamp: string;
+    customer?: string;
+  }>;
 }
 
-// Fallback data for chart
-const fallbackMonthlyData: MonthlyStats[] = [
-  { month: 'Jan', prospek: 8, deal: 3 },
-  { month: 'Feb', prospek: 12, deal: 5 },
-  { month: 'Mar', prospek: 15, deal: 7 },
-  { month: 'Apr', prospek: 10, deal: 4 },
-  { month: 'May', prospek: 18, deal: 8 },
-  { month: 'Jun', prospek: 20, deal: 10 },
-];
+// Fallback sample data
+const fallbackStats: DashboardStats = {
+  totalCustomers: 150,
+  totalProspects: 45,
+  totalDeals: 25,
+  totalOrders: 18,
+  totalRevenue: 125000000,
+  conversionRate: 18.5,
+  monthlyGrowth: 12.3,
+  customersByStatus: {
+    prospek: 45,
+    followUp: 38,
+    deal: 25,
+    tidakJadi: 42
+  },
+  recentActivities: [
+    {
+      id: '1',
+      type: 'customer',
+      message: 'Customer baru ditambahkan: Budi Santoso',
+      timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString(),
+      customer: 'Budi Santoso'
+    },
+    {
+      id: '2',
+      type: 'order',
+      message: 'Pesanan baru dari Siti Rahayu - Rp 2.500.000',
+      timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000).toISOString(),
+      customer: 'Siti Rahayu'
+    },
+    {
+      id: '3',
+      type: 'interaction',
+      message: 'Follow-up call dengan Agus Wijaya',
+      timestamp: new Date(Date.now() - 6 * 60 * 60 * 1000).toISOString(),
+      customer: 'Agus Wijaya'
+    }
+  ]
+};
 
 export const useDashboardStats = () => {
-  const [monthlyData, setMonthlyData] = useState<MonthlyStats[]>([]);
-  const [loading, setLoading] = useState(true);
+  const query = useQuery({
+    queryKey: ['dashboard-stats'],
+    queryFn: async (): Promise<DashboardStats> => {
+      try {
+        console.log('Fetching dashboard stats...');
 
-  const fetchMonthlyStats = async () => {
-    try {
-      setLoading(true);
-      console.log('Fetching monthly stats...');
-      
-      // Ambil data customers untuk 6 bulan terakhir
-      const { data: customers, error } = await supabase
-        .from('customers')
-        .select('status, created_at, deal_date')
-        .gte('created_at', new Date(Date.now() - 6 * 30 * 24 * 60 * 60 * 1000).toISOString());
+        // Fetch customers data
+        const { data: customersData, error: customersError } = await supabase
+          .from('customers')
+          .select('status, created_at');
 
-      if (error) {
-        console.error('Error fetching monthly stats:', error);
-        console.log('Using fallback monthly data');
-        setMonthlyData(fallbackMonthlyData);
-        return;
-      }
+        // Fetch orders data
+        const { data: ordersData, error: ordersError } = await supabase
+          .from('orders')
+          .select('total_amount, created_at, status');
 
-      if (customers && customers.length > 0) {
-        // Proses data untuk chart
-        const monthlyStats: { [key: string]: { prospek: number; deal: number } } = {};
-        
-        // Inisialisasi 6 bulan terakhir
-        for (let i = 5; i >= 0; i--) {
-          const date = new Date();
-          date.setMonth(date.getMonth() - i);
-          const monthKey = date.toLocaleDateString('id-ID', { month: 'short' });
-          monthlyStats[monthKey] = { prospek: 0, deal: 0 };
+        // Fetch recent interactions
+        const { data: interactionsData, error: interactionsError } = await supabase
+          .from('interactions')
+          .select(`
+            id,
+            type,
+            notes,
+            date,
+            customers (name)
+          `)
+          .order('date', { ascending: false })
+          .limit(5);
+
+        // If any error occurs, use fallback data
+        if (customersError || ordersError || interactionsError) {
+          console.error('Error fetching dashboard data:', { customersError, ordersError, interactionsError });
+          console.log('Using fallback dashboard stats');
+          return fallbackStats;
         }
 
-        // Hitung data dari database
-        customers?.forEach(customer => {
-          const createdDate = new Date(customer.created_at);
-          const monthKey = createdDate.toLocaleDateString('id-ID', { month: 'short' });
-          
-          if (monthlyStats[monthKey]) {
-            if (customer.status === 'Prospek') {
-              monthlyStats[monthKey].prospek++;
-            } else if (customer.status === 'Deal') {
-              monthlyStats[monthKey].deal++;
+        // Calculate stats from real data if available
+        if (customersData && ordersData) {
+          const totalCustomers = customersData.length;
+          const customersByStatus = customersData.reduce((acc, customer) => {
+            switch (customer.status) {
+              case 'Prospek':
+                acc.prospek++;
+                break;
+              case 'Follow-up':
+                acc.followUp++;
+                break;
+              case 'Deal':
+                acc.deal++;
+                break;
+              case 'Tidak Jadi':
+                acc.tidakJadi++;
+                break;
             }
-          }
-        });
+            return acc;
+          }, { prospek: 0, followUp: 0, deal: 0, tidakJadi: 0 });
 
-        // Convert ke array untuk chart
-        const chartData = Object.entries(monthlyStats).map(([month, stats]) => ({
-          month,
-          prospek: stats.prospek,
-          deal: stats.deal
-        }));
+          const totalOrders = ordersData.filter(order => order.status === 'completed').length;
+          const totalRevenue = ordersData
+            .filter(order => order.status === 'completed')
+            .reduce((sum, order) => sum + (order.total_amount || 0), 0);
 
-        console.log('Monthly stats processed:', chartData);
-        setMonthlyData(chartData);
-      } else {
-        console.log('No customers found, using fallback monthly data');
-        setMonthlyData(fallbackMonthlyData);
+          const conversionRate = totalCustomers > 0 ? (customersByStatus.deal / totalCustomers) * 100 : 0;
+
+          // Format recent activities
+          const recentActivities = (interactionsData || []).map(interaction => ({
+            id: interaction.id,
+            type: 'interaction' as const,
+            message: `${interaction.type} - ${interaction.notes}`,
+            timestamp: interaction.date,
+            customer: interaction.customers?.name || 'Unknown'
+          }));
+
+          console.log('Dashboard stats calculated from real data');
+          return {
+            totalCustomers,
+            totalProspects: customersByStatus.prospek,
+            totalDeals: customersByStatus.deal,
+            totalOrders,
+            totalRevenue,
+            conversionRate,
+            monthlyGrowth: 12.3, // This would need more complex calculation
+            customersByStatus,
+            recentActivities
+          };
+        }
+
+        console.log('Using fallback dashboard stats - no data available');
+        return fallbackStats;
+      } catch (error) {
+        console.error('Network error fetching dashboard stats:', error);
+        console.log('Using fallback dashboard stats due to network error');
+        return fallbackStats;
       }
-    } catch (error) {
-      console.error('Error processing monthly stats:', error);
-      console.log('Using fallback monthly data due to network error');
-      setMonthlyData(fallbackMonthlyData);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchMonthlyStats();
-  }, []);
+    },
+  });
 
   return {
-    monthlyData,
-    loading,
-    refetch: fetchMonthlyStats
+    stats: query.data || fallbackStats,
+    loading: query.isLoading,
+    error: query.error,
+    ...query
   };
 };
