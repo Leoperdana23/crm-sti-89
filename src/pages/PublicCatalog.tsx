@@ -1,22 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Search, Package, ShoppingCart, Plus, Minus, CheckCircle } from 'lucide-react';
+import { Search, Package, CheckCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Loader2 } from 'lucide-react';
-import {
-  Pagination,
-  PaginationContent,
-  PaginationItem,
-  PaginationLink,
-  PaginationNext,
-  PaginationPrevious,
-} from '@/components/ui/pagination';
 import { supabase } from '@/integrations/supabase/client';
 import { Product, ProductCategory } from '@/types/product';
 import CheckoutDialog from '@/components/CheckoutDialog';
+import SearchAndFilter from '@/components/catalog/SearchAndFilter';
+import ProductGrid from '@/components/catalog/ProductGrid';
+import CartButton from '@/components/catalog/CartButton';
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -176,6 +169,22 @@ const PublicCatalog = () => {
     setTimeout(() => setOrderSuccess(false), 3000);
   };
 
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setCategoryFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleResetSearch = () => {
+    setSearchTerm('');
+    setCategoryFilter('all');
+    setCurrentPage(1);
+  };
+
   const filteredAndSortedProducts = products
     .filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -202,13 +211,7 @@ const PublicCatalog = () => {
     currentPage * PRODUCTS_PER_PAGE
   );
 
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
+  const hasFilters = searchTerm || categoryFilter !== 'all';
 
   if (isLoading) {
     return (
@@ -256,183 +259,38 @@ const PublicCatalog = () => {
           </div>
         )}
 
-        {/* Search and Filter Bar */}
-        <Card className="shadow-sm border-0">
-          <CardContent className="p-3">
-            <div className="flex flex-col gap-3">
-              {/* Search */}
-              <div className="relative">
-                <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
-                <Input
-                  placeholder="Cari makanan atau minuman"
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="pl-10 border-gray-200 focus:border-green-500 focus:ring-green-500 text-sm"
-                />
-              </div>
-              
-              {/* Filters */}
-              <div className="flex gap-2">
-                <Select value={categoryFilter} onValueChange={(value) => {
-                  setCategoryFilter(value);
-                  setCurrentPage(1);
-                }}>
-                  <SelectTrigger className="flex-1 text-sm">
-                    <SelectValue placeholder="Semua" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all">Semua</SelectItem>
-                    {categories.map((category) => (
-                      <SelectItem key={category.id} value={category.id}>
-                        {category.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+        {/* Search and Filter */}
+        <SearchAndFilter
+          searchTerm={searchTerm}
+          onSearchChange={handleSearchChange}
+          categoryFilter={categoryFilter}
+          onCategoryChange={handleCategoryChange}
+          sortBy={sortBy}
+          onSortChange={setSortBy}
+          categories={categories}
+        />
 
-                <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="flex-1 text-sm">
-                    <SelectValue placeholder="Nama" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="name">Nama</SelectItem>
-                    <SelectItem value="price-low">Harga Terendah</SelectItem>
-                    <SelectItem value="price-high">Harga Tertinggi</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Product List */}
-        {paginatedProducts.length > 0 ? (
-          <>
-            <div className="space-y-2">
-              {paginatedProducts.map((product) => (
-                <ProductListItem 
-                  key={product.id} 
-                  product={product} 
-                  quantity={getProductQuantity(product.id)}
-                  onAdd={() => addToCart(product)}
-                  onRemove={() => removeFromCart(product.id)}
-                />
-              ))}
-            </div>
-
-            {/* Pagination */}
-            {totalPages > 1 && (
-              <div className="flex justify-center mt-6">
-                <Pagination>
-                  <PaginationContent>
-                    <PaginationItem>
-                      <PaginationPrevious 
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (currentPage > 1) setCurrentPage(currentPage - 1);
-                        }}
-                        className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
-                      />
-                    </PaginationItem>
-                    
-                    {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                      const page = i + 1;
-                      return (
-                        <PaginationItem key={page}>
-                          <PaginationLink
-                            href="#"
-                            onClick={(e) => {
-                              e.preventDefault();
-                              setCurrentPage(page);
-                            }}
-                            isActive={currentPage === page}
-                            className="text-sm"
-                          >
-                            {page}
-                          </PaginationLink>
-                        </PaginationItem>
-                      );
-                    })}
-                    
-                    <PaginationItem>
-                      <PaginationNext 
-                        href="#"
-                        onClick={(e) => {
-                          e.preventDefault();
-                          if (currentPage < totalPages) setCurrentPage(currentPage + 1);
-                        }}
-                        className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
-                      />
-                    </PaginationItem>
-                  </PaginationContent>
-                </Pagination>
-              </div>
-            )}
-          </>
-        ) : (
-          <Card className="shadow-sm border-0">
-            <CardContent className="text-center py-8">
-              <Package className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-              <h3 className="text-lg font-medium text-gray-700 mb-2">
-                {searchTerm || categoryFilter !== 'all' 
-                  ? 'Produk tidak ditemukan' 
-                  : 'Belum ada produk'}
-              </h3>
-              <p className="text-gray-500 mb-3 text-sm">
-                {searchTerm || categoryFilter !== 'all'
-                  ? 'Coba ubah kata kunci atau filter pencarian Anda'
-                  : 'Produk akan segera ditambahkan'}
-              </p>
-              {(searchTerm || categoryFilter !== 'all') && (
-                <Button 
-                  onClick={() => {
-                    setSearchTerm('');
-                    setCategoryFilter('all');
-                    setCurrentPage(1);
-                  }}
-                  variant="outline"
-                  className="border-green-200 text-green-600 hover:bg-green-50 text-sm"
-                >
-                  Reset Pencarian
-                </Button>
-              )}
-            </CardContent>
-          </Card>
-        )}
+        {/* Product Grid */}
+        <ProductGrid
+          products={paginatedProducts}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          getProductQuantity={getProductQuantity}
+          onAddToCart={addToCart}
+          onRemoveFromCart={removeFromCart}
+          onResetSearch={handleResetSearch}
+          hasFilters={hasFilters}
+        />
       </div>
 
       {/* Fixed Cart Button */}
-      {getTotalItems() > 0 && (
-        <div className="fixed bottom-3 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-sm px-3">
-          <Button
-            onClick={() => setIsCheckoutOpen(true)}
-            className="w-full bg-green-600 text-white rounded-xl px-4 py-3 flex items-center justify-between shadow-lg hover:bg-green-700"
-          >
-            <div className="flex items-center space-x-2">
-              <div className="bg-green-700 rounded-full p-1.5">
-                <ShoppingCart className="h-4 w-4" />
-              </div>
-              <div>
-                <div className="font-semibold text-sm">
-                  {getTotalItems()} item
-                </div>
-                <div className="text-xs opacity-90 truncate max-w-24">
-                  {cart.map(item => item.product.name).join(', ')}
-                </div>
-              </div>
-            </div>
-            <div className="text-right">
-              <div className="font-bold text-base">
-                {formatPrice(getTotalPrice())}
-              </div>
-            </div>
-          </Button>
-        </div>
-      )}
+      <CartButton
+        cart={cart}
+        totalItems={getTotalItems()}
+        totalPrice={getTotalPrice()}
+        onClick={() => setIsCheckoutOpen(true)}
+      />
 
       {/* Checkout Dialog */}
       <CheckoutDialog
@@ -443,119 +301,6 @@ const PublicCatalog = () => {
         onOrderSuccess={handleOrderSuccess}
       />
     </div>
-  );
-};
-
-interface ProductListItemProps {
-  product: Product;
-  quantity: number;
-  onAdd: () => void;
-  onRemove: () => void;
-}
-
-const ProductListItem = ({ product, quantity, onAdd, onRemove }: ProductListItemProps) => {
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
-
-  const displayPrice = product.reseller_price || product.price;
-  const hasDiscount = product.reseller_price && product.reseller_price < product.price;
-  const categoryName = product.product_categories?.name || 'Uncategorized';
-
-  return (
-    <Card className="shadow-sm border-0 bg-white">
-      <CardContent className="p-3">
-        <div className="flex items-start space-x-3">
-          {/* Product Image */}
-          <div className="relative w-16 h-16 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
-            {product.image_url ? (
-              <img 
-                src={product.image_url} 
-                alt={product.name}
-                className="w-full h-full object-cover"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gray-100">
-                <Package className="h-6 w-6 text-gray-400" />
-              </div>
-            )}
-          </div>
-          
-          {/* Product Info */}
-          <div className="flex-1 min-w-0">
-            <div className="flex justify-between items-start">
-              <div className="flex-1 pr-2">
-                {/* Product Name */}
-                <h3 className="font-semibold text-gray-900 text-sm mb-1 line-clamp-1">
-                  {product.name}
-                </h3>
-                
-                {/* Category */}
-                <p className="text-xs text-gray-500 mb-1">
-                  {categoryName}
-                </p>
-
-                {/* Price */}
-                <div className="flex items-baseline space-x-1 mb-1">
-                  <span className="text-base font-bold text-gray-900">
-                    {formatPrice(displayPrice)}
-                  </span>
-                  {hasDiscount && (
-                    <span className="text-xs text-gray-400 line-through">
-                      {formatPrice(product.price)}
-                    </span>
-                  )}
-                </div>
-
-                {/* Description */}
-                {product.description && (
-                  <p className="text-xs text-gray-600 line-clamp-2">
-                    {product.description}
-                  </p>
-                )}
-              </div>
-              
-              {/* Add/Remove Controls */}
-              <div className="flex flex-col items-end justify-center h-full ml-2">
-                {quantity === 0 ? (
-                  <Button
-                    onClick={onAdd}
-                    size="sm"
-                    className="bg-green-600 hover:bg-green-700 text-white px-3 py-1.5 rounded-lg font-medium text-xs h-7 w-8"
-                  >
-                    +
-                  </Button>
-                ) : (
-                  <div className="flex items-center bg-green-600 rounded-lg overflow-hidden">
-                    <Button
-                      size="sm"
-                      onClick={onRemove}
-                      className="bg-green-600 hover:bg-green-700 text-white w-6 h-6 p-0 rounded-none"
-                    >
-                      <Minus className="h-3 w-3" />
-                    </Button>
-                    <span className="text-white font-semibold px-2 py-1 bg-green-600 text-xs min-w-[28px] text-center">
-                      {quantity}
-                    </span>
-                    <Button
-                      size="sm"
-                      onClick={onAdd}
-                      className="bg-green-600 hover:bg-green-700 text-white w-6 h-6 p-0 rounded-none"
-                    >
-                      <Plus className="h-3 w-3" />
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      </CardContent>
-    </Card>
   );
 };
 
