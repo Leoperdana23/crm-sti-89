@@ -6,19 +6,57 @@ import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { MessageSquare, Phone, Calendar, CheckCircle, XCircle } from 'lucide-react';
+import { MessageSquare, Phone, Calendar, CheckCircle, XCircle, Filter } from 'lucide-react';
 import { useCustomers } from '@/hooks/useCustomers';
+import { useBranches } from '@/hooks/useBranches';
 import { useToast } from '@/hooks/use-toast';
 
 const FollowUp = () => {
   const { customers, updateCustomer, getCustomersByStatus } = useCustomers();
+  const { branches } = useBranches();
   const { toast } = useToast();
   const [notes, setNotes] = useState('');
   const [followUpDate, setFollowUpDate] = useState('');
   const [selectedCustomer, setSelectedCustomer] = useState<string | null>(null);
+  
+  // Filter states
+  const [selectedBranch, setSelectedBranch] = useState<string>('');
+  const [startDate, setStartDate] = useState('');
+  const [endDate, setEndDate] = useState('');
 
   const prospekCustomers = getCustomersByStatus('Prospek');
   const followUpCustomers = getCustomersByStatus('Follow-up');
+
+  // Filter function
+  const filterCustomers = (customerList: any[]) => {
+    return customerList.filter(customer => {
+      // Filter by branch
+      if (selectedBranch && customer.branch_id !== selectedBranch) {
+        return false;
+      }
+
+      // Filter by date range
+      if (startDate || endDate) {
+        const customerDate = new Date(customer.created_at);
+        
+        if (startDate) {
+          const start = new Date(startDate);
+          if (customerDate < start) return false;
+        }
+        
+        if (endDate) {
+          const end = new Date(endDate);
+          end.setHours(23, 59, 59, 999); // Include the entire end date
+          if (customerDate > end) return false;
+        }
+      }
+
+      return true;
+    });
+  };
+
+  const filteredProspekCustomers = filterCustomers(prospekCustomers);
+  const filteredFollowUpCustomers = filterCustomers(followUpCustomers);
 
   const handleWhatsApp = (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
@@ -59,6 +97,12 @@ const FollowUp = () => {
     setSelectedCustomer(null);
   };
 
+  const clearFilters = () => {
+    setSelectedBranch('');
+    setStartDate('');
+    setEndDate('');
+  };
+
   return (
     <div className="space-y-6">
       <div>
@@ -66,23 +110,85 @@ const FollowUp = () => {
         <p className="text-gray-600 mt-1">Kelola prospek dan jadwal follow-up</p>
       </div>
 
+      {/* Filter Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center">
+            <Filter className="h-5 w-5 mr-2" />
+            Filter Data
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Cabang</label>
+              <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Pilih cabang" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="">Semua Cabang</SelectItem>
+                  {branches.map((branch) => (
+                    <SelectItem key={branch.id} value={branch.id}>
+                      {branch.name}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tanggal Mulai</label>
+              <Input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium">Tanggal Akhir</label>
+              <Input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+              />
+            </div>
+            
+            <div className="space-y-2">
+              <label className="text-sm font-medium invisible">Action</label>
+              <Button 
+                variant="outline" 
+                onClick={clearFilters}
+                className="w-full"
+              >
+                Reset Filter
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         {/* Prospek Baru */}
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center">
               <MessageSquare className="h-5 w-5 mr-2 text-yellow-600" />
-              Prospek Baru ({prospekCustomers.length})
+              Prospek Baru ({filteredProspekCustomers.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {prospekCustomers.map((customer) => (
+            {filteredProspekCustomers.map((customer) => (
               <div key={customer.id} className="p-4 border border-yellow-200 bg-yellow-50 rounded-lg">
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <h3 className="font-semibold text-gray-900">{customer.name}</h3>
                     <p className="text-sm text-gray-600">{customer.phone}</p>
                     <p className="text-sm text-gray-600">{customer.needs}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(customer.created_at).toLocaleDateString('id-ID')}
+                    </p>
                   </div>
                   <Badge className="bg-yellow-100 text-yellow-800">
                     {customer.status}
@@ -111,8 +217,13 @@ const FollowUp = () => {
               </div>
             ))}
             
-            {prospekCustomers.length === 0 && (
-              <p className="text-gray-500 text-center py-8">Tidak ada prospek baru</p>
+            {filteredProspekCustomers.length === 0 && (
+              <p className="text-gray-500 text-center py-8">
+                {selectedBranch || startDate || endDate 
+                  ? "Tidak ada prospek baru sesuai filter" 
+                  : "Tidak ada prospek baru"
+                }
+              </p>
             )}
           </CardContent>
         </Card>
@@ -122,17 +233,20 @@ const FollowUp = () => {
           <CardHeader>
             <CardTitle className="flex items-center">
               <Calendar className="h-5 w-5 mr-2 text-blue-600" />
-              Follow-up Aktif ({followUpCustomers.length})
+              Follow-up Aktif ({filteredFollowUpCustomers.length})
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {followUpCustomers.map((customer) => (
+            {filteredFollowUpCustomers.map((customer) => (
               <div key={customer.id} className="p-4 border border-blue-200 bg-blue-50 rounded-lg">
                 <div className="flex justify-between items-start mb-3">
                   <div>
                     <h3 className="font-semibold text-gray-900">{customer.name}</h3>
                     <p className="text-sm text-gray-600">{customer.phone}</p>
                     <p className="text-sm text-gray-600">{customer.needs}</p>
+                    <p className="text-xs text-gray-500 mt-1">
+                      {new Date(customer.created_at).toLocaleDateString('id-ID')}
+                    </p>
                   </div>
                   <Badge className="bg-blue-100 text-blue-800">
                     {customer.status}
@@ -214,8 +328,13 @@ const FollowUp = () => {
               </div>
             ))}
             
-            {followUpCustomers.length === 0 && (
-              <p className="text-gray-500 text-center py-8">Tidak ada follow-up aktif</p>
+            {filteredFollowUpCustomers.length === 0 && (
+              <p className="text-gray-500 text-center py-8">
+                {selectedBranch || startDate || endDate 
+                  ? "Tidak ada follow-up aktif sesuai filter" 
+                  : "Tidak ada follow-up aktif"
+                }
+              </p>
             )}
           </CardContent>
         </Card>
