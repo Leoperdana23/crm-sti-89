@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -15,15 +15,23 @@ interface CartItem {
   quantity: number;
 }
 
+interface ResellerSession {
+  id: string;
+  name: string;
+  phone: string;
+  catalogToken: string;
+}
+
 interface CheckoutDialogProps {
   isOpen: boolean;
   onClose: () => void;
   cart: CartItem[];
   catalogToken: string;
+  resellerSession: ResellerSession | null;
   onOrderSuccess: () => void;
 }
 
-const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, onOrderSuccess }: CheckoutDialogProps) => {
+const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, resellerSession, onOrderSuccess }: CheckoutDialogProps) => {
   const [customerName, setCustomerName] = useState('');
   const [customerPhone, setCustomerPhone] = useState('');
   const [notes, setNotes] = useState('');
@@ -31,6 +39,14 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, onOrderSuccess }:
   const [expedisi, setExpedisi] = useState('');
   
   const createOrderMutation = useCreateOrder();
+
+  // Auto-fill reseller data when dialog opens
+  useEffect(() => {
+    if (isOpen && resellerSession) {
+      setCustomerName(resellerSession.name);
+      setCustomerPhone(resellerSession.phone);
+    }
+  }, [isOpen, resellerSession]);
 
   const getTotalAmount = () => {
     return cart.reduce((total, item) => {
@@ -82,8 +98,6 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, onOrderSuccess }:
       onOrderSuccess();
       onClose();
       // Reset form
-      setCustomerName('');
-      setCustomerPhone('');
       setNotes('');
       setDeliveryMethod('pickup');
       setExpedisi('');
@@ -120,33 +134,33 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, onOrderSuccess }:
             </div>
           </div>
 
-          {/* Customer Information */}
+          {/* Customer Information - Auto-filled and disabled */}
           <div className="space-y-3">
             <div>
-              <Label htmlFor="customerName" className="text-sm">Nama Pelanggan *</Label>
+              <Label htmlFor="customerName" className="text-sm">Nama Pelanggan (Reseller)</Label>
               <Input
                 id="customerName"
                 value={customerName}
                 onChange={(e) => setCustomerName(e.target.value)}
-                placeholder="Masukkan nama pelanggan"
-                required
-                className="mt-1"
+                placeholder="Nama pelanggan"
+                disabled
+                className="mt-1 bg-gray-100"
               />
             </div>
             
             <div>
-              <Label htmlFor="customerPhone" className="text-sm">No. Telepon *</Label>
+              <Label htmlFor="customerPhone" className="text-sm">No. Telepon (Reseller)</Label>
               <Input
                 id="customerPhone"
                 value={customerPhone}
                 onChange={(e) => setCustomerPhone(e.target.value)}
-                placeholder="Masukkan nomor telepon"
-                required
-                className="mt-1"
+                placeholder="Nomor telepon"
+                disabled
+                className="mt-1 bg-gray-100"
               />
             </div>
 
-            {/* Delivery Method */}
+            {/* Delivery Method - Editable */}
             <div>
               <Label htmlFor="deliveryMethod" className="text-sm">Metode Pengambilan *</Label>
               <Select value={deliveryMethod} onValueChange={setDeliveryMethod}>
@@ -175,6 +189,7 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, onOrderSuccess }:
               </div>
             )}
             
+            {/* Notes - Editable */}
             <div>
               <Label htmlFor="notes" className="text-sm">Catatan (Opsional)</Label>
               <Textarea

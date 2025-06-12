@@ -44,7 +44,7 @@ export const useResellerAuth = () => {
         throw new Error('Password salah');
       }
 
-      // Generate or get catalog token
+      // Generate or get catalog token (unlimited expiry)
       let catalogToken = '';
       
       const { data: existingToken } = await supabase
@@ -54,16 +54,18 @@ export const useResellerAuth = () => {
         .eq('is_active', true)
         .maybeSingle();
 
-      if (existingToken && existingToken.expires_at && new Date(existingToken.expires_at) > new Date()) {
+      if (existingToken) {
+        // Use existing token (no expiry check since tokens are unlimited)
         catalogToken = existingToken.token;
       } else {
+        // Create new token without expiry
         const { data: newToken, error: createTokenError } = await supabase
           .from('catalog_tokens')
           .insert({
             name: `Token for ${resellerData.name}`,
             reseller_id: resellerData.id,
             token: `reseller_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            expires_at: null, // No expiry
             is_active: true
           })
           .select()

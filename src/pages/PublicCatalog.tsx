@@ -1,11 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
-import { useParams } from 'react-router-dom';
-import { Search, Package, CheckCircle } from 'lucide-react';
+import { useParams, useNavigate } from 'react-router-dom';
+import { Search, Package, CheckCircle, User, LogOut } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Product, ProductCategory } from '@/types/product';
+import { useResellerAuth } from '@/hooks/useResellerAuth';
 import CheckoutDialog from '@/components/CheckoutDialog';
 import SearchAndFilter from '@/components/catalog/SearchAndFilter';
 import ProductGrid from '@/components/catalog/ProductGrid';
@@ -21,6 +22,8 @@ interface CartItem {
 
 const PublicCatalog = () => {
   const { token } = useParams<{ token: string }>();
+  const navigate = useNavigate();
+  const { session, clearResellerSession } = useResellerAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -41,10 +44,24 @@ const PublicCatalog = () => {
         return;
       }
 
+      // Check if reseller is logged in
+      if (!session) {
+        setError('Silakan login sebagai reseller untuk mengakses katalog');
+        setIsLoading(false);
+        return;
+      }
+
+      // Verify if the token matches the logged-in reseller's token
+      if (session.catalogToken !== token) {
+        setError('Token tidak sesuai dengan sesi reseller yang login');
+        setIsLoading(false);
+        return;
+      }
+
       try {
         console.log('Verifying token:', token);
         
-        // Verify token first
+        // Verify token exists and is active (no expiry check since tokens are now unlimited)
         const { data: tokenData, error: tokenError } = await supabase
           .from('catalog_tokens')
           .select('*')
@@ -54,14 +71,7 @@ const PublicCatalog = () => {
 
         if (tokenError || !tokenData) {
           console.error('Token verification failed:', tokenError);
-          setError('Token tidak valid atau sudah kedaluwarsa');
-          setIsLoading(false);
-          return;
-        }
-
-        // Check if token is expired
-        if (tokenData.expires_at && new Date(tokenData.expires_at) < new Date()) {
-          setError('Token sudah kedaluwarsa');
+          setError('Token tidak valid atau tidak aktif');
           setIsLoading(false);
           return;
         }
@@ -120,7 +130,16 @@ const PublicCatalog = () => {
     };
 
     fetchCatalogData();
-  }, [token]);
+  }, [token, session]);
+
+  const handleLogout = () => {
+    clearResellerSession();
+    navigate('/reseller-login');
+  };
+
+  const handleLogin = () => {
+    navigate('/reseller-login');
+  };
 
   const addToCart = (product: Product) => {
     setCart(prevCart => {
@@ -211,7 +230,6 @@ const PublicCatalog = () => {
     currentPage * PRODUCTS_PER_PAGE
   );
 
-  // Fix: Ensure hasFilters is properly typed as boolean
   const hasFilters = Boolean(searchTerm || categoryFilter !== 'all');
 
   if (isLoading) {
@@ -232,7 +250,12 @@ const PublicCatalog = () => {
           <CardContent className="text-center py-8">
             <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
             <h3 className="text-lg font-medium text-gray-900 mb-2">Akses Ditolak</h3>
-            <p className="text-gray-600">{error}</p>
+            <p className="text-gray-600 mb-4">{error}</p>
+            {!session && (
+              <Button onClick={handleLogin} className="bg-green-600 hover:bg-green-700">
+                Login Reseller
+              </Button>
+            )}
           </CardContent>
         </Card>
       </div>
@@ -245,8 +268,39 @@ const PublicCatalog = () => {
       <div className="bg-white shadow-sm sticky top-0 z-10">
         <div className="w-full max-w-sm mx-auto px-3 py-3">
           <div className="flex items-center justify-between">
-            <h1 className="text-lg font-bold text-gray-900">Katalog Produk</h1>
-            <Search className="h-5 w-5 text-gray-400" />
+            <div className="flex items-center gap-2">
+              <h1 className="text-lg font-bold text-gray-900">Katalog Produk</h1>
+              <Search className="h-5 w-5 text-gray-400" />
+            </div>
+            
+            {/* User Menu */}
+            <div className="flex items-center gap-2">
+              {session ? (
+                <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-1 text-sm text-gray-600">
+                    <User className="h-4 w-4" />
+                    <span className="hidden sm:inline">{session.name}</span>
+                  </div>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={handleLogout}
+                    className="flex items-center gap-1"
+                  >
+                    <LogOut className="h-3 w-3" />
+                    <span className="hidden sm:inline">Logout</span>
+                  </Button>
+                </div>
+              ) : (
+                <Button
+                  size="sm"
+                  onClick={handleLogin}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  Login
+                </Button>
+              )}
+            </div>
           </div>
         </div>
       </div>
@@ -299,6 +353,7 @@ const PublicCatalog = () => {
         onClose={() => setIsCheckoutOpen(false)}
         cart={cart}
         catalogToken={token || ''}
+        resellerSession={session}
         onOrderSuccess={handleOrderSuccess}
       />
     </div>
