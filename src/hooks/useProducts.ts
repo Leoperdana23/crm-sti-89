@@ -53,6 +53,33 @@ export const useProductCategories = () => {
   });
 };
 
+// Helper function to get current authenticated user
+const getCurrentAuthenticatedUser = () => {
+  // Check for app user in localStorage
+  const appUser = localStorage.getItem('appUser');
+  if (appUser) {
+    try {
+      return JSON.parse(appUser);
+    } catch (error) {
+      console.error('Invalid app user data:', error);
+      localStorage.removeItem('appUser');
+    }
+  }
+
+  // Check for sales user in localStorage
+  const salesUser = localStorage.getItem('salesUser');
+  if (salesUser) {
+    try {
+      return JSON.parse(salesUser);
+    } catch (error) {
+      console.error('Invalid sales user data:', error);
+      localStorage.removeItem('salesUser');
+    }
+  }
+
+  return null;
+};
+
 export const useCreateProduct = () => {
   const queryClient = useQueryClient();
   const { toast } = useToast();
@@ -61,14 +88,14 @@ export const useCreateProduct = () => {
     mutationFn: async (productData: CreateProductData) => {
       console.log('Creating product:', productData);
       
-      // Check current user authentication
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        console.error('User not authenticated:', userError);
+      // Check for authenticated user using our custom auth system
+      const currentUser = getCurrentAuthenticatedUser();
+      if (!currentUser) {
+        console.error('User not authenticated via custom auth system');
         throw new Error('User tidak terautentikasi');
       }
 
-      console.log('Current user:', user);
+      console.log('Current authenticated user:', currentUser);
 
       const { data, error } = await supabase
         .from('products')
@@ -109,6 +136,14 @@ export const useUpdateProduct = () => {
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateProductData) => {
       console.log('Updating product:', id, updates);
+      
+      // Check for authenticated user using our custom auth system
+      const currentUser = getCurrentAuthenticatedUser();
+      if (!currentUser) {
+        console.error('User not authenticated via custom auth system');
+        throw new Error('User tidak terautentikasi');
+      }
+
       const { data, error } = await supabase
         .from('products')
         .update(updates)
@@ -149,6 +184,14 @@ export const useDeleteProduct = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       console.log('Deleting product:', id);
+      
+      // Check for authenticated user using our custom auth system
+      const currentUser = getCurrentAuthenticatedUser();
+      if (!currentUser) {
+        console.error('User not authenticated via custom auth system');
+        throw new Error('User tidak terautentikasi');
+      }
+
       const { error } = await supabase
         .from('products')
         .update({ is_active: false })

@@ -5,21 +5,46 @@ import { useToast } from '@/hooks/use-toast';
 
 export interface CatalogToken {
   id: string;
-  token: string;
   name: string;
   description: string | null;
-  expires_at: string | null;
+  token: string;
   is_active: boolean;
-  created_by: string | null;
+  expires_at: string | null;
   created_at: string;
-  updated_at: string;
+  created_by: string | null;
 }
 
 export interface CreateCatalogTokenData {
   name: string;
   description?: string;
-  expires_at?: string;
 }
+
+// Helper function to get current authenticated user
+const getCurrentAuthenticatedUser = () => {
+  // Check for app user in localStorage
+  const appUser = localStorage.getItem('appUser');
+  if (appUser) {
+    try {
+      return JSON.parse(appUser);
+    } catch (error) {
+      console.error('Invalid app user data:', error);
+      localStorage.removeItem('appUser');
+    }
+  }
+
+  // Check for sales user in localStorage
+  const salesUser = localStorage.getItem('salesUser');
+  if (salesUser) {
+    try {
+      return JSON.parse(salesUser);
+    } catch (error) {
+      console.error('Invalid sales user data:', error);
+      localStorage.removeItem('salesUser');
+    }
+  }
+
+  return null;
+};
 
 export const useCatalogTokens = () => {
   return useQuery({
@@ -50,28 +75,21 @@ export const useCreateCatalogToken = () => {
     mutationFn: async (tokenData: CreateCatalogTokenData) => {
       console.log('Creating catalog token:', tokenData);
       
-      // Get current user
-      const { data: { user }, error: userError } = await supabase.auth.getUser();
-      if (userError || !user) {
-        console.error('User not authenticated:', userError);
+      // Check for authenticated user using our custom auth system
+      const currentUser = getCurrentAuthenticatedUser();
+      if (!currentUser) {
+        console.error('User not authenticated via custom auth system');
         throw new Error('User tidak terautentikasi');
       }
 
-      // Get app_user data
-      const { data: appUser, error: appUserError } = await supabase
-        .from('app_users')
-        .select('id')
-        .eq('auth_user_id', user.id)
-        .single();
+      console.log('Current authenticated user:', currentUser);
 
-      if (appUserError || !appUser) {
-        console.error('App user not found:', appUserError);
-        throw new Error('Data user tidak ditemukan');
-      }
-
+      // Get the user ID from the appropriate field
+      const userId = currentUser.id || currentUser.user_id || currentUser.app_user_id;
+      
       const insertData = {
         ...tokenData,
-        created_by: appUser.id
+        created_by: userId,
       };
 
       console.log('Inserting token data:', insertData);
@@ -94,14 +112,14 @@ export const useCreateCatalogToken = () => {
       queryClient.invalidateQueries({ queryKey: ['catalog-tokens'] });
       toast({
         title: 'Sukses',
-        description: 'Token katalog berhasil dibuat',
+        description: 'Token berhasil dibuat',
       });
     },
     onError: (error) => {
       console.error('Error in useCreateCatalogToken:', error);
       toast({
         title: 'Error',
-        description: 'Gagal membuat token katalog',
+        description: 'Gagal membuat token',
         variant: 'destructive',
       });
     },
@@ -115,6 +133,14 @@ export const useDeleteCatalogToken = () => {
   return useMutation({
     mutationFn: async (tokenId: string) => {
       console.log('Deleting catalog token:', tokenId);
+      
+      // Check for authenticated user using our custom auth system
+      const currentUser = getCurrentAuthenticatedUser();
+      if (!currentUser) {
+        console.error('User not authenticated via custom auth system');
+        throw new Error('User tidak terautentikasi');
+      }
+
       const { error } = await supabase
         .from('catalog_tokens')
         .delete()
@@ -131,14 +157,14 @@ export const useDeleteCatalogToken = () => {
       queryClient.invalidateQueries({ queryKey: ['catalog-tokens'] });
       toast({
         title: 'Sukses',
-        description: 'Token katalog berhasil dihapus',
+        description: 'Token berhasil dihapus',
       });
     },
     onError: (error) => {
       console.error('Error in useDeleteCatalogToken:', error);
       toast({
         title: 'Error',
-        description: 'Gagal menghapus token katalog',
+        description: 'Gagal menghapus token',
         variant: 'destructive',
       });
     },

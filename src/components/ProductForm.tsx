@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -80,6 +79,9 @@ const ProductForm = ({ isOpen, onClose, product }: ProductFormProps) => {
           <DialogTitle>
             {product ? 'Edit Produk' : 'Tambah Produk Baru'}
           </DialogTitle>
+          <DialogDescription>
+            {product ? 'Perbarui informasi produk' : 'Isi form di bawah untuk menambahkan produk baru ke katalog'}
+          </DialogDescription>
         </DialogHeader>
 
         <Form {...form}>
