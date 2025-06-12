@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Order, OrderItem, CreateOrderData, CreateOrderItemData } from '@/types/order';
@@ -14,16 +13,7 @@ export const useOrders = () => {
         .from('orders')
         .select(`
           *,
-          order_items (*),
-          resellers!catalog_tokens(
-            id,
-            name,
-            branch_id,
-            branches(
-              id,
-              name
-            )
-          )
+          order_items (*)
         `)
         .order('created_at', { ascending: false });
 
@@ -33,6 +23,45 @@ export const useOrders = () => {
       }
 
       console.log('Orders fetched successfully:', data);
+
+      // If we have orders, fetch reseller data separately for each unique catalog_token
+      if (data && data.length > 0) {
+        const uniqueTokens = [...new Set(data.map(order => order.catalog_token))];
+        
+        const { data: catalogTokens, error: tokenError } = await supabase
+          .from('catalog_tokens')
+          .select(`
+            token,
+            reseller_id,
+            resellers!inner (
+              id,
+              name,
+              branch_id,
+              branches (
+                id,
+                name
+              )
+            )
+          `)
+          .in('token', uniqueTokens);
+
+        if (tokenError) {
+          console.error('Error fetching catalog tokens:', tokenError);
+          // Don't throw error, just continue without reseller data
+        }
+
+        // Map reseller data to orders
+        const ordersWithResellers = data.map(order => {
+          const tokenData = catalogTokens?.find(token => token.token === order.catalog_token);
+          return {
+            ...order,
+            reseller: tokenData?.resellers || null
+          };
+        });
+
+        return ordersWithResellers as (Order & { order_items: OrderItem[] })[];
+      }
+
       return data as (Order & { order_items: OrderItem[] })[];
     },
   });
