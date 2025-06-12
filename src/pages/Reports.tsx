@@ -361,10 +361,10 @@ const Reports = () => {
       [''],
       ['RATA-RATA RATING SURVEI', ''],
       ...(averageRatings ? [
-        ['Pelayanan Teknisi', averageRatings.serviceTechnician.toFixed(1)],
-        ['Pelayanan Sales/CS', averageRatings.serviceSales.toFixed(1)],
-        ['Kualitas Produk', averageRatings.productQuality.toFixed(1)],
-        ['Kejelasan Penggunaan', averageRatings.usageClarity.toFixed(1)],
+        ['Pelayanan Teknisi', averageRatings.service_technician.toFixed(1)],
+        ['Pelayanan Sales/CS', averageRatings.service_sales.toFixed(1)],
+        ['Kualitas Produk', averageRatings.product_quality.toFixed(1)],
+        ['Kejelasan Penggunaan', averageRatings.usage_clarity.toFixed(1)],
         ['Persetujuan Harga', averageRatings.priceApprovalRate.toFixed(1) + '%'],
       ] : [['Belum ada data survei', '']])
     ];
