@@ -84,17 +84,17 @@ export const useUserPermissions = () => {
       'role_permission_view': { can_view: true, can_create: true, can_edit: true, can_delete: true }
     };
 
-    // Staff permissions
+    // Staff permissions - sesuai dengan yang diminta: dashboard, daftar pesanan, pelanggan, reseller, follow-up, ulang tahun, proses pekerjaan, survei, katalog produk
     const staffPermissions = {
       'dashboard': { can_view: true, can_create: false, can_edit: false, can_delete: false },
+      'order_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
       'customer_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
       'reseller_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-      'product_management': { can_view: true, can_create: false, can_edit: false, can_delete: false },
       'followup_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
       'work_process_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
       'survey_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-      'deal_history_view': { can_view: true, can_create: false, can_edit: false, can_delete: false },
-      'order_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+      'product_management': { can_view: true, can_create: false, can_edit: false, can_delete: false },
+      // Menu ulang tahun tidak memerlukan permission khusus (null di SidebarMenu)
     };
 
     if (role === 'super_admin') {
@@ -117,7 +117,7 @@ export const useUserPermissions = () => {
       };
     }
 
-    // Default for staff and others
+    // Default for staff - sesuai menu yang diminta
     return staffPermissions;
   };
 
