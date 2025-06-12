@@ -7,12 +7,11 @@ export const createTempAuthSession = async () => {
     // Check if we already have a session
     const { data: { session } } = await supabase.auth.getSession();
     if (session) {
+      console.log('Existing session found:', session.user.email);
       return session;
     }
 
-    // Create a temporary session using a service role or anonymous access
-    // For now, we'll use signInAnonymously if available, otherwise skip auth requirement
-    // The RLS policies have been simplified to allow operations without complex auth checks
+    console.log('No session found, proceeding without auth for testing');
     return null;
   } catch (error) {
     console.log('Auth session creation skipped:', error);
@@ -22,6 +21,12 @@ export const createTempAuthSession = async () => {
 
 // Helper function to perform authenticated database operations
 export const withAuth = async <T>(operation: () => Promise<T>): Promise<T> => {
-  // For now, just execute the operation directly since we've simplified RLS policies
-  return await operation();
+  try {
+    // For testing, just execute the operation directly
+    console.log('Executing database operation');
+    return await operation();
+  } catch (error) {
+    console.error('Database operation failed:', error);
+    throw error;
+  }
 };
