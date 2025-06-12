@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 
 const Customers = () => {
   const { customers, loading, addCustomer, updateCustomer, deleteCustomer, deleteCustomersByName } = useCustomers();
-  const { createReseller } = useCreateReseller();
+  const createResellerMutation = useCreateReseller();
   const { branches } = useBranches();
   const { sales } = useSales();
   const { toast } = useToast();
@@ -62,7 +62,7 @@ const Customers = () => {
           is_active: true
         };
         
-        await createReseller.mutateAsync(resellerData);
+        await createResellerMutation.mutateAsync(resellerData);
         toast({
           title: "Berhasil",
           description: "Reseller baru berhasil ditambahkan",
