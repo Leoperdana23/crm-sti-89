@@ -30,7 +30,7 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
       to: '/dashboard',
       icon: Home,
       label: 'Dashboard',
-      permission: null // Dashboard always visible
+      permission: 'dashboard'
     },
     {
       to: '/orders',
@@ -60,7 +60,7 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
       to: '/birthday',
       icon: Calendar,
       label: 'Ulang Tahun',
-      permission: null // Always visible for all roles
+      permission: 'birthday'
     },
     {
       to: '/work-process',
