@@ -84,28 +84,23 @@ const ProductListItem = ({ product, quantity, onQuantityChange }: ProductListIte
 
           {/* Product Info */}
           <div className="flex-1 min-w-0">
-            <h3 className="font-medium text-sm text-gray-900 truncate">
+            <h3 className="font-medium text-sm text-gray-900 mb-1 leading-tight">
               {product.name}
             </h3>
             
             {product.description && (
-              <p className="text-xs text-gray-600 mt-1 line-clamp-2">
+              <p className="text-xs text-gray-600 mb-2 line-clamp-2">
                 {product.description}
               </p>
             )}
             
-            <div className="flex items-center gap-2 mt-2">
+            <div className="flex items-center gap-2">
               <span className="font-bold text-green-600 text-sm">
                 {formatPrice(displayPrice)}
               </span>
               <Badge variant="outline" className="text-xs">
                 {product.unit}
               </Badge>
-              {product.reseller_price && (
-                <Badge variant="secondary" className="text-xs">
-                  Harga Reseller
-                </Badge>
-              )}
             </div>
           </div>
 
