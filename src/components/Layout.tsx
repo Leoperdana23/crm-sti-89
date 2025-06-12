@@ -1,8 +1,7 @@
 
 import React from 'react';
-import { Outlet, useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { Users, LogOut } from 'lucide-react';
-import { cn } from '@/lib/utils';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { Button } from '@/components/ui/button';
@@ -21,7 +20,11 @@ import {
   SidebarTrigger,
 } from '@/components/ui/sidebar';
 
-const Layout = () => {
+interface LayoutProps {
+  children: React.ReactNode;
+}
+
+const Layout: React.FC<LayoutProps> = ({ children }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const { user, signOut } = useAuth();
@@ -140,7 +143,7 @@ const Layout = () => {
           </header>
           <div className="flex-1 overflow-auto">
             <div className="p-4 md:p-6 lg:p-8">
-              <Outlet />
+              {children}
             </div>
           </div>
         </SidebarInset>
