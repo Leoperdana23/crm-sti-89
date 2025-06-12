@@ -60,6 +60,16 @@ export const useCreateProduct = () => {
   return useMutation({
     mutationFn: async (productData: CreateProductData) => {
       console.log('Creating product:', productData);
+      
+      // Check current user authentication
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.error('User not authenticated:', userError);
+        throw new Error('User tidak terautentikasi');
+      }
+
+      console.log('Current user:', user);
+
       const { data, error } = await supabase
         .from('products')
         .insert(productData)

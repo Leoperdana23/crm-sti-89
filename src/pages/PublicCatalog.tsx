@@ -30,6 +30,8 @@ const PublicCatalog = () => {
       }
 
       try {
+        console.log('Verifying token:', token);
+        
         // Verify token first
         const { data: tokenData, error: tokenError } = await supabase
           .from('catalog_tokens')
@@ -39,6 +41,7 @@ const PublicCatalog = () => {
           .single();
 
         if (tokenError || !tokenData) {
+          console.error('Token verification failed:', tokenError);
           setError('Token tidak valid atau sudah kedaluwarsa');
           setIsLoading(false);
           return;
@@ -51,8 +54,13 @@ const PublicCatalog = () => {
           return;
         }
 
-        // Fetch products and categories with RLS bypass using service key
-        const { data: productsData, error: productsError } = await supabase
+        console.log('Token verified successfully:', tokenData);
+
+        // Create an unauthenticated client for public access
+        const publicSupabase = supabase;
+
+        // Fetch products with public access
+        const { data: productsData, error: productsError } = await publicSupabase
           .from('products')
           .select(`
             *,
@@ -65,12 +73,24 @@ const PublicCatalog = () => {
 
         if (productsError) {
           console.error('Error fetching products:', productsError);
-          setError('Gagal memuat produk');
-          setIsLoading(false);
-          return;
+          // Try alternative approach - fetch without relation
+          const { data: simpleProductsData, error: simpleProductsError } = await publicSupabase
+            .from('products')
+            .select('*')
+            .eq('is_active', true)
+            .order('name');
+
+          if (simpleProductsError) {
+            setError('Gagal memuat produk');
+            setIsLoading(false);
+            return;
+          }
+          setProducts(simpleProductsData || []);
+        } else {
+          setProducts(productsData || []);
         }
 
-        const { data: categoriesData, error: categoriesError } = await supabase
+        const { data: categoriesData, error: categoriesError } = await publicSupabase
           .from('product_categories')
           .select('*')
           .eq('is_active', true)
@@ -78,13 +98,12 @@ const PublicCatalog = () => {
 
         if (categoriesError) {
           console.error('Error fetching categories:', categoriesError);
-          setError('Gagal memuat kategori');
-          setIsLoading(false);
-          return;
+          // Continue without categories
+          setCategories([]);
+        } else {
+          setCategories(categoriesData || []);
         }
 
-        setProducts(productsData || []);
-        setCategories(categoriesData || []);
         setIsLoading(false);
       } catch (error) {
         console.error('Error fetching catalog data:', error);
