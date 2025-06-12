@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/useAuth';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { Product } from '@/types/product';
 import ProductForm from '@/components/ProductForm';
-import ProductCategoryForm from '@/components/ProductCategoryForm';
 import CatalogTokenManager from '@/components/CatalogTokenManager';
 import ProductFilters from '@/components/catalog/ProductFilters';
 import ProductActions from '@/components/catalog/ProductActions';
@@ -24,14 +23,12 @@ const ProductCatalog = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [productFormOpen, setProductFormOpen] = useState(false);
-  const [categoryFormOpen, setCategoryFormOpen] = useState(false);
   const [tokenManagerOpen, setTokenManagerOpen] = useState(false);
   const [editingProduct, setEditingProduct] = useState<Product | undefined>();
 
-  // Check if user is a reseller
   const isReseller = () => {
     const salesUser = localStorage.getItem('salesUser');
-    if (salesUser) return false; // Sales users are not resellers
+    if (salesUser) return false;
     
     const appUser = localStorage.getItem('appUser');
     if (appUser) {
@@ -75,10 +72,6 @@ const ProductCatalog = () => {
     setEditingProduct(undefined);
   };
 
-  const handleCloseCategoryForm = () => {
-    setCategoryFormOpen(false);
-  };
-
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[200px] md:min-h-[400px]">
@@ -104,13 +97,11 @@ const ProductCatalog = () => {
           canManageProducts={canManageProducts}
           setTokenManagerOpen={setTokenManagerOpen}
           setProductFormOpen={setProductFormOpen}
-          setCategoryFormOpen={setCategoryFormOpen}
           viewMode={viewMode}
           setViewMode={setViewMode}
         />
       </div>
 
-      {/* Search and Filter */}
       <ProductFilters
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
@@ -120,7 +111,6 @@ const ProductCatalog = () => {
         filteredProductsCount={filteredProducts.length}
       />
 
-      {/* Product List */}
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
           {filteredProducts.map((product) => (
@@ -153,16 +143,10 @@ const ProductCatalog = () => {
         <EmptyState searchTerm={searchTerm} categoryFilter={categoryFilter} />
       )}
 
-      {/* Modals */}
       <ProductForm 
         isOpen={productFormOpen}
         onClose={handleCloseProductForm}
         product={editingProduct}
-      />
-
-      <ProductCategoryForm 
-        isOpen={categoryFormOpen}
-        onClose={handleCloseCategoryForm}
       />
 
       <CatalogTokenManager 
