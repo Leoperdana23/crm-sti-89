@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
+import { useResellerAuth } from '@/hooks/useResellerAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -15,6 +15,7 @@ const ResellerAuth = () => {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
+  const { authenticateReseller } = useResellerAuth();
 
   const handleResellerLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -24,78 +25,17 @@ const ResellerAuth = () => {
       console.log('=== RESELLER LOGIN DEBUG START ===');
       console.log('Phone:', phone);
       
-      // Find reseller by phone number
-      const { data: resellerData, error: resellerError } = await supabase
-        .from('resellers')
-        .select('*')
-        .eq('phone', phone)
-        .eq('is_active', true)
-        .single();
-
-      if (resellerError || !resellerData) {
-        console.error('Reseller not found:', resellerError);
-        throw new Error('Reseller tidak ditemukan atau tidak aktif');
-      }
-
-      console.log('Found reseller:', resellerData.name);
-
-      // For now, we'll use a simple password check (you can enhance this later)
-      // In a real scenario, you'd want to hash passwords properly
-      if (password !== '123456') { // Default password for demo
-        throw new Error('Password salah');
-      }
-
-      // Generate or get existing catalog token for this reseller
-      let catalogToken = '';
+      const result = await authenticateReseller(phone, password);
       
-      // Check if reseller already has an active token
-      const { data: existingToken, error: tokenError } = await supabase
-        .from('catalog_tokens')
-        .select('*')
-        .eq('reseller_id', resellerData.id)
-        .eq('is_active', true)
-        .maybeSingle();
+      if (result.success && result.session) {
+        toast({
+          title: "Login Berhasil",
+          description: `Selamat datang, ${result.session.name}!`,
+        });
 
-      if (existingToken && existingToken.expires_at && new Date(existingToken.expires_at) > new Date()) {
-        catalogToken = existingToken.token;
-        console.log('Using existing token');
-      } else {
-        // Create new token
-        const { data: newToken, error: createTokenError } = await supabase
-          .from('catalog_tokens')
-          .insert({
-            reseller_id: resellerData.id,
-            token: `reseller_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(), // 30 days
-            is_active: true
-          })
-          .select()
-          .single();
-
-        if (createTokenError || !newToken) {
-          console.error('Error creating token:', createTokenError);
-          throw new Error('Gagal membuat token akses');
-        }
-
-        catalogToken = newToken.token;
-        console.log('Created new token');
+        // Redirect to catalog
+        navigate(`/catalog/${result.session.catalogToken}`);
       }
-
-      // Store reseller info in localStorage for session management
-      localStorage.setItem('resellerSession', JSON.stringify({
-        id: resellerData.id,
-        name: resellerData.name,
-        phone: resellerData.phone,
-        catalogToken: catalogToken
-      }));
-
-      toast({
-        title: "Login Berhasil",
-        description: `Selamat datang, ${resellerData.name}!`,
-      });
-
-      // Redirect to catalog
-      navigate(`/catalog/${catalogToken}`);
 
     } catch (error: any) {
       console.error('=== RESELLER LOGIN ERROR ===', error);

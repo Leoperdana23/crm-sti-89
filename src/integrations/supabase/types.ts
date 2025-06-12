@@ -145,6 +145,7 @@ export type Database = {
           id: string
           is_active: boolean
           name: string
+          reseller_id: string | null
           token: string
           updated_at: string
         }
@@ -156,6 +157,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name: string
+          reseller_id?: string | null
           token?: string
           updated_at?: string
         }
@@ -167,6 +169,7 @@ export type Database = {
           id?: string
           is_active?: boolean
           name?: string
+          reseller_id?: string | null
           token?: string
           updated_at?: string
         }
@@ -176,6 +179,13 @@ export type Database = {
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "catalog_tokens_reseller_id_fkey"
+            columns: ["reseller_id"]
+            isOneToOne: false
+            referencedRelation: "resellers"
             referencedColumns: ["id"]
           },
         ]

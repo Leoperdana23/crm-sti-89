@@ -60,6 +60,7 @@ export const useResellerAuth = () => {
         const { data: newToken, error: createTokenError } = await supabase
           .from('catalog_tokens')
           .insert({
+            name: `Token for ${resellerData.name}`,
             reseller_id: resellerData.id,
             token: `reseller_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
             expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
