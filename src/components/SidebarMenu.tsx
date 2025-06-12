@@ -36,25 +36,25 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
       to: '/orders',
       icon: ShoppingCart,
       label: 'Daftar Pesanan',
-      permission: 'order_view'
+      permission: 'orders'
     },
     {
       to: '/customers',
       icon: Users,
       label: 'Pelanggan',
-      permission: 'customer_view'
+      permission: 'customers'
     },
     {
       to: '/resellers',
       icon: UserCheck,
       label: 'Reseller',
-      permission: 'reseller_view'
+      permission: 'resellers'
     },
     {
       to: '/follow-up',
       icon: Phone,
       label: 'Follow-Up',
-      permission: 'followup_view'
+      permission: 'follow_up'
     },
     {
       to: '/birthday',
@@ -66,55 +66,55 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
       to: '/work-process',
       icon: Briefcase,
       label: 'Proses Pekerjaan',
-      permission: 'work_process_view'
+      permission: 'work_process'
     },
     {
       to: '/survey',
       icon: FileText,
       label: 'Survei',
-      permission: 'survey_view'
+      permission: 'survey'
     },
     {
       to: '/catalog',
       icon: Package,
       label: 'Katalog Produk',
-      permission: 'product_management'
+      permission: 'product_catalog'
     },
     {
       to: '/deal-history',
       icon: TrendingUp,
       label: 'Riwayat Deal',
-      permission: 'deal_history_view'
+      permission: 'deal_history'
     },
     {
       to: '/sales',
       icon: TrendingUp,
       label: 'Sales',
-      permission: 'sales_view'
+      permission: 'sales'
     },
     {
       to: '/branches',
       icon: Building,
       label: 'Cabang',
-      permission: 'branch_view'
+      permission: 'branches'
     },
     {
       to: '/reports',
       icon: BarChart3,
       label: 'Laporan',
-      permission: 'reports_view'
+      permission: 'reports'
     },
     {
       to: '/users',
       icon: Users,
       label: 'Master User',
-      permission: 'user_view'
+      permission: 'users'
     },
     {
       to: '/role-permissions',
       icon: Shield,
       label: 'Hak Akses Role',
-      permission: 'role_permission_view'
+      permission: 'role_permissions'
     }
   ];
 

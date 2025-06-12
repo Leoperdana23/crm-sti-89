@@ -69,32 +69,32 @@ export const useUserPermissions = () => {
     // For debugging, give super_admin full permissions
     const superAdminPermissions = {
       'dashboard': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-      'customer_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-      'reseller_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-      'product_management': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-      'followup_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-      'work_process_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-      'survey_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-      'deal_history_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-      'order_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-      'sales_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-      'branch_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-      'reports_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-      'user_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-      'role_permission_view': { can_view: true, can_create: true, can_edit: true, can_delete: true }
+      'customers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+      'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+      'product_catalog': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+      'orders': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+      'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+      'work_process': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+      'survey': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+      'deal_history': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+      'sales': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+      'branches': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+      'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+      'users': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+      'role_permissions': { can_view: true, can_create: true, can_edit: true, can_delete: true }
     };
 
-    // Staff permissions - sesuai dengan yang diminta: dashboard, daftar pesanan, pelanggan, reseller, follow-up, ulang tahun, proses pekerjaan, survei, katalog produk
+    // Staff permissions - sesuai dengan yang diminta: dashboard, orders, customers, resellers, follow-up, birthday, work_process, survey, product_catalog
     const staffPermissions = {
       'dashboard': { can_view: true, can_create: false, can_edit: false, can_delete: false },
-      'order_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-      'customer_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-      'reseller_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-      'followup_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-      'work_process_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-      'survey_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-      'product_management': { can_view: true, can_create: false, can_edit: false, can_delete: false },
-      // Menu ulang tahun tidak memerlukan permission khusus (null di SidebarMenu)
+      'orders': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+      'customers': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+      'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+      'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+      'work_process': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+      'survey': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+      'product_catalog': { can_view: true, can_create: false, can_edit: false, can_delete: false },
+      // Menu birthday tidak memerlukan permission khusus (null di SidebarMenu)
     };
 
     if (role === 'super_admin') {
@@ -102,18 +102,18 @@ export const useUserPermissions = () => {
     } else if (role === 'admin') {
       return {
         ...staffPermissions,
-        'product_management': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-        'sales_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-        'branch_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-        'reports_view': { can_view: true, can_create: true, can_edit: true, can_delete: true },
-        'user_view': { can_view: true, can_create: true, can_edit: true, can_delete: false }
+        'product_catalog': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+        'sales': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+        'branches': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+        'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'users': { can_view: true, can_create: true, can_edit: true, can_delete: false }
       };
     } else if (role === 'manager') {
       return {
         ...staffPermissions,
-        'product_management': { can_view: true, can_create: false, can_edit: false, can_delete: false },
-        'branch_view': { can_view: true, can_create: true, can_edit: true, can_delete: false },
-        'reports_view': { can_view: true, can_create: true, can_edit: true, can_delete: true }
+        'product_catalog': { can_view: true, can_create: false, can_edit: false, can_delete: false },
+        'branches': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+        'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true }
       };
     }
 
@@ -173,8 +173,17 @@ export const useUserPermissions = () => {
 
     const permission = permissions[permissionName];
     if (!permission) {
-      console.log(`No permission found for: ${permissionName}, granting access for testing`);
-      return true; // For testing, allow access if permission not found
+      console.log(`No permission found for: ${permissionName}, checking if staff role has access`);
+      
+      // Special handling for staff role - allow access to required menus
+      if (currentUser?.role === 'staff') {
+        const staffAllowedMenus = ['dashboard', 'orders', 'customers', 'resellers', 'follow_up', 'work_process', 'survey', 'product_catalog'];
+        const hasAccess = staffAllowedMenus.includes(permissionName);
+        console.log(`Staff access check for ${permissionName}: ${hasAccess}`);
+        return hasAccess;
+      }
+      
+      return false;
     }
 
     const hasAccess = (() => {
