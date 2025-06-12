@@ -25,7 +25,7 @@ const ProductForm = ({ isOpen, onClose, product }: ProductFormProps) => {
     defaultValues: {
       name: product?.name || '',
       description: product?.description || '',
-      category_id: product?.category_id || '',
+      category_id: product?.category_id || 'no-category',
       price: product?.price || 0,
       reseller_price: product?.reseller_price || 0,
       unit: product?.unit || 'unit',
@@ -38,7 +38,7 @@ const ProductForm = ({ isOpen, onClose, product }: ProductFormProps) => {
       form.reset({
         name: product.name,
         description: product.description || '',
-        category_id: product.category_id || '',
+        category_id: product.category_id || 'no-category',
         price: product.price,
         reseller_price: product.reseller_price || 0,
         unit: product.unit,
@@ -48,7 +48,7 @@ const ProductForm = ({ isOpen, onClose, product }: ProductFormProps) => {
       form.reset({
         name: '',
         description: '',
-        category_id: '',
+        category_id: 'no-category',
         price: 0,
         reseller_price: 0,
         unit: 'unit',
@@ -61,9 +61,11 @@ const ProductForm = ({ isOpen, onClose, product }: ProductFormProps) => {
     try {
       console.log('Form data before submission:', data);
       
-      // Ensure category_id is either a valid UUID or empty string (will be converted to null)
+      // Convert special values back to proper database format
       const processedData = {
         ...data,
+        // Convert 'no-category' back to null for database
+        category_id: data.category_id === 'no-category' ? null : data.category_id,
         // Convert 0 values to proper numbers or null
         price: Number(data.price) || 0,
         reseller_price: data.reseller_price ? Number(data.reseller_price) : 0,
@@ -133,14 +135,14 @@ const ProductForm = ({ isOpen, onClose, product }: ProductFormProps) => {
               render={({ field }) => (
                 <FormItem>
                   <FormLabel>Kategori</FormLabel>
-                  <Select onValueChange={field.onChange} value={field.value || ""}>
+                  <Select onValueChange={field.onChange} value={field.value || "no-category"}>
                     <FormControl>
                       <SelectTrigger>
                         <SelectValue placeholder="Pilih kategori" />
                       </SelectTrigger>
                     </FormControl>
                     <SelectContent>
-                      <SelectItem value="">Tanpa Kategori</SelectItem>
+                      <SelectItem value="no-category">Tanpa Kategori</SelectItem>
                       {categories?.map((category) => (
                         <SelectItem key={category.id} value={category.id}>
                           {category.name}
