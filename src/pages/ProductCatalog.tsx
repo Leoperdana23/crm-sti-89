@@ -1,23 +1,33 @@
 
 import React, { useState } from 'react';
-import { Search, Filter, Package, Grid, List, ShoppingCart, Eye } from 'lucide-react';
+import { Search, Filter, Package, Grid, List, ShoppingCart, Eye, Plus, Edit, Trash2, Link } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Loader2 } from 'lucide-react';
-import { useProducts, useProductCategories } from '@/hooks/useProducts';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { useProducts, useProductCategories, useDeleteProduct } from '@/hooks/useProducts';
 import { useAuth } from '@/hooks/useAuth';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 import { Product } from '@/types/product';
+import ProductForm from '@/components/ProductForm';
+import CatalogTokenManager from '@/components/CatalogTokenManager';
 
 const ProductCatalog = () => {
   const { data: products, isLoading } = useProducts();
   const { data: categories } = useProductCategories();
   const { user } = useAuth();
+  const { hasPermission } = useUserPermissions();
+  const deleteProductMutation = useDeleteProduct();
+
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [productFormOpen, setProductFormOpen] = useState(false);
+  const [tokenManagerOpen, setTokenManagerOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | undefined>();
 
   // Check if user is a reseller
   const isReseller = () => {
@@ -38,6 +48,7 @@ const ProductCatalog = () => {
   };
 
   const showResellerPrice = isReseller();
+  const canManageProducts = hasPermission('product_management', 'edit');
 
   const filteredProducts = products?.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -53,6 +64,24 @@ const ProductCatalog = () => {
       currency: 'IDR',
       minimumFractionDigits: 0,
     }).format(price);
+  };
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product);
+    setProductFormOpen(true);
+  };
+
+  const handleDeleteProduct = async (productId: string) => {
+    try {
+      await deleteProductMutation.mutateAsync(productId);
+    } catch (error) {
+      console.error('Error deleting product:', error);
+    }
+  };
+
+  const handleCloseProductForm = () => {
+    setProductFormOpen(false);
+    setEditingProduct(undefined);
   };
 
   if (isLoading) {
@@ -77,6 +106,19 @@ const ProductCatalog = () => {
         </div>
         
         <div className="flex items-center space-x-2">
+          {canManageProducts && (
+            <>
+              <Button onClick={() => setTokenManagerOpen(true)} variant="outline" size="sm">
+                <Link className="h-4 w-4 mr-2" />
+                Link Publik
+              </Button>
+              <Button onClick={() => setProductFormOpen(true)} size="sm">
+                <Plus className="h-4 w-4 mr-2" />
+                Tambah Produk
+              </Button>
+            </>
+          )}
+          
           <Button
             variant={viewMode === 'grid' ? 'default' : 'outline'}
             size="sm"
@@ -165,13 +207,27 @@ const ProductCatalog = () => {
       {viewMode === 'grid' ? (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
           {filteredProducts.map((product) => (
-            <ProductCard key={product.id} product={product} showResellerPrice={showResellerPrice} />
+            <ProductCard 
+              key={product.id} 
+              product={product} 
+              showResellerPrice={showResellerPrice}
+              canManage={canManageProducts}
+              onEdit={() => handleEditProduct(product)}
+              onDelete={() => handleDeleteProduct(product.id)}
+            />
           ))}
         </div>
       ) : (
         <div className="space-y-4">
           {filteredProducts.map((product) => (
-            <ProductListItem key={product.id} product={product} showResellerPrice={showResellerPrice} />
+            <ProductListItem 
+              key={product.id} 
+              product={product} 
+              showResellerPrice={showResellerPrice}
+              canManage={canManageProducts}
+              onEdit={() => handleEditProduct(product)}
+              onDelete={() => handleDeleteProduct(product.id)}
+            />
           ))}
         </div>
       )}
@@ -193,11 +249,35 @@ const ProductCatalog = () => {
           </CardContent>
         </Card>
       )}
+
+      {/* Modals */}
+      <ProductForm 
+        isOpen={productFormOpen}
+        onClose={handleCloseProductForm}
+        product={editingProduct}
+      />
+
+      <CatalogTokenManager 
+        isOpen={tokenManagerOpen}
+        onClose={() => setTokenManagerOpen(false)}
+      />
     </div>
   );
 };
 
-const ProductCard = ({ product, showResellerPrice }: { product: Product; showResellerPrice: boolean }) => {
+const ProductCard = ({ 
+  product, 
+  showResellerPrice, 
+  canManage, 
+  onEdit, 
+  onDelete 
+}: { 
+  product: Product; 
+  showResellerPrice: boolean;
+  canManage: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}) => {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -252,13 +332,52 @@ const ProductCard = ({ product, showResellerPrice }: { product: Product; showRes
               <p className="text-xs text-gray-500">per {product.unit}</p>
             </div>
           </div>
+
+          {canManage && (
+            <div className="flex items-center space-x-2 pt-2">
+              <Button size="sm" variant="outline" onClick={onEdit}>
+                <Edit className="h-3 w-3" />
+              </Button>
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button size="sm" variant="destructive">
+                    <Trash2 className="h-3 w-3" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Hapus Produk</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Apakah Anda yakin ingin menghapus produk "{product.name}"? Tindakan ini tidak dapat dibatalkan.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Batal</AlertDialogCancel>
+                    <AlertDialogAction onClick={onDelete}>Hapus</AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>
   );
 };
 
-const ProductListItem = ({ product, showResellerPrice }: { product: Product; showResellerPrice: boolean }) => {
+const ProductListItem = ({ 
+  product, 
+  showResellerPrice, 
+  canManage, 
+  onEdit, 
+  onDelete 
+}: { 
+  product: Product; 
+  showResellerPrice: boolean;
+  canManage: boolean;
+  onEdit: () => void;
+  onDelete: () => void;
+}) => {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -311,6 +430,33 @@ const ProductListItem = ({ product, showResellerPrice }: { product: Product; sho
                   </p>
                 )}
                 <p className="text-xs text-gray-500">per {product.unit}</p>
+                
+                {canManage && (
+                  <div className="flex items-center space-x-1 mt-2">
+                    <Button size="sm" variant="outline" onClick={onEdit}>
+                      <Edit className="h-3 w-3" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button size="sm" variant="destructive">
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Hapus Produk</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            Apakah Anda yakin ingin menghapus produk "{product.name}"? Tindakan ini tidak dapat dibatalkan.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Batal</AlertDialogCancel>
+                          <AlertDialogAction onClick={onDelete}>Hapus</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
+                )}
               </div>
             </div>
           </div>

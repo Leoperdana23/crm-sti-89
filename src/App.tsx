@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -20,6 +21,7 @@ import RolePermissions from '@/pages/RolePermissions';
 import Attendance from '@/pages/Attendance';
 import DealHistory from '@/pages/DealHistory';
 import PublicSurvey from '@/pages/PublicSurvey';
+import PublicCatalog from '@/pages/PublicCatalog';
 import Auth from '@/pages/Auth';
 import NotFound from '@/pages/NotFound';
 import ProductCatalog from '@/pages/ProductCatalog';
@@ -35,6 +37,7 @@ function App() {
           <Route path="/auth" element={<Auth />} />
           <Route path="/survey/:token" element={<PublicSurvey />} />
           <Route path="/public-survey/:token" element={<PublicSurvey />} />
+          <Route path="/catalog/:token" element={<PublicCatalog />} />
           <Route path="/" element={
             <ProtectedRoute>
               <Layout />
