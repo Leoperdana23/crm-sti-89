@@ -101,6 +101,25 @@ export const useUpdateOrderStatus = () => {
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
       console.log('Updating order status for ID:', orderId, 'to status:', status);
 
+      // First check if order exists
+      const { data: existingOrder, error: checkError } = await supabase
+        .from('orders')
+        .select('id, status')
+        .eq('id', orderId)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking order existence:', checkError);
+        throw checkError;
+      }
+
+      if (!existingOrder) {
+        console.error('Order not found with ID:', orderId);
+        throw new Error(`Pesanan dengan ID ${orderId} tidak ditemukan`);
+      }
+
+      console.log('Order found, current status:', existingOrder.status);
+
       // Update the order status
       const { data, error } = await supabase
         .from('orders')
@@ -110,27 +129,23 @@ export const useUpdateOrderStatus = () => {
         })
         .eq('id', orderId)
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error('Error updating order status:', error);
         throw error;
       }
 
-      if (!data) {
-        console.error('Order not found with ID:', orderId);
-        throw new Error(`Pesanan dengan ID ${orderId} tidak ditemukan`);
-      }
-
       console.log('Order status updated successfully:', data);
       return data;
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       toast({
         title: 'Sukses',
         description: 'Status pesanan berhasil diperbarui',
       });
+      console.log('Order status update completed successfully');
     },
     onError: (error) => {
       console.error('Error in useUpdateOrderStatus:', error);
