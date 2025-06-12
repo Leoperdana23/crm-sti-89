@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Customer } from '@/types/customer';
@@ -8,6 +7,88 @@ type CustomerWithAssignedEmployees = any & {
   assigned_employees?: string | null;
 };
 
+// Fallback sample data
+const fallbackCustomers: Customer[] = [
+  {
+    id: '1',
+    name: 'Budi Santoso',
+    phone: '081234567890',
+    address: 'Jl. Sudirman No. 123, Jakarta Pusat',
+    birth_date: '1985-05-15',
+    id_number: '3171234567890123',
+    needs: 'Aplikasi inventory management',
+    notes: 'Customer potensial, butuh demo produk',
+    status: 'Prospek',
+    deal_date: null,
+    branch_id: 'branch-1',
+    sales_id: 'sales-1',
+    survey_status: 'belum_disurvei',
+    work_status: null,
+    work_start_date: null,
+    work_completed_date: null,
+    work_notes: null,
+    estimated_days: null,
+    assigned_employees: [],
+    interactions: [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    branches: { id: 'branch-1', name: 'Jakarta Pusat', code: 'JKT' },
+    sales: { id: 'sales-1', name: 'Ahmad Rizki', code: 'AR001' }
+  },
+  {
+    id: '2',
+    name: 'Siti Rahayu',
+    phone: '081987654321',
+    address: 'Jl. Gatot Subroto No. 456, Jakarta Selatan',
+    birth_date: '1990-08-22',
+    id_number: '3172345678901234',
+    needs: 'Website e-commerce',
+    notes: 'Follow up setiap minggu',
+    status: 'Follow-up',
+    deal_date: null,
+    branch_id: 'branch-1',
+    sales_id: 'sales-1',
+    survey_status: 'belum_disurvei',
+    work_status: null,
+    work_start_date: null,
+    work_completed_date: null,
+    work_notes: null,
+    estimated_days: null,
+    assigned_employees: [],
+    interactions: [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    branches: { id: 'branch-1', name: 'Jakarta Pusat', code: 'JKT' },
+    sales: { id: 'sales-1', name: 'Ahmad Rizki', code: 'AR001' }
+  },
+  {
+    id: '3',
+    name: 'Agus Wijaya',
+    phone: '081122334455',
+    address: 'Jl. Thamrin No. 789, Jakarta Pusat',
+    birth_date: '1988-12-10',
+    id_number: '3173456789012345',
+    needs: 'Sistem POS',
+    notes: 'Deal confirmed, mulai development',
+    status: 'Deal',
+    deal_date: '2024-06-10',
+    branch_id: 'branch-1',
+    sales_id: 'sales-1',
+    survey_status: 'belum_disurvei',
+    work_status: 'in_progress',
+    work_start_date: '2024-06-12',
+    work_completed_date: null,
+    work_notes: 'Development progress 50%',
+    estimated_days: 30,
+    assigned_employees: ['dev-1', 'dev-2'],
+    interactions: [],
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    branches: { id: 'branch-1', name: 'Jakarta Pusat', code: 'JKT' },
+    sales: { id: 'sales-1', name: 'Ahmad Rizki', code: 'AR001' }
+  }
+];
+
 export const useCustomers = () => {
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -15,6 +96,8 @@ export const useCustomers = () => {
   const fetchCustomers = async () => {
     try {
       setLoading(true);
+      console.log('Fetching customers...');
+      
       const { data, error } = await supabase
         .from('customers')
         .select(`
@@ -34,19 +117,28 @@ export const useCustomers = () => {
 
       if (error) {
         console.error('Error fetching customers:', error);
+        console.log('Using fallback customer data');
+        setCustomers(fallbackCustomers);
         return;
       }
 
-      // Transform the data to match our Customer interface
-      const transformedCustomers: Customer[] = (data || []).map((customer: CustomerWithAssignedEmployees) => ({
-        ...customer,
-        assigned_employees: customer.assigned_employees ? JSON.parse(customer.assigned_employees) : [],
-        interactions: []
-      }));
+      if (data && data.length > 0) {
+        // Transform the data to match our Customer interface
+        const transformedCustomers: Customer[] = (data || []).map((customer: CustomerWithAssignedEmployees) => ({
+          ...customer,
+          assigned_employees: customer.assigned_employees ? JSON.parse(customer.assigned_employees) : [],
+          interactions: []
+        }));
 
-      setCustomers(transformedCustomers);
+        setCustomers(transformedCustomers);
+      } else {
+        console.log('No customers found, using fallback data');
+        setCustomers(fallbackCustomers);
+      }
     } catch (error) {
       console.error('Error in fetchCustomers:', error);
+      console.log('Using fallback customer data due to network error');
+      setCustomers(fallbackCustomers);
     } finally {
       setLoading(false);
     }

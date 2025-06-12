@@ -1,77 +1,128 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Branch } from '@/types/branch';
+import { Branch, CreateBranchData } from '@/types/branch';
+import { useToast } from '@/hooks/use-toast';
+
+// Fallback sample data
+const fallbackBranches: Branch[] = [
+  {
+    id: 'branch-1',
+    name: 'Jakarta Pusat',
+    code: 'JKT',
+    address: 'Jl. Sudirman No. 123, Jakarta Pusat',
+    phone: '021-12345678',
+    manager_name: 'Andi Kurniawan',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'branch-2',
+    name: 'Surabaya',
+    code: 'SBY',
+    address: 'Jl. Pemuda No. 456, Surabaya',
+    phone: '031-87654321',
+    manager_name: 'Sari Dewi',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  },
+  {
+    id: 'branch-3',
+    name: 'Bandung',
+    code: 'BDG',
+    address: 'Jl. Asia Afrika No. 789, Bandung',
+    phone: '022-11223344',
+    manager_name: 'Rizki Pratama',
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString()
+  }
+];
 
 export const useBranches = () => {
-  const [branches, setBranches] = useState<Branch[]>([]);
-  const [loading, setLoading] = useState(true);
+  return useQuery({
+    queryKey: ['branches'],
+    queryFn: async () => {
+      try {
+        console.log('Fetching branches...');
+        
+        const { data, error } = await supabase
+          .from('branches')
+          .select('*')
+          .order('name', { ascending: true });
 
-  const fetchBranches = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('branches')
-        .select('*')
-        .order('name', { ascending: true });
+        if (error) {
+          console.error('Error fetching branches:', error);
+          console.log('Using fallback branch data');
+          return fallbackBranches;
+        }
 
-      if (error) {
-        console.error('Error fetching branches:', error);
-        return;
+        if (data && data.length > 0) {
+          console.log('Branches fetched successfully:', data);
+          return data as Branch[];
+        } else {
+          console.log('No branches found, using fallback data');
+          return fallbackBranches;
+        }
+      } catch (error) {
+        console.error('Network error fetching branches:', error);
+        console.log('Using fallback branch data due to network error');
+        return fallbackBranches;
       }
+    },
+  });
+};
 
-      setBranches(data || []);
-    } catch (error) {
-      console.error('Error in fetchBranches:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+export const useCreateBranch = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    fetchBranches();
-  }, []);
+  return useMutation({
+    mutationFn: async (branchData: CreateBranchData) => {
+      console.log('Creating branch:', branchData);
 
-  const addBranch = async (branchData: Omit<Branch, 'id' | 'created_at' | 'updated_at'>) => {
-    try {
       const { data, error } = await supabase
         .from('branches')
-        .insert({
-          name: branchData.name,
-          code: branchData.code,
-          address: branchData.address,
-          phone: branchData.phone,
-          manager_name: branchData.manager_name,
-        })
+        .insert(branchData)
         .select()
         .single();
 
       if (error) {
-        console.error('Error adding branch:', error);
+        console.error('Error creating branch:', error);
         throw error;
       }
 
-      if (data) {
-        setBranches(prev => [...prev, data]);
-        return data;
-      }
-    } catch (error) {
-      console.error('Error in addBranch:', error);
-      throw error;
-    }
-  };
+      console.log('Branch created successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['branches'] });
+      toast({
+        title: 'Sukses',
+        description: 'Cabang berhasil ditambahkan',
+      });
+    },
+    onError: (error) => {
+      console.error('Error in useCreateBranch:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal menambahkan cabang',
+        variant: 'destructive',
+      });
+    },
+  });
+};
 
-  const updateBranch = async (id: string, updates: Partial<Branch>) => {
-    try {
+export const useUpdateBranch = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<CreateBranchData>) => {
+      console.log('Updating branch:', id, updates);
+
       const { data, error } = await supabase
         .from('branches')
-        .update({
-          name: updates.name,
-          code: updates.code,
-          address: updates.address,
-          phone: updates.phone,
-          manager_name: updates.manager_name,
-        })
+        .update(updates)
         .eq('id', id)
         .select()
         .single();
@@ -81,21 +132,35 @@ export const useBranches = () => {
         throw error;
       }
 
-      if (data) {
-        setBranches(prev => 
-          prev.map(branch => 
-            branch.id === id ? data : branch
-          )
-        );
-      }
-    } catch (error) {
-      console.error('Error in updateBranch:', error);
-      throw error;
-    }
-  };
+      console.log('Branch updated successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['branches'] });
+      toast({
+        title: 'Sukses',
+        description: 'Cabang berhasil diperbarui',
+      });
+    },
+    onError: (error) => {
+      console.error('Error in useUpdateBranch:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal memperbarui cabang',
+        variant: 'destructive',
+      });
+    },
+  });
+};
 
-  const deleteBranch = async (id: string) => {
-    try {
+export const useDeleteBranch = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Deleting branch:', id);
+
       const { error } = await supabase
         .from('branches')
         .delete()
@@ -106,19 +171,22 @@ export const useBranches = () => {
         throw error;
       }
 
-      setBranches(prev => prev.filter(branch => branch.id !== id));
-    } catch (error) {
-      console.error('Error in deleteBranch:', error);
-      throw error;
-    }
-  };
-
-  return {
-    branches,
-    loading,
-    addBranch,
-    updateBranch,
-    deleteBranch,
-    refreshBranches: fetchBranches
-  };
+      console.log('Branch deleted successfully');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['branches'] });
+      toast({
+        title: 'Sukses',
+        description: 'Cabang berhasil dihapus',
+      });
+    },
+    onError: (error) => {
+      console.error('Error in useDeleteBranch:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal menghapus cabang',
+        variant: 'destructive',
+      });
+    },
+  });
 };

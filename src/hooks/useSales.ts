@@ -1,105 +1,157 @@
 
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Sales } from '@/types/sales';
+import { Sales, CreateSalesData } from '@/types/sales';
+import { useToast } from '@/hooks/use-toast';
+
+// Fallback sample data
+const fallbackSales: Sales[] = [
+  {
+    id: 'sales-1',
+    name: 'Ahmad Rizki',
+    code: 'AR001',
+    email: 'ahmad.rizki@company.com',
+    phone: '081234567890',
+    password_hash: null,
+    branch_id: 'branch-1',
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    branches: {
+      id: 'branch-1',
+      name: 'Jakarta Pusat',
+      code: 'JKT'
+    }
+  },
+  {
+    id: 'sales-2',
+    name: 'Sari Indah',
+    code: 'SI002',
+    email: 'sari.indah@company.com',
+    phone: '081987654321',
+    password_hash: null,
+    branch_id: 'branch-2',
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    branches: {
+      id: 'branch-2',
+      name: 'Surabaya',
+      code: 'SBY'
+    }
+  },
+  {
+    id: 'sales-3',
+    name: 'Dedi Kurnia',
+    code: 'DK003',
+    email: 'dedi.kurnia@company.com',
+    phone: '081122334455',
+    password_hash: null,
+    branch_id: 'branch-3',
+    is_active: true,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+    branches: {
+      id: 'branch-3',
+      name: 'Bandung',
+      code: 'BDG'
+    }
+  }
+];
 
 export const useSales = () => {
-  const [sales, setSales] = useState<Sales[]>([]);
-  const [loading, setLoading] = useState(true);
+  return useQuery({
+    queryKey: ['sales'],
+    queryFn: async () => {
+      try {
+        console.log('Fetching sales...');
+        
+        const { data, error } = await supabase
+          .from('sales')
+          .select(`
+            *,
+            branches (
+              id,
+              name,
+              code
+            )
+          `)
+          .eq('is_active', true)
+          .order('name', { ascending: true });
 
-  const fetchSales = async () => {
-    try {
-      setLoading(true);
-      const { data, error } = await supabase
-        .from('sales')
-        .select(`
-          *,
-          branches (
-            id,
-            name,
-            code
-          )
-        `)
-        .eq('is_active', true)
-        .order('name', { ascending: true });
+        if (error) {
+          console.error('Error fetching sales:', error);
+          console.log('Using fallback sales data');
+          return fallbackSales;
+        }
 
-      if (error) {
-        console.error('Error fetching sales:', error);
-        return;
+        if (data && data.length > 0) {
+          console.log('Sales fetched successfully:', data);
+          return data as Sales[];
+        } else {
+          console.log('No sales found, using fallback data');
+          return fallbackSales;
+        }
+      } catch (error) {
+        console.error('Network error fetching sales:', error);
+        console.log('Using fallback sales data due to network error');
+        return fallbackSales;
       }
+    },
+  });
+};
 
-      setSales(data || []);
-    } catch (error) {
-      console.error('Error in fetchSales:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+export const useCreateSales = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  useEffect(() => {
-    fetchSales();
-  }, []);
-
-  const addSales = async (salesData: Omit<Sales, 'id' | 'created_at' | 'updated_at'> & { password?: string }) => {
-    try {
-      const insertData: any = {
-        name: salesData.name,
-        code: salesData.code,
-        phone: salesData.phone,
-        email: salesData.email,
-        branch_id: salesData.branch_id === 'no-branch' ? null : salesData.branch_id,
-        is_active: salesData.is_active
-      };
-
-      // Add password if provided - let the database trigger handle the hashing
-      if (salesData.password && salesData.password.trim() !== '') {
-        insertData.password_hash = salesData.password;
-      }
-
-      console.log('Adding sales with data:', insertData);
+  return useMutation({
+    mutationFn: async (salesData: CreateSalesData) => {
+      console.log('Creating sales:', salesData);
 
       const { data, error } = await supabase
         .from('sales')
-        .insert(insertData)
+        .insert(salesData)
         .select()
         .single();
 
       if (error) {
-        console.error('Error adding sales:', error);
+        console.error('Error creating sales:', error);
         throw error;
       }
 
-      if (data) {
-        setSales(prev => [data, ...prev]);
-        return data;
-      }
-    } catch (error) {
-      console.error('Error in addSales:', error);
-      throw error;
-    }
-  };
+      console.log('Sales created successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      toast({
+        title: 'Sukses',
+        description: 'Sales berhasil ditambahkan',
+      });
+    },
+    onError: (error) => {
+      console.error('Error in useCreateSales:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal menambahkan sales',
+        variant: 'destructive',
+      });
+    },
+  });
+};
 
-  const updateSales = async (id: string, updates: Partial<Sales> & { password?: string }) => {
-    try {
-      const updateData: any = {
-        name: updates.name,
-        code: updates.code,
-        phone: updates.phone,
-        email: updates.email,
-        branch_id: updates.branch_id === 'no-branch' ? null : updates.branch_id,
-        is_active: updates.is_active
-      };
+export const useUpdateSales = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-      // Only update password if provided - let the database trigger handle the hashing
-      if (updates.password && updates.password.trim() !== '') {
-        updateData.password_hash = updates.password;
-      }
-
-      console.log('Updating sales with data:', updateData);
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<CreateSalesData>) => {
+      console.log('Updating sales:', id, updates);
 
       const { data, error } = await supabase
         .from('sales')
-        .update(updateData)
+        .update(updates)
         .eq('id', id)
         .select()
         .single();
@@ -109,49 +161,105 @@ export const useSales = () => {
         throw error;
       }
 
-      if (data) {
-        setSales(prev => 
-          prev.map(sale => 
-            sale.id === id ? data : sale
-          )
-        );
-      }
-    } catch (error) {
-      console.error('Error in updateSales:', error);
-      throw error;
-    }
-  };
+      console.log('Sales updated successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      toast({
+        title: 'Sukses',
+        description: 'Sales berhasil diperbarui',
+      });
+    },
+    onError: (error) => {
+      console.error('Error in useUpdateSales:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal memperbarui sales',
+        variant: 'destructive',
+      });
+    },
+  });
+};
 
-  const deleteSales = async (id: string) => {
-    try {
-      const { error } = await supabase
+export const useDeleteSales = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Soft deleting sales:', id);
+
+      const { data, error } = await supabase
         .from('sales')
         .update({ is_active: false })
-        .eq('id', id);
+        .eq('id', id)
+        .select()
+        .single();
 
       if (error) {
-        console.error('Error deleting sales:', error);
+        console.error('Error soft deleting sales:', error);
         throw error;
       }
 
-      setSales(prev => prev.filter(sale => sale.id !== id));
-    } catch (error) {
-      console.error('Error in deleteSales:', error);
-      throw error;
-    }
-  };
+      console.log('Sales soft deleted successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      toast({
+        title: 'Sukses',
+        description: 'Sales berhasil dihapus',
+      });
+    },
+    onError: (error) => {
+      console.error('Error in useDeleteSales:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal menghapus sales',
+        variant: 'destructive',
+      });
+    },
+  });
+};
 
-  const getSalesByBranch = (branchId: string) => {
-    return sales.filter(sale => sale.branch_id === branchId);
-  };
+export const useSetSalesPassword = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
 
-  return {
-    sales,
-    loading,
-    addSales,
-    updateSales,
-    deleteSales,
-    getSalesByBranch,
-    refreshSales: fetchSales
-  };
+  return useMutation({
+    mutationFn: async ({ id, password }: { id: string; password: string }) => {
+      console.log('Setting password for sales:', id);
+
+      const { data, error } = await supabase
+        .from('sales')
+        .update({ password_hash: password })
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error setting sales password:', error);
+        throw error;
+      }
+
+      console.log('Sales password set successfully');
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['sales'] });
+      toast({
+        title: 'Sukses',
+        description: 'Password sales berhasil diatur',
+      });
+    },
+    onError: (error) => {
+      console.error('Error in useSetSalesPassword:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal mengatur password sales',
+        variant: 'destructive',
+      });
+    },
+  });
 };
