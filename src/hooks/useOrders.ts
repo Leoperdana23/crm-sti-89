@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Order, OrderItem, CreateOrderData, CreateOrderItemData } from '@/types/order';
@@ -8,62 +7,97 @@ export const useOrders = () => {
   return useQuery({
     queryKey: ['orders'],
     queryFn: async () => {
-      console.log('Fetching orders...');
-      
-      const { data, error } = await supabase
-        .from('orders')
-        .select(`
-          *,
-          order_items (*)
-        `)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching orders:', error);
-        throw error;
-      }
-
-      console.log('Orders fetched successfully:', data);
-
-      // If we have orders, fetch reseller data separately for each unique catalog_token
-      if (data && data.length > 0) {
-        const uniqueTokens = [...new Set(data.map(order => order.catalog_token))];
+      try {
+        console.log('Fetching orders...');
         
-        const { data: catalogTokens, error: tokenError } = await supabase
-          .from('catalog_tokens')
-          .select(`
-            token,
-            reseller_id,
-            resellers!inner (
-              id,
-              name,
-              branch_id,
-              branches (
-                id,
-                name
-              )
-            )
-          `)
-          .in('token', uniqueTokens);
+        // Check database connection first
+        const { data: connectionTest, error: connectionError } = await supabase
+          .from('orders')
+          .select('count')
+          .limit(1);
 
-        if (tokenError) {
-          console.error('Error fetching catalog tokens:', tokenError);
-          // Don't throw error, just continue without reseller data
+        if (connectionError) {
+          console.error('Database connection error for orders:', connectionError);
+          console.log('Orders connection error details:', {
+            code: connectionError.code,
+            message: connectionError.message,
+            details: connectionError.details,
+            hint: connectionError.hint
+          });
         }
 
-        // Map reseller data to orders
-        const ordersWithResellers = data.map(order => {
-          const tokenData = catalogTokens?.find(token => token.token === order.catalog_token);
-          return {
-            ...order,
-            reseller: tokenData?.resellers || null
-          };
-        });
+        const { data, error } = await supabase
+          .from('orders')
+          .select(`
+            *,
+            order_items (*)
+          `)
+          .order('created_at', { ascending: false });
 
-        return ordersWithResellers as (Order & { order_items: OrderItem[] })[];
+        if (error) {
+          console.error('Error fetching orders:', error);
+          console.log('Orders error details:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
+          throw error;
+        }
+
+        console.log('Orders fetched successfully:', data);
+        console.log('Number of orders returned:', data?.length || 0);
+
+        // If we have orders, fetch reseller data separately for each unique catalog_token
+        if (data && data.length > 0) {
+          console.log('Fetching reseller data for orders...');
+          const uniqueTokens = [...new Set(data.map(order => order.catalog_token))];
+          console.log('Unique catalog tokens:', uniqueTokens);
+          
+          const { data: catalogTokens, error: tokenError } = await supabase
+            .from('catalog_tokens')
+            .select(`
+              token,
+              reseller_id,
+              resellers!inner (
+                id,
+                name,
+                branch_id,
+                branches (
+                  id,
+                  name
+                )
+              )
+            `)
+            .in('token', uniqueTokens);
+
+          if (tokenError) {
+            console.error('Error fetching catalog tokens:', tokenError);
+            // Don't throw error, just continue without reseller data
+          } else {
+            console.log('Catalog tokens fetched:', catalogTokens);
+          }
+
+          // Map reseller data to orders
+          const ordersWithResellers = data.map(order => {
+            const tokenData = catalogTokens?.find(token => token.token === order.catalog_token);
+            return {
+              ...order,
+              reseller: tokenData?.resellers || null
+            };
+          });
+
+          console.log('Orders with reseller data:', ordersWithResellers);
+          return ordersWithResellers as (Order & { order_items: OrderItem[] })[];
+        }
+
+        console.log('No orders found or empty result');
+        return data as (Order & { order_items: OrderItem[] })[];
+      } catch (error) {
+        console.error('Network error fetching orders:', error);
+        console.log('Network error details:', error);
+        throw error;
       }
-
-      return data as (Order & { order_items: OrderItem[] })[];
     },
   });
 };

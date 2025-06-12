@@ -73,6 +73,22 @@ export const useCustomers = () => {
       try {
         console.log('Fetching customers...');
         
+        // Check connection first
+        const { data: connectionTest, error: connectionError } = await supabase
+          .from('customers')
+          .select('count')
+          .limit(1);
+
+        if (connectionError) {
+          console.error('Database connection error:', connectionError);
+          console.log('Connection error details:', {
+            code: connectionError.code,
+            message: connectionError.message,
+            details: connectionError.details,
+            hint: connectionError.hint
+          });
+        }
+
         const { data, error } = await supabase
           .from('customers')
           .select(`
@@ -89,31 +105,46 @@ export const useCustomers = () => {
 
         if (error) {
           console.error('Error fetching customers:', error);
-          console.log('Using fallback customer data');
+          console.log('Error details:', {
+            code: error.code,
+            message: error.message,
+            details: error.details,
+            hint: error.hint
+          });
+          console.log('Using fallback customer data due to error');
           return fallbackCustomers;
         }
+
+        console.log('Raw customers data from database:', data);
+        console.log('Number of customers returned:', data?.length || 0);
 
         if (data && data.length > 0) {
           console.log('Customers fetched successfully:', data);
           // Transform the data to match our interface
-          const transformedData = data.map(customer => ({
-            ...customer,
-            interactions: (customer.interactions || []).map(interaction => ({
-              ...interaction,
-              customer_id: customer.id
-            })),
-            assigned_employees: customer.assigned_employees ? 
-              (typeof customer.assigned_employees === 'string' ? 
-                customer.assigned_employees.split(',').filter(Boolean) : 
-                customer.assigned_employees) : []
-          }));
+          const transformedData = data.map(customer => {
+            console.log('Processing customer:', customer.name);
+            return {
+              ...customer,
+              interactions: (customer.interactions || []).map(interaction => ({
+                ...interaction,
+                customer_id: customer.id
+              })),
+              assigned_employees: customer.assigned_employees ? 
+                (typeof customer.assigned_employees === 'string' ? 
+                  customer.assigned_employees.split(',').filter(Boolean) : 
+                  customer.assigned_employees) : []
+            };
+          });
+          console.log('Transformed customers data:', transformedData);
           return transformedData as Customer[];
         } else {
-          console.log('No customers found, using fallback data');
+          console.log('No customers found in database, using fallback data');
+          console.log('Database returned empty array or null');
           return fallbackCustomers;
         }
       } catch (error) {
         console.error('Network error fetching customers:', error);
+        console.log('Network error details:', error);
         console.log('Using fallback customer data due to network error');
         return fallbackCustomers;
       }
@@ -122,11 +153,13 @@ export const useCustomers = () => {
 
   const getCustomersByStatus = (status: string) => {
     const customers = query.data || fallbackCustomers;
+    console.log(`Getting customers by status: ${status}`, customers);
     return customers.filter(customer => customer.status === status);
   };
 
   const getStatsByBranch = (branchId?: string) => {
     const customers = query.data || fallbackCustomers;
+    console.log(`Getting stats by branch: ${branchId}`, customers);
     const filteredCustomers = branchId ? 
       customers.filter(customer => customer.branch_id === branchId) : 
       customers;
@@ -296,6 +329,45 @@ export const useCustomers = () => {
       });
     },
   });
+
+  const deleteCustomersByName = async (name: string) => {
+    console.log('Deleting customers by name:', name);
+    
+    const { error } = await supabase
+      .from('customers')
+      .delete()
+      .eq('name', name);
+
+    if (error) {
+      console.error('Error deleting customers by name:', error);
+      throw error;
+    }
+
+    console.log('Customers deleted successfully by name');
+    queryClient.invalidateQueries({ queryKey: ['customers'] });
+  };
+
+  const cancelWorkProcess = async (customerId: string) => {
+    console.log('Canceling work process for customer:', customerId);
+    
+    const { error } = await supabase
+      .from('customers')
+      .update({ 
+        work_status: 'not_started',
+        work_start_date: null,
+        work_completed_date: null,
+        work_notes: null
+      })
+      .eq('id', customerId);
+
+    if (error) {
+      console.error('Error canceling work process:', error);
+      throw error;
+    }
+
+    console.log('Work process canceled successfully');
+    queryClient.invalidateQueries({ queryKey: ['customers'] });
+  };
 
   return {
     customers: query.data || fallbackCustomers,
