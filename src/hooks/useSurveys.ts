@@ -97,6 +97,7 @@ export const useSurveys = () => {
         service_sales: 0,
         service_technician: 0,
         usage_clarity: 0,
+        priceApprovalRate: 0,
         total: 0
       };
     }
@@ -106,7 +107,8 @@ export const useSurveys = () => {
       service_sales: acc.service_sales + survey.service_sales,
       service_technician: acc.service_technician + survey.service_technician,
       usage_clarity: acc.usage_clarity + survey.usage_clarity,
-    }), { product_quality: 0, service_sales: 0, service_technician: 0, usage_clarity: 0 });
+      price_approvals: acc.price_approvals + (survey.price_approval ? 1 : 0),
+    }), { product_quality: 0, service_sales: 0, service_technician: 0, usage_clarity: 0, price_approvals: 0 });
 
     const count = completedSurveys.length;
     return {
@@ -114,8 +116,56 @@ export const useSurveys = () => {
       service_sales: Math.round((totals.service_sales / count) * 10) / 10,
       service_technician: Math.round((totals.service_technician / count) * 10) / 10,
       usage_clarity: Math.round((totals.usage_clarity / count) * 10) / 10,
+      priceApprovalRate: Math.round((totals.price_approvals / count) * 100 * 10) / 10,
       total: count
     };
+  };
+
+  const addSurvey = async (surveyData: Omit<Survey, 'id' | 'created_at' | 'survey_token' | 'customers'>) => {
+    console.log('Adding survey:', surveyData);
+    
+    const { data, error } = await supabase
+      .from('surveys')
+      .insert(surveyData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error adding survey:', error);
+      throw error;
+    }
+
+    console.log('Survey added successfully:', data);
+    return data;
+  };
+
+  const createSurveyLink = async (customerId: string) => {
+    console.log('Creating survey link for customer:', customerId);
+    
+    const surveyData = {
+      customer_id: customerId,
+      deal_date: new Date().toISOString().split('T')[0],
+      product_quality: 0,
+      service_sales: 0,
+      service_technician: 0,
+      usage_clarity: 0,
+      price_approval: false,
+      is_completed: false
+    };
+
+    const { data, error } = await supabase
+      .from('surveys')
+      .insert(surveyData)
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating survey link:', error);
+      throw error;
+    }
+
+    console.log('Survey link created successfully:', data);
+    return data;
   };
 
   return {
@@ -123,6 +173,8 @@ export const useSurveys = () => {
     loading: query.isLoading,
     error: query.error,
     getAverageRatings,
+    addSurvey,
+    createSurveyLink,
     ...query
   };
 };

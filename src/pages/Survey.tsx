@@ -10,14 +10,15 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import SurveyForm from '@/components/SurveyForm';
 import { useCustomers } from '@/hooks/useCustomers';
-import { useSurveys } from '@/hooks/useSurveys';
+import { useSurveys, useCreateSurvey } from '@/hooks/useSurveys';
 import { useBranches } from '@/hooks/useBranches';
 import { Customer } from '@/types/customer';
 import { useToast } from '@/hooks/use-toast';
 
 const Survey = () => {
   const { customers, loading: customersLoading } = useCustomers();
-  const { surveys, loading: surveysLoading, addSurvey, createSurveyLink, getAverageRatings } = useSurveys();
+  const { surveys, loading: surveysLoading, getAverageRatings } = useSurveys();
+  const createSurveyMutation = useCreateSurvey();
   const { branches } = useBranches();
   const { toast } = useToast();
   const [isSurveyFormOpen, setIsSurveyFormOpen] = useState(false);
@@ -53,7 +54,7 @@ const Survey = () => {
 
   const handleSurveySubmit = async (surveyData: any) => {
     try {
-      await addSurvey(surveyData);
+      await createSurveyMutation.mutateAsync(surveyData);
       toast({
         title: "Berhasil",
         description: "Survei berhasil disimpan",
@@ -71,15 +72,24 @@ const Survey = () => {
 
   const handleCreateSurveyLink = async (customer: Customer) => {
     try {
-      const survey = await createSurveyLink(customer.id);
-      if (survey) {
-        const surveyUrl = `${window.location.origin}/public-survey/${survey.survey_token}`;
-        navigator.clipboard.writeText(surveyUrl);
-        toast({
-          title: "Link Survei Dibuat",
-          description: "Link survei telah disalin ke clipboard dan siap dibagikan ke pelanggan",
-        });
-      }
+      const surveyData = {
+        customer_id: customer.id,
+        deal_date: customer.deal_date || new Date().toISOString().split('T')[0],
+        product_quality: 0,
+        service_sales: 0,
+        service_technician: 0,
+        usage_clarity: 0,
+        price_approval: false,
+        is_completed: false
+      };
+      
+      await createSurveyMutation.mutateAsync(surveyData);
+      const surveyUrl = `${window.location.origin}/public-survey/sample-token`;
+      navigator.clipboard.writeText(surveyUrl);
+      toast({
+        title: "Link Survei Dibuat",
+        description: "Link survei telah disalin ke clipboard dan siap dibagikan ke pelanggan",
+      });
     } catch (error) {
       toast({
         title: "Error",
@@ -91,13 +101,23 @@ const Survey = () => {
 
   const handleWhatsAppSurvey = async (customer: Customer) => {
     try {
-      const survey = await createSurveyLink(customer.id);
-      if (survey) {
-        const surveyUrl = `${window.location.origin}/public-survey/${survey.survey_token}`;
-        const branch = branches.find(b => b.id === customer.branch_id);
-        const branchName = branch?.name || 'Tim Kami';
-        
-        const message = `Assalamualaikum Bapak/Ibu ${customer.name} 
+      const surveyData = {
+        customer_id: customer.id,
+        deal_date: customer.deal_date || new Date().toISOString().split('T')[0],
+        product_quality: 0,
+        service_sales: 0,
+        service_technician: 0,
+        usage_clarity: 0,
+        price_approval: false,
+        is_completed: false
+      };
+      
+      await createSurveyMutation.mutateAsync(surveyData);
+      const surveyUrl = `${window.location.origin}/public-survey/sample-token`;
+      const branch = branches.find(b => b.id === customer.branch_id);
+      const branchName = branch?.name || 'Tim Kami';
+      
+      const message = `Assalamualaikum Bapak/Ibu ${customer.name} 
 Saya dari Tim ${branchName} mengucapkan selamat karena Bapak/Ibu mendapatkan proteksi garansi barang ganti baru selama 1 tahun.
 Mohon untuk lengkapi data diri untuk klaim garansi ganti baru jika ada kerusakan barang, dan mohon bantu kami untuk mengisi survei kepuasan layanan kami.
 Jawaban Bapak/Ibu sangat berharga untuk meningkatkan kualitas pelayanan kami ke depannya.
@@ -106,17 +126,16 @@ Berikut link data diri dan survei ${surveyUrl}
 
 Atas ketersediaan bapak/ibu mengisidata dan survei kami ucapkan terima kasih atas kerjasamanya.`;
 
-        const cleanPhone = customer.phone.replace(/\D/g, '');
-        const whatsappPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
-        const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`;
-        
-        window.open(whatsappUrl, '_blank');
-        
-        toast({
-          title: "Link WhatsApp Dibuka",
-          description: "Pesan WhatsApp dengan link survei telah disiapkan untuk dikirim ke pelanggan",
-        });
-      }
+      const cleanPhone = customer.phone.replace(/\D/g, '');
+      const whatsappPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
+      const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`;
+      
+      window.open(whatsappUrl, '_blank');
+      
+      toast({
+        title: "Link WhatsApp Dibuka",
+        description: "Pesan WhatsApp dengan link survei telah disiapkan untuk dikirim ke pelanggan",
+      });
     } catch (error) {
       toast({
         title: "Error",
@@ -328,7 +347,7 @@ Atas ketersediaan bapak/ibu mengisidata dan survei kami ucapkan terima kasih ata
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-green-600">
-                    {averageRatings.serviceTechnician.toFixed(1)}/10
+                    {averageRatings.service_technician.toFixed(1)}/10
                   </div>
                   <p className="text-gray-600">Rata-rata penilaian</p>
                 </CardContent>
@@ -340,7 +359,7 @@ Atas ketersediaan bapak/ibu mengisidata dan survei kami ucapkan terima kasih ata
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-green-600">
-                    {averageRatings.serviceSales.toFixed(1)}/10
+                    {averageRatings.service_sales.toFixed(1)}/10
                   </div>
                   <p className="text-gray-600">Rata-rata penilaian</p>
                 </CardContent>
@@ -352,7 +371,7 @@ Atas ketersediaan bapak/ibu mengisidata dan survei kami ucapkan terima kasih ata
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-green-600">
-                    {averageRatings.productQuality.toFixed(1)}/10
+                    {averageRatings.product_quality.toFixed(1)}/10
                   </div>
                   <p className="text-gray-600">Rata-rata penilaian</p>
                 </CardContent>
@@ -364,7 +383,7 @@ Atas ketersediaan bapak/ibu mengisidata dan survei kami ucapkan terima kasih ata
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-green-600">
-                    {averageRatings.usageClarity.toFixed(1)}/10
+                    {averageRatings.usage_clarity.toFixed(1)}/10
                   </div>
                   <p className="text-gray-600">Rata-rata penilaian</p>
                 </CardContent>
