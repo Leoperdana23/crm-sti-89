@@ -66,6 +66,7 @@ export const useUserPermissions = () => {
       'dashboard': { can_view: true, can_create: false, can_edit: false, can_delete: false },
       'customers': { can_view: true, can_create: true, can_edit: true, can_delete: false },
       'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: false },
+      'product_catalog': { can_view: true, can_create: false, can_edit: false, can_delete: false },
       'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: false },
       'work_process': { can_view: true, can_create: true, can_edit: true, can_delete: false },
       'survey': { can_view: true, can_create: true, can_edit: true, can_delete: false },
@@ -79,6 +80,7 @@ export const useUserPermissions = () => {
         'dashboard': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'customers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'resellers': { can_view: true, can_create: true, can_edit: true, can_delete: true },
+        'product_catalog': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'follow_up': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'work_process': { can_view: true, can_create: true, can_edit: true, can_delete: true },
         'survey': { can_view: true, can_create: true, can_edit: true, can_delete: true },
@@ -93,6 +95,7 @@ export const useUserPermissions = () => {
     } else if (role === 'admin') {
       return {
         ...staffPermissions,
+        'product_catalog': { can_view: true, can_create: true, can_edit: true, can_delete: false },
         'sales': { can_view: true, can_create: true, can_edit: true, can_delete: false },
         'branches': { can_view: true, can_create: true, can_edit: true, can_delete: false },
         'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true },
@@ -101,12 +104,13 @@ export const useUserPermissions = () => {
     } else if (role === 'manager') {
       return {
         ...staffPermissions,
+        'product_catalog': { can_view: true, can_create: false, can_edit: false, can_delete: false },
         'branches': { can_view: true, can_create: true, can_edit: true, can_delete: false },
         'reports': { can_view: true, can_create: true, can_edit: true, can_delete: true }
       };
     }
 
-    // Default for staff - only the specified menus
+    // Default for staff - including product_catalog
     return staffPermissions;
   };
 

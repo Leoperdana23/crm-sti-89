@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
@@ -23,6 +22,7 @@ import DealHistory from '@/pages/DealHistory';
 import PublicSurvey from '@/pages/PublicSurvey';
 import Auth from '@/pages/Auth';
 import NotFound from '@/pages/NotFound';
+import ProductCatalog from '@/pages/ProductCatalog';
 import './App.css';
 
 const queryClient = new QueryClient();
@@ -42,6 +42,8 @@ function App() {
           }>
             <Route index element={<Dashboard />} />
             <Route path="customers" element={<Customers />} />
+            <Route path="resellers" element={<Resellers />} />
+            <Route path="product-catalog" element={<ProductCatalog />} />
             <Route path="follow-up" element={<FollowUp />} />
             <Route path="birthday" element={<Birthday />} />
             <Route path="work-process" element={<WorkProcess />} />
@@ -49,7 +51,6 @@ function App() {
             <Route path="deal-history" element={<DealHistory />} />
             <Route path="sales" element={<Sales />} />
             <Route path="branches" element={<Branches />} />
-            <Route path="resellers" element={<Resellers />} />
             <Route path="reports" element={<Reports />} />
             <Route path="users" element={<Users />} />
             <Route path="role-permissions" element={<RolePermissions />} />
