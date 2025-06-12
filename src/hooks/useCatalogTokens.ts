@@ -49,9 +49,36 @@ export const useCreateCatalogToken = () => {
   return useMutation({
     mutationFn: async (tokenData: CreateCatalogTokenData) => {
       console.log('Creating catalog token:', tokenData);
+      
+      // Get current user
+      const { data: { user }, error: userError } = await supabase.auth.getUser();
+      if (userError || !user) {
+        console.error('User not authenticated:', userError);
+        throw new Error('User tidak terautentikasi');
+      }
+
+      // Get app_user data
+      const { data: appUser, error: appUserError } = await supabase
+        .from('app_users')
+        .select('id')
+        .eq('auth_user_id', user.id)
+        .single();
+
+      if (appUserError || !appUser) {
+        console.error('App user not found:', appUserError);
+        throw new Error('Data user tidak ditemukan');
+      }
+
+      const insertData = {
+        ...tokenData,
+        created_by: appUser.id
+      };
+
+      console.log('Inserting token data:', insertData);
+
       const { data, error } = await supabase
         .from('catalog_tokens')
-        .insert(tokenData)
+        .insert(insertData)
         .select()
         .single();
 
