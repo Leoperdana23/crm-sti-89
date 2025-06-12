@@ -119,10 +119,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     getSession();
 
-    // Listen for auth changes
+    // Listen for auth changes, but don't override app user sessions
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
       console.log('Auth state changed:', event, session?.user?.email);
-      setUser(session?.user ?? null);
+      
+      // Only update user state if there's no app user in localStorage
+      const appUser = localStorage.getItem('appUser');
+      if (!appUser) {
+        setUser(session?.user ?? null);
+      }
       setLoading(false);
     });
 
