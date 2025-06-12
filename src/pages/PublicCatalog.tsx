@@ -232,17 +232,15 @@ const PublicCatalog = () => {
     <div className="min-h-screen bg-gray-50">
       {/* Header */}
       <div className="bg-white shadow-sm sticky top-0 z-10">
-        <div className="container mx-auto px-4 py-4">
+        <div className="max-w-md mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <h1 className="text-xl font-bold text-gray-900">Katalog Produk</h1>
-            <div className="flex items-center space-x-2">
-              <Search className="h-5 w-5 text-gray-400" />
-            </div>
+            <Search className="h-5 w-5 text-gray-400" />
           </div>
         </div>
       </div>
 
-      <div className="container mx-auto px-4 py-4 space-y-4">
+      <div className="max-w-md mx-auto px-4 py-4 space-y-4">
         {/* Search and Filter Bar */}
         <Card className="shadow-sm border-0">
           <CardContent className="p-4">
@@ -267,8 +265,8 @@ const PublicCatalog = () => {
                   setCategoryFilter(value);
                   setCurrentPage(1);
                 }}>
-                  <SelectTrigger className="w-40 shrink-0">
-                    <SelectValue placeholder="Kategori" />
+                  <SelectTrigger className="w-32 shrink-0">
+                    <SelectValue placeholder="Semua" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all">Semua</SelectItem>
@@ -281,8 +279,8 @@ const PublicCatalog = () => {
                 </Select>
 
                 <Select value={sortBy} onValueChange={setSortBy}>
-                  <SelectTrigger className="w-40 shrink-0">
-                    <SelectValue placeholder="Urutkan" />
+                  <SelectTrigger className="w-32 shrink-0">
+                    <SelectValue placeholder="Nama" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="name">Nama</SelectItem>
@@ -393,8 +391,8 @@ const PublicCatalog = () => {
 
       {/* Fixed Cart Button */}
       {getTotalItems() > 0 && (
-        <div className="fixed bottom-4 left-4 right-4 z-50">
-          <div className="bg-green-600 text-white rounded-xl px-6 py-4 flex items-center justify-between shadow-lg max-w-sm mx-auto">
+        <div className="fixed bottom-4 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-md px-4">
+          <div className="bg-green-600 text-white rounded-xl px-6 py-4 flex items-center justify-between shadow-lg">
             <div className="flex items-center space-x-3">
               <div className="bg-green-700 rounded-full p-2">
                 <ShoppingCart className="h-5 w-5" />
@@ -403,7 +401,7 @@ const PublicCatalog = () => {
                 <div className="font-semibold text-sm">
                   {getTotalItems()} item
                 </div>
-                <div className="text-xs opacity-90">
+                <div className="text-xs opacity-90 truncate max-w-32">
                   {cart.map(item => item.product.name).join(', ')}
                 </div>
               </div>
@@ -438,13 +436,14 @@ const ProductListItem = ({ product, quantity, onAdd, onRemove }: ProductListItem
 
   const displayPrice = product.reseller_price || product.price;
   const hasDiscount = product.reseller_price && product.reseller_price < product.price;
+  const categoryName = product.product_categories?.name || 'Uncategorized';
 
   return (
     <Card className="shadow-sm border-0 bg-white">
       <CardContent className="p-4">
         <div className="flex items-start space-x-4">
           {/* Product Image */}
-          <div className="relative w-24 h-24 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
+          <div className="relative w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
             {product.image_url ? (
               <img 
                 src={product.image_url} 
@@ -461,62 +460,63 @@ const ProductListItem = ({ product, quantity, onAdd, onRemove }: ProductListItem
           {/* Product Info */}
           <div className="flex-1 min-w-0">
             <div className="flex justify-between items-start">
-              <div className="flex-1 pr-4">
-                <h3 className="font-semibold text-gray-900 text-base mb-1 line-clamp-2">
+              <div className="flex-1 pr-2">
+                {/* Product Name */}
+                <h3 className="font-semibold text-gray-900 text-base mb-1 line-clamp-1">
                   {product.name}
                 </h3>
                 
-                {product.description && (
-                  <p className="text-sm text-gray-600 line-clamp-2 mb-2">
-                    {product.description}
-                  </p>
-                )}
+                {/* Category */}
+                <p className="text-sm text-gray-500 mb-2">
+                  {categoryName}
+                </p>
 
                 {/* Price */}
-                <div className="flex items-baseline space-x-2 mb-3">
+                <div className="flex items-baseline space-x-2 mb-2">
                   <span className="text-lg font-bold text-gray-900">
                     {formatPrice(displayPrice)}
                   </span>
                   {hasDiscount && (
-                    <span className="text-sm text-gray-500 line-through">
+                    <span className="text-sm text-gray-400 line-through">
                       {formatPrice(product.price)}
                     </span>
                   )}
                 </div>
 
-                {/* Paling laku badge */}
-                <div className="flex items-center space-x-2">
-                  <Badge variant="secondary" className="text-xs bg-red-50 text-red-600 border-red-200">
-                    👑 Paling laku
-                  </Badge>
-                </div>
+                {/* Description */}
+                {product.description && (
+                  <p className="text-sm text-gray-600 line-clamp-2">
+                    {product.description}
+                  </p>
+                )}
               </div>
               
               {/* Add/Remove Controls */}
-              <div className="flex flex-col items-end space-y-2">
+              <div className="flex flex-col items-end justify-center h-full">
                 {quantity === 0 ? (
                   <Button
                     onClick={onAdd}
-                    className="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-lg font-medium"
+                    size="sm"
+                    className="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium text-sm h-9"
                   >
-                    Tambah
+                    +
                   </Button>
                 ) : (
-                  <div className="flex items-center space-x-2 bg-green-600 rounded-lg p-1">
+                  <div className="flex items-center bg-green-600 rounded-lg overflow-hidden">
                     <Button
                       size="sm"
                       onClick={onRemove}
-                      className="bg-green-700 hover:bg-green-800 text-white w-8 h-8 p-0 rounded"
+                      className="bg-green-600 hover:bg-green-700 text-white w-8 h-8 p-0 rounded-none"
                     >
                       <Minus className="h-4 w-4" />
                     </Button>
-                    <span className="text-white font-semibold px-3">
+                    <span className="text-white font-semibold px-3 py-2 bg-green-600 text-sm min-w-[40px] text-center">
                       {quantity}
                     </span>
                     <Button
                       size="sm"
                       onClick={onAdd}
-                      className="bg-green-700 hover:bg-green-800 text-white w-8 h-8 p-0 rounded"
+                      className="bg-green-600 hover:bg-green-700 text-white w-8 h-8 p-0 rounded-none"
                     >
                       <Plus className="h-4 w-4" />
                     </Button>
