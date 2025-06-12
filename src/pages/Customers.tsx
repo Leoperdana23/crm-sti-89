@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Plus, Users, Filter, Search, Calendar, Loader2, Trash } from 'lucide-react';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -10,6 +9,7 @@ import { Badge } from '@/components/ui/badge';
 import CustomerCard from '@/components/CustomerCard';
 import CustomerForm from '@/components/CustomerForm';
 import { useCustomers } from '@/hooks/useCustomers';
+import { useCreateReseller } from '@/hooks/useResellers';
 import { useBranches } from '@/hooks/useBranches';
 import { useSales } from '@/hooks/useSales';
 import { Customer } from '@/types/customer';
