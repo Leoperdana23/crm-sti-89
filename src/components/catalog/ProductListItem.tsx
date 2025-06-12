@@ -94,7 +94,7 @@ const ProductListItem = ({ product, quantity, onQuantityChange }: ProductListIte
               </p>
             )}
             
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 mb-3">
               <span className="font-bold text-green-600 text-sm">
                 {formatPrice(displayPrice)}
               </span>
@@ -102,83 +102,83 @@ const ProductListItem = ({ product, quantity, onQuantityChange }: ProductListIte
                 {product.unit}
               </Badge>
             </div>
-          </div>
 
-          {/* Quantity Controls */}
-          <div className="flex flex-col items-end gap-2">
-            <div className="flex items-center gap-1">
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 w-8 p-0"
-                onClick={handleQuantityDecrease}
-                disabled={quantity === 0}
-              >
-                <Minus className="h-3 w-3" />
-              </Button>
+            {/* Quantity Controls - Now below price */}
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-1">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 w-8 p-0"
+                  onClick={handleQuantityDecrease}
+                  disabled={quantity === 0}
+                >
+                  <Minus className="h-3 w-3" />
+                </Button>
+                
+                {isEditingQty ? (
+                  <div className="flex items-center gap-1">
+                    <Input
+                      type="number"
+                      min="0"
+                      value={editQty}
+                      onChange={(e) => setEditQty(e.target.value)}
+                      onKeyDown={handleQtyKeyPress}
+                      className="w-16 h-8 text-center text-sm"
+                      autoFocus
+                    />
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={handleQtyConfirm}
+                    >
+                      <Check className="h-3 w-3 text-green-600" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={handleQtyCancel}
+                    >
+                      <X className="h-3 w-3 text-red-600" />
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="flex items-center gap-1">
+                    <span 
+                      className="w-12 h-8 flex items-center justify-center text-sm font-medium border rounded cursor-pointer hover:bg-gray-50"
+                      onClick={handleQtyEdit}
+                    >
+                      {quantity}
+                    </span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-6 w-6 p-0"
+                      onClick={handleQtyEdit}
+                    >
+                      <Edit2 className="h-3 w-3 text-gray-500" />
+                    </Button>
+                  </div>
+                )}
+                
+                <Button
+                  size="sm"
+                  variant="outline"
+                  className="h-8 w-8 p-0"
+                  onClick={handleQuantityIncrease}
+                >
+                  <Plus className="h-3 w-3" />
+                </Button>
+              </div>
               
-              {isEditingQty ? (
-                <div className="flex items-center gap-1">
-                  <Input
-                    type="number"
-                    min="0"
-                    value={editQty}
-                    onChange={(e) => setEditQty(e.target.value)}
-                    onKeyDown={handleQtyKeyPress}
-                    className="w-16 h-8 text-center text-sm"
-                    autoFocus
-                  />
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 p-0"
-                    onClick={handleQtyConfirm}
-                  >
-                    <Check className="h-3 w-3 text-green-600" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 p-0"
-                    onClick={handleQtyCancel}
-                  >
-                    <X className="h-3 w-3 text-red-600" />
-                  </Button>
-                </div>
-              ) : (
-                <div className="flex items-center gap-1">
-                  <span 
-                    className="w-12 h-8 flex items-center justify-center text-sm font-medium border rounded cursor-pointer hover:bg-gray-50"
-                    onClick={handleQtyEdit}
-                  >
-                    {quantity}
-                  </span>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-6 w-6 p-0"
-                    onClick={handleQtyEdit}
-                  >
-                    <Edit2 className="h-3 w-3 text-gray-500" />
-                  </Button>
-                </div>
+              {quantity > 0 && (
+                <span className="text-xs text-gray-600">
+                  Total: {formatPrice(displayPrice * quantity)}
+                </span>
               )}
-              
-              <Button
-                size="sm"
-                variant="outline"
-                className="h-8 w-8 p-0"
-                onClick={handleQuantityIncrease}
-              >
-                <Plus className="h-3 w-3" />
-              </Button>
             </div>
-            
-            {quantity > 0 && (
-              <span className="text-xs text-gray-600">
-                Total: {formatPrice(displayPrice * quantity)}
-              </span>
-            )}
           </div>
         </div>
       </CardContent>
