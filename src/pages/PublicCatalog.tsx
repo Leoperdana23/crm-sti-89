@@ -1,7 +1,6 @@
-
 import React, { useState, useEffect } from 'react';
 import { useParams } from 'react-router-dom';
-import { Search, Package, ShoppingCart, Plus, Minus } from 'lucide-react';
+import { Search, Package, ShoppingCart, Plus, Minus, CheckCircle } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -17,6 +16,7 @@ import {
 } from '@/components/ui/pagination';
 import { supabase } from '@/integrations/supabase/client';
 import { Product, ProductCategory } from '@/types/product';
+import CheckoutDialog from '@/components/CheckoutDialog';
 
 const PRODUCTS_PER_PAGE = 20;
 
@@ -37,6 +37,8 @@ const PublicCatalog = () => {
   const [sortBy, setSortBy] = useState('name');
   const [currentPage, setCurrentPage] = useState(1);
   const [cart, setCart] = useState<CartItem[]>([]);
+  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  const [orderSuccess, setOrderSuccess] = useState(false);
 
   useEffect(() => {
     const fetchCatalogData = async () => {
@@ -168,6 +170,12 @@ const PublicCatalog = () => {
     }, 0);
   };
 
+  const handleOrderSuccess = () => {
+    setCart([]);
+    setOrderSuccess(true);
+    setTimeout(() => setOrderSuccess(false), 3000);
+  };
+
   const filteredAndSortedProducts = products
     .filter(product => {
       const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -240,6 +248,14 @@ const PublicCatalog = () => {
       </div>
 
       <div className="w-full max-w-sm mx-auto px-3 py-3 space-y-3">
+        {/* Order Success Message */}
+        {orderSuccess && (
+          <div className="bg-green-100 border border-green-300 rounded-lg p-3 flex items-center gap-2">
+            <CheckCircle className="h-5 w-5 text-green-600" />
+            <span className="text-green-800 text-sm font-medium">Pesanan berhasil dibuat!</span>
+          </div>
+        )}
+
         {/* Search and Filter Bar */}
         <Card className="shadow-sm border-0">
           <CardContent className="p-3">
@@ -392,7 +408,10 @@ const PublicCatalog = () => {
       {/* Fixed Cart Button */}
       {getTotalItems() > 0 && (
         <div className="fixed bottom-3 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-sm px-3">
-          <div className="bg-green-600 text-white rounded-xl px-4 py-3 flex items-center justify-between shadow-lg">
+          <Button
+            onClick={() => setIsCheckoutOpen(true)}
+            className="w-full bg-green-600 text-white rounded-xl px-4 py-3 flex items-center justify-between shadow-lg hover:bg-green-700"
+          >
             <div className="flex items-center space-x-2">
               <div className="bg-green-700 rounded-full p-1.5">
                 <ShoppingCart className="h-4 w-4" />
@@ -411,9 +430,18 @@ const PublicCatalog = () => {
                 {formatPrice(getTotalPrice())}
               </div>
             </div>
-          </div>
+          </Button>
         </div>
       )}
+
+      {/* Checkout Dialog */}
+      <CheckoutDialog
+        isOpen={isCheckoutOpen}
+        onClose={() => setIsCheckoutOpen(false)}
+        cart={cart}
+        catalogToken={token || ''}
+        onOrderSuccess={handleOrderSuccess}
+      />
     </div>
   );
 };
