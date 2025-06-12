@@ -25,6 +25,7 @@ import PublicCatalog from '@/pages/PublicCatalog';
 import Auth from '@/pages/Auth';
 import NotFound from '@/pages/NotFound';
 import ProductCatalog from '@/pages/ProductCatalog';
+import Orders from '@/pages/Orders';
 import './App.css';
 
 const queryClient = new QueryClient();
@@ -47,6 +48,7 @@ function App() {
             <Route path="customers" element={<Customers />} />
             <Route path="resellers" element={<Resellers />} />
             <Route path="product-catalog" element={<ProductCatalog />} />
+            <Route path="orders" element={<Orders />} />
             <Route path="follow-up" element={<FollowUp />} />
             <Route path="birthday" element={<Birthday />} />
             <Route path="work-process" element={<WorkProcess />} />
