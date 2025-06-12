@@ -4,8 +4,8 @@ export interface Customer {
   name: string;
   phone: string;
   address: string;
-  birth_date: string;
-  id_number: string;
+  birth_date?: string;
+  id_number?: string;
   needs?: string;
   notes?: string;
   status: 'Prospek' | 'Follow-up' | 'Deal' | 'Tidak Jadi';
