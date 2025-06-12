@@ -832,7 +832,7 @@ const Reports = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-yellow-600">
-              {averageRatings ? ((averageRatings.serviceTechnician + averageRatings.serviceSales + averageRatings.productQuality + averageRatings.usageClarity) / 4).toFixed(1) : '0'}/10
+              {averageRatings ? ((averageRatings.service_technician + averageRatings.service_sales + averageRatings.product_quality + averageRatings.usage_clarity) / 4).toFixed(1) : '0'}/10
             </div>
             <p className="text-xs text-muted-foreground">
               kepuasan pelanggan
@@ -1123,12 +1123,12 @@ const Reports = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-blue-600">
-                {averageRatings.serviceTechnician.toFixed(1)}/10
+                {averageRatings.service_technician.toFixed(1)}/10
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                 <div 
                   className="bg-blue-600 h-2 rounded-full" 
-                  style={{ width: `${(averageRatings.serviceTechnician / 10) * 100}%` }}
+                  style={{ width: `${(averageRatings.service_technician / 10) * 100}%` }}
                 ></div>
               </div>
             </CardContent>
@@ -1140,12 +1140,12 @@ const Reports = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-green-600">
-                {averageRatings.serviceSales.toFixed(1)}/10
+                {averageRatings.service_sales.toFixed(1)}/10
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                 <div 
                   className="bg-green-600 h-2 rounded-full" 
-                  style={{ width: `${(averageRatings.serviceSales / 10) * 100}%` }}
+                  style={{ width: `${(averageRatings.service_sales / 10) * 100}%` }}
                 ></div>
               </div>
             </CardContent>
@@ -1157,12 +1157,12 @@ const Reports = () => {
             </CardHeader>
             <CardContent>
               <div className="text-3xl font-bold text-purple-600">
-                {averageRatings.productQuality.toFixed(1)}/10
+                {averageRatings.product_quality.toFixed(1)}/10
               </div>
               <div className="w-full bg-gray-200 rounded-full h-2 mt-2">
                 <div 
                   className="bg-purple-600 h-2 rounded-full" 
-                  style={{ width: `${(averageRatings.productQuality / 10) * 100}%` }}
+                  style={{ width: `${(averageRatings.product_quality / 10) * 100}%` }}
                 ></div>
               </div>
             </CardContent>
