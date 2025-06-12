@@ -1,32 +1,33 @@
 
-import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { Toaster } from '@/components/ui/toaster';
-import Layout from '@/components/Layout';
-import ProtectedRoute from '@/components/ProtectedRoute';
+import { Toaster } from '@/components/ui/sonner';
 import Index from '@/pages/Index';
+import Auth from '@/pages/Auth';
 import Dashboard from '@/pages/Dashboard';
+import ProductCatalog from '@/pages/ProductCatalog';
+import ProductCategories from '@/pages/ProductCategories';
+import PublicCatalog from '@/pages/PublicCatalog';
 import Customers from '@/pages/Customers';
-import FollowUp from '@/pages/FollowUp';
-import Birthday from '@/pages/Birthday';
-import WorkProcess from '@/pages/WorkProcess';
-import Survey from '@/pages/Survey';
-import Sales from '@/pages/Sales';
+import Users from '@/pages/Users';
 import Branches from '@/pages/Branches';
 import Resellers from '@/pages/Resellers';
-import Reports from '@/pages/Reports';
-import Users from '@/pages/Users';
-import RolePermissions from '@/pages/RolePermissions';
-import Attendance from '@/pages/Attendance';
-import DealHistory from '@/pages/DealHistory';
-import PublicSurvey from '@/pages/PublicSurvey';
-import PublicCatalog from '@/pages/PublicCatalog';
-import Auth from '@/pages/Auth';
-import ResellerAuth from '@/pages/ResellerAuth';
-import NotFound from '@/pages/NotFound';
-import ProductCatalog from '@/pages/ProductCatalog';
 import Orders from '@/pages/Orders';
+import Sales from '@/pages/Sales';
+import ResellerAuth from '@/pages/ResellerAuth';
+import FollowUp from '@/pages/FollowUp';
+import Reports from '@/pages/Reports';
+import Survey from '@/pages/Survey';
+import PublicSurvey from '@/pages/PublicSurvey';
+import WorkProcess from '@/pages/WorkProcess';
+import Birthday from '@/pages/Birthday';
+import DealHistory from '@/pages/DealHistory';
+import Attendance from '@/pages/Attendance';
+import AttendanceApp from '@/pages/AttendanceApp';
+import RolePermissions from '@/pages/RolePermissions';
+import NotFound from '@/pages/NotFound';
+import Layout from '@/components/Layout';
+import ProtectedRoute from '@/components/ProtectedRoute';
 import './App.css';
 
 const queryClient = new QueryClient();
@@ -35,38 +36,147 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <Router>
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/reseller-login" element={<ResellerAuth />} />
-          <Route path="/survey/:token" element={<PublicSurvey />} />
-          <Route path="/public-survey/:token" element={<PublicSurvey />} />
-          <Route path="/catalog/:token" element={<PublicCatalog />} />
-          <Route path="/" element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }>
-            <Route index element={<Dashboard />} />
-            <Route path="customers" element={<Customers />} />
-            <Route path="resellers" element={<Resellers />} />
-            <Route path="product-catalog" element={<ProductCatalog />} />
-            <Route path="orders" element={<Orders />} />
-            <Route path="follow-up" element={<FollowUp />} />
-            <Route path="birthday" element={<Birthday />} />
-            <Route path="work-process" element={<WorkProcess />} />
-            <Route path="survey" element={<Survey />} />
-            <Route path="deal-history" element={<DealHistory />} />
-            <Route path="sales" element={<Sales />} />
-            <Route path="branches" element={<Branches />} />
-            <Route path="reports" element={<Reports />} />
-            <Route path="users" element={<Users />} />
-            <Route path="role-permissions" element={<RolePermissions />} />
-            <Route path="attendance" element={<Attendance />} />
+        <div className="App">
+          <Routes>
+            {/* Public routes */}
+            <Route path="/" element={<Index />} />
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/reseller-auth" element={<ResellerAuth />} />
+            <Route path="/catalog/:token" element={<PublicCatalog />} />
+            <Route path="/survey/:token" element={<PublicSurvey />} />
+            
+            {/* Protected routes */}
+            <Route path="/dashboard" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Dashboard />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/catalog" element={
+              <ProtectedRoute>
+                <Layout>
+                  <ProductCatalog />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/categories" element={
+              <ProtectedRoute>
+                <Layout>
+                  <ProductCategories />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/customers" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Customers />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/users" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Users />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/branches" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Branches />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/resellers" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Resellers />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/orders" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Orders />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/sales" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Sales />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/follow-up" element={
+              <ProtectedRoute>
+                <Layout>
+                  <FollowUp />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/reports" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Reports />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/survey" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Survey />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/work-process" element={
+              <ProtectedRoute>
+                <Layout>
+                  <WorkProcess />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/birthday" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Birthday />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/deal-history" element={
+              <ProtectedRoute>
+                <Layout>
+                  <DealHistory />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/attendance" element={
+              <ProtectedRoute>
+                <Layout>
+                  <Attendance />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            <Route path="/attendance-app" element={
+              <ProtectedRoute>
+                <AttendanceApp />
+              </ProtectedRoute>
+            } />
+            <Route path="/role-permissions" element={
+              <ProtectedRoute>
+                <Layout>
+                  <RolePermissions />
+                </Layout>
+              </ProtectedRoute>
+            } />
+            
+            {/* 404 route */}
             <Route path="*" element={<NotFound />} />
-          </Route>
-        </Routes>
+          </Routes>
+          <Toaster />
+        </div>
       </Router>
-      <Toaster />
     </QueryClientProvider>
   );
 }

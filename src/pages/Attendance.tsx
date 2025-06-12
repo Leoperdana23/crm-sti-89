@@ -6,13 +6,15 @@ import { Badge } from '@/components/ui/badge';
 import { useAttendance } from '@/hooks/useAttendance';
 import { useEmployees } from '@/hooks/useEmployees';
 import { useAuth } from '@/hooks/useAuth';
-import { Clock, LogIn, LogOut, Calendar } from 'lucide-react';
+import { Clock, LogIn, LogOut, Calendar, Smartphone } from 'lucide-react';
 import { toast } from 'sonner';
+import { useNavigate } from 'react-router-dom';
 
 const Attendance = () => {
   const { attendanceRecords, loading, checkIn, checkOut, getTodayAttendance } = useAttendance();
   const { employees } = useEmployees();
   const { user } = useAuth();
+  const navigate = useNavigate();
   const [checkingIn, setCheckingIn] = useState(false);
   const [checkingOut, setCheckingOut] = useState(false);
 
@@ -101,6 +103,31 @@ const Attendance = () => {
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">Absensi Karyawan</h1>
           <p className="text-gray-600">Kelola absensi masuk dan keluar karyawan</p>
+        </div>
+
+        {/* Mobile App Promotion */}
+        <div className="mb-6">
+          <Card className="bg-gradient-to-r from-blue-600 to-indigo-600 text-white">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center space-x-4">
+                  <div className="bg-white/20 p-3 rounded-full">
+                    <Smartphone className="h-8 w-8" />
+                  </div>
+                  <div>
+                    <h3 className="text-xl font-bold">Aplikasi Mobile Absensi</h3>
+                    <p className="text-blue-100">Absen dengan GPS dan tampilan mobile-friendly</p>
+                  </div>
+                </div>
+                <Button
+                  onClick={() => navigate('/attendance-app')}
+                  className="bg-white text-blue-600 hover:bg-blue-50"
+                >
+                  Buka App Mobile
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Quick Actions */}

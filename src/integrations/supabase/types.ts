@@ -61,34 +61,49 @@ export type Database = {
       }
       attendance: {
         Row: {
+          check_in_latitude: number | null
+          check_in_longitude: number | null
           check_in_time: string | null
+          check_out_latitude: number | null
+          check_out_longitude: number | null
           check_out_time: string | null
           created_at: string
           date: string
           employee_id: string | null
           id: string
+          location_id: string | null
           notes: string | null
           status: string | null
           updated_at: string
         }
         Insert: {
+          check_in_latitude?: number | null
+          check_in_longitude?: number | null
           check_in_time?: string | null
+          check_out_latitude?: number | null
+          check_out_longitude?: number | null
           check_out_time?: string | null
           created_at?: string
           date: string
           employee_id?: string | null
           id?: string
+          location_id?: string | null
           notes?: string | null
           status?: string | null
           updated_at?: string
         }
         Update: {
+          check_in_latitude?: number | null
+          check_in_longitude?: number | null
           check_in_time?: string | null
+          check_out_latitude?: number | null
+          check_out_longitude?: number | null
           check_out_time?: string | null
           created_at?: string
           date?: string
           employee_id?: string | null
           id?: string
+          location_id?: string | null
           notes?: string | null
           status?: string | null
           updated_at?: string
@@ -99,6 +114,13 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "attendance_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "employee_locations"
             referencedColumns: ["id"]
           },
         ]
@@ -334,6 +356,42 @@ export type Database = {
           },
         ]
       }
+      employee_locations: {
+        Row: {
+          address: string
+          created_at: string
+          id: string
+          is_active: boolean
+          latitude: number
+          longitude: number
+          name: string
+          radius: number
+          updated_at: string
+        }
+        Insert: {
+          address: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          latitude: number
+          longitude: number
+          name: string
+          radius?: number
+          updated_at?: string
+        }
+        Update: {
+          address?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          latitude?: number
+          longitude?: number
+          name?: string
+          radius?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       employees: {
         Row: {
           created_at: string
@@ -565,6 +623,63 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      overtime_requests: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          date: string
+          employee_id: string | null
+          end_time: string
+          id: string
+          reason: string
+          start_time: string
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          date: string
+          employee_id?: string | null
+          end_time: string
+          id?: string
+          reason: string
+          start_time: string
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          date?: string
+          employee_id?: string | null
+          end_time?: string
+          id?: string
+          reason?: string
+          start_time?: string
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "overtime_requests_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "overtime_requests_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       payroll: {
         Row: {
@@ -932,6 +1047,57 @@ export type Database = {
             columns: ["customer_id"]
             isOneToOne: false
             referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      work_schedules: {
+        Row: {
+          created_at: string
+          day_of_week: number
+          employee_id: string | null
+          end_time: string
+          id: string
+          is_active: boolean
+          location_id: string | null
+          start_time: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          day_of_week: number
+          employee_id?: string | null
+          end_time: string
+          id?: string
+          is_active?: boolean
+          location_id?: string | null
+          start_time: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          day_of_week?: number
+          employee_id?: string | null
+          end_time?: string
+          id?: string
+          is_active?: boolean
+          location_id?: string | null
+          start_time?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "work_schedules_employee_id_fkey"
+            columns: ["employee_id"]
+            isOneToOne: false
+            referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "work_schedules_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "employee_locations"
             referencedColumns: ["id"]
           },
         ]
