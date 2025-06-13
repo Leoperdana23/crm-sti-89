@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -46,7 +45,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
     defaultValues: {
       name: product?.name || '',
       description: product?.description || '',
-      category_id: product?.category_id || '',
+      category_id: product?.category_id || 'no-category',
       price: product?.price || 0,
       reseller_price: product?.reseller_price || 0,
       points_value: product?.points_value || 0,
@@ -69,7 +68,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
           id: product.id,
           name: data.name,
           description: data.description || null,
-          category_id: data.category_id && data.category_id !== '' && data.category_id !== 'no-category' ? data.category_id : null,
+          category_id: data.category_id && data.category_id !== 'no-category' ? data.category_id : null,
           price: data.price,
           reseller_price: data.reseller_price || null,
           points_value: data.points_value || 0,
@@ -90,7 +89,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
           price: data.price,
           unit: data.unit,
           description: data.description || null,
-          category_id: data.category_id && data.category_id !== '' && data.category_id !== 'no-category' ? data.category_id : null,
+          category_id: data.category_id && data.category_id !== 'no-category' ? data.category_id : null,
           reseller_price: data.reseller_price || null,
           points_value: data.points_value || 0,
           commission_value: data.commission_value || 0,
@@ -135,14 +134,14 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Kategori</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value || ''}>
+                <Select onValueChange={field.onChange} value={field.value || 'no-category'}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih kategori" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Tanpa Kategori</SelectItem>
+                    <SelectItem value="no-category">Tanpa Kategori</SelectItem>
                     {categories?.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
@@ -165,7 +164,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                   <Input
                     type="number"
                     placeholder="0"
-                    {...field}
+                    value={field.value || ''}
                     onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
@@ -184,7 +183,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                   <Input
                     type="number"
                     placeholder="0"
-                    {...field}
+                    value={field.value || ''}
                     onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
@@ -203,7 +202,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                   <Input
                     type="number"
                     placeholder="0"
-                    {...field}
+                    value={field.value || ''}
                     onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
@@ -222,7 +221,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                   <Input
                     type="number"
                     placeholder="0"
-                    {...field}
+                    value={field.value || ''}
                     onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
@@ -255,7 +254,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                   <Input
                     type="number"
                     placeholder="0"
-                    {...field}
+                    value={field.value || ''}
                     onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
@@ -274,7 +273,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                   <Input
                     type="number"
                     placeholder="0"
-                    {...field}
+                    value={field.value || ''}
                     onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
@@ -293,7 +292,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                   <Input
                     type="number"
                     placeholder="0"
-                    {...field}
+                    value={field.value || ''}
                     onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
