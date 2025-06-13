@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Home, 
@@ -33,7 +34,6 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
   const [customerOpen, setCustomerOpen] = useState(false);
   const [processOpen, setProcessOpen] = useState(false);
 
-  // Reordered menu items according to specification
   const menuItems = [
     {
       to: '/dashboard',
@@ -71,7 +71,7 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
     {
       to: '/customers',
       icon: Users,
-      label: 'Pelanggan Umum',
+      label: 'Pelanggan',
       permission: 'customers'
     },
     {
@@ -132,17 +132,23 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
 
   return (
     <nav className="space-y-1">
-      {/* Dashboard */}
-      {hasPermission('dashboard', 'view') && (
-        <MenuItem
-          key="/dashboard"
-          to="/dashboard"
-          icon={Home}
-          onClick={onItemClick}
-        >
-          Dashboard
-        </MenuItem>
-      )}
+      {menuItems.map((item) => {
+        // Show item if user has permission to view it
+        if (!hasPermission(item.permission, 'view')) {
+          return null;
+        }
+
+        return (
+          <MenuItem
+            key={item.to}
+            to={item.to}
+            icon={item.icon}
+            onClick={onItemClick}
+          >
+            {item.label}
+          </MenuItem>
+        );
+      })}
 
       {/* Customer Menu with Submenu */}
       <div className="space-y-1">
@@ -223,25 +229,6 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
           </div>
         )}
       </div>
-
-      {/* Other menu items in order */}
-      {menuItems.slice(1).map((item) => {
-        // Show item if user has permission to view it
-        if (!hasPermission(item.permission, 'view')) {
-          return null;
-        }
-
-        return (
-          <MenuItem
-            key={item.to}
-            to={item.to}
-            icon={item.icon}
-            onClick={onItemClick}
-          >
-            {item.label}
-          </MenuItem>
-        );
-      })}
 
       {/* Settings Menu with Submenu */}
       <div className="space-y-1">
