@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -13,14 +14,14 @@ import { useProductCategories } from '@/hooks/useProductCategories';
 import { Product } from '@/types/product';
 
 const formSchema = z.object({
-  name: z.string().min(1, 'Nama produk wajib diisi'),
+  name: z.string().min(1, 'Nama produk wajib diisi').max(255, 'Nama produk terlalu panjang'),
   description: z.string().optional(),
   category_id: z.string().optional(),
-  price: z.number().min(0, 'Harga harus lebih dari 0'),
-  reseller_price: z.number().min(0, 'Harga reseller harus lebih dari 0').optional(),
+  price: z.number().min(0, 'Harga harus 0 atau lebih'),
+  reseller_price: z.number().min(0, 'Harga reseller harus 0 atau lebih').optional(),
   points_value: z.number().min(0, 'Nilai poin harus 0 atau lebih').optional(),
   commission_value: z.number().min(0, 'Nilai komisi harus 0 atau lebih').optional(),
-  unit: z.string().min(1, 'Satuan wajib diisi'),
+  unit: z.string().min(1, 'Satuan wajib diisi').max(50, 'Satuan terlalu panjang'),
   stock_quantity: z.number().min(0, 'Stok harus 0 atau lebih').optional(),
   min_stock_level: z.number().min(0, 'Minimal stok harus 0 atau lebih').optional(),
   featured: z.boolean().optional(),
@@ -36,7 +37,7 @@ interface ProductFormProps {
 }
 
 const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
-  const { data: categories, isLoading: categoriesLoading } = useProductCategories();
+  const { data: categories = [], isLoading: categoriesLoading } = useProductCategories();
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
 
@@ -47,7 +48,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
       description: product?.description || '',
       category_id: product?.category_id || '',
       price: product?.price || 0,
-      reseller_price: product?.reseller_price || 0,
+      reseller_price: product?.reseller_price || undefined,
       points_value: product?.points_value || 0,
       commission_value: product?.commission_value || 0,
       unit: product?.unit || 'unit',
@@ -63,28 +64,36 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
       console.log('Form data submitted:', data);
       
       if (product?.id) {
-        // For updates - only send changed fields
+        // For updates - prepare clean update data
         const updateData = {
           id: product.id,
-          ...data,
-          category_id: data.category_id === 'no-category' ? null : data.category_id || null,
+          name: data.name,
           description: data.description || null,
+          category_id: data.category_id === 'no-category' ? null : data.category_id || null,
+          price: data.price,
           reseller_price: data.reseller_price || null,
+          points_value: data.points_value || 0,
+          commission_value: data.commission_value || 0,
+          unit: data.unit,
+          stock_quantity: data.stock_quantity || 0,
+          min_stock_level: data.min_stock_level || 0,
+          featured: data.featured || false,
+          sort_order: data.sort_order || 0,
         };
         
         console.log('Sending update data:', updateData);
         await updateProductMutation.mutateAsync(updateData);
       } else {
-        // For creates - ensure all required fields are present
+        // For creates - prepare create data
         const createData = {
-          name: data.name, // Required field
-          price: data.price, // Required field
-          unit: data.unit, // Required field
+          name: data.name,
           description: data.description || null,
           category_id: data.category_id === 'no-category' ? null : data.category_id || null,
+          price: data.price,
           reseller_price: data.reseller_price || null,
           points_value: data.points_value || 0,
           commission_value: data.commission_value || 0,
+          unit: data.unit,
           stock_quantity: data.stock_quantity || 0,
           min_stock_level: data.min_stock_level || 0,
           featured: data.featured || false,
@@ -114,7 +123,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Nama Produk</FormLabel>
+                <FormLabel>Nama Produk *</FormLabel>
                 <FormControl>
                   <Input placeholder="Masukkan nama produk" {...field} />
                 </FormControl>
@@ -158,13 +167,15 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
             name="price"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Harga Normal</FormLabel>
+                <FormLabel>Harga Normal *</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
+                    min="0"
+                    step="0.01"
                     placeholder="0"
                     {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -181,9 +192,12 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                 <FormControl>
                   <Input
                     type="number"
+                    min="0"
+                    step="0.01"
                     placeholder="0"
                     {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                    value={field.value || ''}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -200,6 +214,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                 <FormControl>
                   <Input
                     type="number"
+                    min="0"
                     placeholder="0"
                     {...field}
                     onChange={(e) => field.onChange(Number(e.target.value) || 0)}
@@ -219,6 +234,8 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                 <FormControl>
                   <Input
                     type="number"
+                    min="0"
+                    step="0.01"
                     placeholder="0"
                     {...field}
                     onChange={(e) => field.onChange(Number(e.target.value) || 0)}
@@ -234,7 +251,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
             name="unit"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Satuan</FormLabel>
+                <FormLabel>Satuan *</FormLabel>
                 <FormControl>
                   <Input placeholder="unit, kg, liter, dll" {...field} />
                 </FormControl>
@@ -252,6 +269,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                 <FormControl>
                   <Input
                     type="number"
+                    min="0"
                     placeholder="0"
                     {...field}
                     onChange={(e) => field.onChange(Number(e.target.value) || 0)}
@@ -271,6 +289,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                 <FormControl>
                   <Input
                     type="number"
+                    min="0"
                     placeholder="0"
                     {...field}
                     onChange={(e) => field.onChange(Number(e.target.value) || 0)}
@@ -290,6 +309,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                 <FormControl>
                   <Input
                     type="number"
+                    min="0"
                     placeholder="0"
                     {...field}
                     onChange={(e) => field.onChange(Number(e.target.value) || 0)}
@@ -308,7 +328,11 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
             <FormItem>
               <FormLabel>Deskripsi</FormLabel>
               <FormControl>
-                <Textarea placeholder="Masukkan deskripsi produk" {...field} />
+                <Textarea 
+                  placeholder="Masukkan deskripsi produk" 
+                  className="min-h-[100px]"
+                  {...field} 
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -338,12 +362,12 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
 
         <div className="flex justify-end gap-4">
           {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
+            <Button type="button" variant="outline" onClick={onCancel} disabled={isLoading}>
               Batal
             </Button>
           )}
           <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Menyimpan...' : product ? 'Update' : 'Simpan'}
+            {isLoading ? 'Menyimpan...' : product ? 'Update Produk' : 'Simpan Produk'}
           </Button>
         </div>
       </form>

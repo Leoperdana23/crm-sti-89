@@ -43,40 +43,47 @@ export const useCreateProduct = () => {
     mutationFn: async (productData: CreateProductData) => {
       console.log('Creating product with data:', productData);
       
-      // Build the insert data object
-      const insertData = {
-        name: productData.name,
-        description: productData.description || null,
-        category_id: productData.category_id || null,
-        price: productData.price,
-        reseller_price: productData.reseller_price || null,
-        points_value: productData.points_value || 0,
-        commission_value: productData.commission_value || 0,
-        unit: productData.unit,
-        image_url: productData.image_url || null,
-        stock_quantity: productData.stock_quantity || 0,
-        min_stock_level: productData.min_stock_level || 0,
-        tags: productData.tags || null,
-        featured: productData.featured || false,
-        sort_order: productData.sort_order || 0,
-        is_active: true
-      };
+      return withAuth(async () => {
+        // Build the insert data object with proper validation
+        const insertData = {
+          name: productData.name?.trim(),
+          description: productData.description?.trim() || null,
+          category_id: productData.category_id === 'no-category' ? null : productData.category_id || null,
+          price: Number(productData.price) || 0,
+          reseller_price: productData.reseller_price ? Number(productData.reseller_price) : null,
+          points_value: Number(productData.points_value) || 0,
+          commission_value: Number(productData.commission_value) || 0,
+          unit: productData.unit?.trim() || 'unit',
+          image_url: productData.image_url?.trim() || null,
+          stock_quantity: Number(productData.stock_quantity) || 0,
+          min_stock_level: Number(productData.min_stock_level) || 0,
+          tags: productData.tags || null,
+          featured: Boolean(productData.featured),
+          sort_order: Number(productData.sort_order) || 0,
+          is_active: true
+        };
 
-      console.log('Insert data:', insertData);
-      
-      const { data, error } = await supabase
-        .from('products')
-        .insert([insertData])
-        .select()
-        .single();
+        console.log('Insert data:', insertData);
+        
+        const { data, error } = await supabase
+          .from('products')
+          .insert([insertData])
+          .select(`
+            *,
+            product_categories (
+              name
+            )
+          `)
+          .single();
 
-      if (error) {
-        console.error('Error creating product:', error);
-        throw error;
-      }
+        if (error) {
+          console.error('Error creating product:', error);
+          throw error;
+        }
 
-      console.log('Product created successfully:', data);
-      return data;
+        console.log('Product created successfully:', data);
+        return data;
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -115,55 +122,75 @@ export const useUpdateProduct = () => {
       console.log('Updating product with ID:', id);
       console.log('Update data:', updates);
       
-      // Clean updates - remove undefined values but keep null values
-      const cleanUpdates = Object.fromEntries(
-        Object.entries(updates).filter(([_, value]) => value !== undefined)
-      );
-      
-      console.log('Clean updates to apply:', cleanUpdates);
-      
-      // First check if the product exists
-      const { data: existingProduct, error: checkError } = await supabase
-        .from('products')
-        .select('id')
-        .eq('id', id)
-        .maybeSingle();
+      return withAuth(async () => {
+        // Clean and validate updates
+        const cleanUpdates: any = {};
+        
+        Object.entries(updates).forEach(([key, value]) => {
+          if (value !== undefined) {
+            if (key === 'category_id') {
+              cleanUpdates[key] = value === 'no-category' ? null : value || null;
+            } else if (key === 'description') {
+              cleanUpdates[key] = value ? String(value).trim() : null;
+            } else if (key === 'name' || key === 'unit') {
+              cleanUpdates[key] = value ? String(value).trim() : value;
+            } else if (['price', 'reseller_price', 'points_value', 'commission_value', 'stock_quantity', 'min_stock_level', 'sort_order'].includes(key)) {
+              cleanUpdates[key] = value ? Number(value) : (key === 'price' ? 0 : value);
+            } else if (key === 'featured') {
+              cleanUpdates[key] = Boolean(value);
+            } else {
+              cleanUpdates[key] = value;
+            }
+          }
+        });
+        
+        console.log('Clean updates to apply:', cleanUpdates);
+        
+        // First check if the product exists
+        const { data: existingProduct, error: checkError } = await supabase
+          .from('products')
+          .select('id, name')
+          .eq('id', id)
+          .eq('is_active', true)
+          .maybeSingle();
 
-      if (checkError) {
-        console.error('Error checking product existence:', checkError);
-        throw checkError;
-      }
+        if (checkError) {
+          console.error('Error checking product existence:', checkError);
+          throw checkError;
+        }
 
-      if (!existingProduct) {
-        console.error('Product not found with ID:', id);
-        throw new Error('Produk tidak ditemukan');
-      }
+        if (!existingProduct) {
+          console.error('Product not found with ID:', id);
+          throw new Error('Produk tidak ditemukan atau sudah dihapus');
+        }
 
-      // Now perform the update
-      const { data, error } = await supabase
-        .from('products')
-        .update(cleanUpdates)
-        .eq('id', id)
-        .select(`
-          *,
-          product_categories (
-            name
-          )
-        `)
-        .maybeSingle();
+        // Now perform the update
+        const { data, error } = await supabase
+          .from('products')
+          .update(cleanUpdates)
+          .eq('id', id)
+          .eq('is_active', true)
+          .select(`
+            *,
+            product_categories (
+              name
+            )
+          `)
+          .maybeSingle();
 
-      if (error) {
-        console.error('Error updating product:', error);
-        throw error;
-      }
+        if (error) {
+          console.error('Error updating product:', error);
+          throw error;
+        }
 
-      if (!data) {
-        console.error('No product returned after update');
-        throw new Error('Gagal memperbarui produk - tidak ada data yang dikembalikan');
-      }
+        if (!data) {
+          console.error('No product returned after update');
+          throw new Error('Gagal memperbarui produk - tidak ada data yang dikembalikan');
+        }
 
-      console.log('Product updated successfully:', data);
-      return data;
+        console.log('Product updated successfully:', data);
+        return data;
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -201,17 +228,36 @@ export const useDeleteProduct = () => {
     mutationFn: async (id: string) => {
       console.log('Deleting product:', id);
       
-      const { error } = await supabase
-        .from('products')
-        .update({ is_active: false })
-        .eq('id', id);
+      return withAuth(async () => {
+        // First check if the product exists
+        const { data: existingProduct, error: checkError } = await supabase
+          .from('products')
+          .select('id, name')
+          .eq('id', id)
+          .eq('is_active', true)
+          .maybeSingle();
 
-      if (error) {
-        console.error('Error deleting product:', error);
-        throw error;
-      }
+        if (checkError) {
+          console.error('Error checking product existence:', checkError);
+          throw checkError;
+        }
 
-      console.log('Product deleted successfully');
+        if (!existingProduct) {
+          throw new Error('Produk tidak ditemukan atau sudah dihapus');
+        }
+
+        const { error } = await supabase
+          .from('products')
+          .update({ is_active: false })
+          .eq('id', id);
+
+        if (error) {
+          console.error('Error deleting product:', error);
+          throw error;
+        }
+
+        console.log('Product deleted successfully');
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
