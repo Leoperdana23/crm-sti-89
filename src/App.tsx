@@ -5,7 +5,6 @@ import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/hooks/useAuth';
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
-import ProductCatalog from '@/pages/ProductCatalog';
 import ProductCategories from '@/pages/ProductCategories';
 import ModernPublicCatalog from '@/components/PublicCatalog/ModernPublicCatalog';
 import ResellerCatalog from '@/pages/ResellerCatalog';
@@ -59,13 +58,6 @@ function App() {
                 <ProtectedRoute>
                   <ModernLayout>
                     <ModernDashboard />
-                  </ModernLayout>
-                </ProtectedRoute>
-              } />
-              <Route path="/catalog" element={
-                <ProtectedRoute>
-                  <ModernLayout>
-                    <ProductCatalog />
                   </ModernLayout>
                 </ProtectedRoute>
               } />

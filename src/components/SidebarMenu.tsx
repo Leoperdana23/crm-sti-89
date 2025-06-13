@@ -4,7 +4,6 @@ import {
   Home, 
   Users, 
   UserCheck, 
-  Package, 
   ShoppingCart,
   Phone, 
   Calendar, 
@@ -73,12 +72,6 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
       icon: FileText,
       label: 'Survei',
       permission: 'survey'
-    },
-    {
-      to: '/catalog',
-      icon: Package,
-      label: 'Katalog Produk',
-      permission: 'product_catalog'
     },
     {
       to: '/deal-history',

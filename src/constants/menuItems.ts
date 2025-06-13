@@ -2,7 +2,6 @@
 import {
   LayoutDashboard,
   Users,
-  Package,
   ShoppingCart,
   FileText,
   Settings,
@@ -32,11 +31,6 @@ export const menuItems = [
     label: 'Follow Up',
     path: '/follow-up',
     icon: UserCheck
-  },
-  {
-    label: 'Products',
-    path: '/catalog',
-    icon: Package
   },
   {
     label: 'Categories',
