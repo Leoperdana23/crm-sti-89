@@ -38,6 +38,38 @@ export const useResellerApp = () => {
     logout();
   };
 
+  const createCatalogTokenIfNotExists = async (resellerId: string) => {
+    console.log('Checking if catalog token exists for reseller:', resellerId);
+    
+    // Check if catalog token exists
+    const { data: existingToken } = await supabase
+      .from('catalog_tokens')
+      .select('token')
+      .eq('reseller_id', resellerId)
+      .maybeSingle();
+
+    if (!existingToken) {
+      console.log('Creating new catalog token for reseller:', resellerId);
+      // Create new catalog token
+      const { data: newToken, error } = await supabase
+        .from('catalog_tokens')
+        .insert({
+          reseller_id: resellerId,
+          name: `Token untuk Reseller ${resellerId}`,
+          description: 'Auto-generated token for reseller',
+          is_active: true
+        })
+        .select('token')
+        .single();
+
+      if (error) {
+        console.error('Error creating catalog token:', error);
+      } else {
+        console.log('Created new catalog token:', newToken.token);
+      }
+    }
+  };
+
   const authenticateReseller = async (phone: string, password: string) => {
     console.log('Authenticating reseller with phone:', phone);
     
@@ -70,6 +102,9 @@ export const useResellerApp = () => {
       expires_at: responseData.expires_at,
     };
 
+    // Ensure catalog token exists
+    await createCatalogTokenIfNotExists(sessionData.id);
+
     login(sessionData);
 
     return {
@@ -99,43 +134,6 @@ export const useResellerStats = (resellerId: string | null) => {
 
       console.log('Reseller stats fetched:', data);
       return data as unknown as ResellerStats;
-    },
-    enabled: !!resellerId,
-  });
-};
-
-export const useResellerOrders = (resellerId: string | null) => {
-  return useQuery({
-    queryKey: ['reseller-orders-list', resellerId],
-    queryFn: async () => {
-      if (!resellerId) return [];
-      
-      console.log('Fetching reseller orders for ID:', resellerId);
-      
-      const { data, error } = await supabase
-        .from('reseller_orders')
-        .select(`
-          *,
-          orders (
-            *,
-            order_items (
-              *,
-              products (
-                points_value
-              )
-            )
-          )
-        `)
-        .eq('reseller_id', resellerId)
-        .order('created_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching reseller orders:', error);
-        throw error;
-      }
-
-      console.log('Reseller orders fetched:', data);
-      return data as ResellerOrder[];
     },
     enabled: !!resellerId,
   });

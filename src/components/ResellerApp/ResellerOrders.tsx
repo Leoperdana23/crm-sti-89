@@ -33,6 +33,18 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
           refetch();
         }
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'reseller_orders'
+        },
+        (payload) => {
+          console.log('Reseller order updated:', payload);
+          refetch();
+        }
+      )
       .subscribe();
 
     return () => {
@@ -60,10 +72,13 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
     switch (status.toLowerCase()) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
+      case 'processing':
       case 'proses':
         return 'bg-blue-100 text-blue-800';
+      case 'completed':
       case 'selesai':
         return 'bg-green-100 text-green-800';
+      case 'cancelled':
       case 'batal':
         return 'bg-red-100 text-red-800';
       default:
@@ -75,10 +90,13 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
     switch (status.toLowerCase()) {
       case 'pending':
         return <Clock className="h-4 w-4" />;
+      case 'processing':
       case 'proses':
         return <Package className="h-4 w-4" />;
+      case 'completed':
       case 'selesai':
         return <CheckCircle className="h-4 w-4" />;
+      case 'cancelled':
       case 'batal':
         return <XCircle className="h-4 w-4" />;
       default:
@@ -89,15 +107,19 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
   const getStatusLabel = (status: string) => {
     const mapping: { [key: string]: string } = {
       'pending': 'Menunggu',
+      'processing': 'Proses',
       'proses': 'Proses', 
+      'completed': 'Selesai',
       'selesai': 'Selesai',
+      'cancelled': 'Batal',
       'batal': 'Batal'
     };
     return mapping[status.toLowerCase()] || status;
   };
 
-  const calculateCommission = (totalAmount: number) => {
-    return (totalAmount * (reseller.commission_rate / 100));
+  const calculateCommission = (totalAmount: number, commissionRate?: number) => {
+    const rate = commissionRate || reseller.commission_rate;
+    return (totalAmount * (rate / 100));
   };
 
   const calculateTotalPoints = (orderItems: any[]) => {
@@ -108,11 +130,18 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
 
   const filterOrdersByStatus = (status: string) => {
     if (status === 'all') return orders || [];
-    return (orders || []).filter(order => order.status?.toLowerCase() === status.toLowerCase());
+    return (orders || []).filter(order => {
+      const orderStatus = order.status?.toLowerCase();
+      if (status === 'pending') return orderStatus === 'pending';
+      if (status === 'proses') return orderStatus === 'processing' || orderStatus === 'proses';
+      if (status === 'selesai') return orderStatus === 'completed' || orderStatus === 'selesai';
+      if (status === 'batal') return orderStatus === 'cancelled' || orderStatus === 'batal';
+      return orderStatus === status.toLowerCase();
+    });
   };
 
   const renderOrderCard = (order: any) => {
-    const commission = calculateCommission(order.total_amount || 0);
+    const commission = calculateCommission(order.total_amount || 0, order.commission_rate);
     const totalPoints = calculateTotalPoints(order.order_items || []);
 
     return (
@@ -146,7 +175,7 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
               <span className="font-medium">{formatCurrency(order.total_amount || 0)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Komisi ({reseller.commission_rate}%):</span>
+              <span className="text-gray-600">Komisi ({order.commission_rate || reseller.commission_rate}%):</span>
               <span className="font-medium text-green-600">{formatCurrency(commission)}</span>
             </div>
             {totalPoints > 0 && (

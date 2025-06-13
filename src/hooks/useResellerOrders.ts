@@ -10,33 +10,22 @@ export const useResellerOrders = (resellerId: string | null) => {
       
       console.log('Fetching reseller orders for reseller ID:', resellerId);
       
-      // First get the catalog token for this reseller
-      const { data: catalogTokenData, error: tokenError } = await supabase
-        .from('catalog_tokens')
-        .select('token')
-        .eq('reseller_id', resellerId)
-        .single();
-
-      if (tokenError || !catalogTokenData) {
-        console.error('Error fetching catalog token:', tokenError);
-        return [];
-      }
-
-      console.log('Found catalog token:', catalogTokenData.token);
-
-      // Then get orders using that token
+      // Langsung ambil dari reseller_orders table dengan join ke orders
       const { data, error } = await supabase
-        .from('orders')
+        .from('reseller_orders')
         .select(`
           *,
-          order_items (
+          orders (
             *,
-            products (
-              points_value
+            order_items (
+              *,
+              products (
+                points_value
+              )
             )
           )
         `)
-        .eq('catalog_token', catalogTokenData.token)
+        .eq('reseller_id', resellerId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -45,9 +34,16 @@ export const useResellerOrders = (resellerId: string | null) => {
       }
 
       console.log('Reseller orders fetched successfully:', data);
-      return data || [];
+      
+      // Transform data untuk mengembalikan format yang diharapkan
+      return (data || []).map(resellerOrder => ({
+        ...resellerOrder.orders,
+        commission_rate: resellerOrder.commission_rate,
+        commission_amount: resellerOrder.commission_amount,
+        reseller_order_status: resellerOrder.status
+      })) || [];
     },
     enabled: !!resellerId,
-    refetchInterval: 5000, // Refresh every 5 seconds to catch status changes
+    refetchInterval: 5000, // Refresh every 5 seconds
   });
 };
