@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { useProductCategories } from '@/hooks/useProductCategories';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import ModernLayout from '@/components/Layout/ModernLayout';
 import ProductCatalogHeader from '@/components/catalog/ProductCatalogHeader';
 import ProductCatalogStats from '@/components/catalog/ProductCatalogStats';
 import ProductCatalogFilters from '@/components/catalog/ProductCatalogFilters';
@@ -98,96 +97,92 @@ const ProductCatalogCRM = () => {
 
   if (productsLoading || categoriesLoading) {
     return (
-      <ModernLayout>
-        <div className="flex items-center justify-center min-h-[60vh]">
-          <div className="flex flex-col items-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-            <span className="text-lg text-muted-foreground">Memuat katalog produk...</span>
-          </div>
+      <div className="flex items-center justify-center min-h-[60vh]">
+        <div className="flex flex-col items-center space-y-4">
+          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <span className="text-lg text-muted-foreground">Memuat katalog produk...</span>
         </div>
-      </ModernLayout>
+      </div>
     );
   }
 
   return (
-    <ModernLayout>
-      <div className="container mx-auto max-w-7xl">
-        <div className="space-y-8 p-4 md:p-6">
-          {/* Header dengan toggle harga */}
-          <div className="flex justify-between items-center">
-            <ProductCatalogHeader
-              canManageProducts={canManageProducts}
-              onAddProduct={() => setProductFormOpen(true)}
-              viewMode={viewMode}
-              onViewModeChange={setViewMode}
-            />
-            
-            {/* Price View Toggle */}
-            <div className="flex items-center space-x-2">
-              <span className="text-sm text-muted-foreground">Tampilan Harga:</span>
-              <select 
-                value={priceView} 
-                onChange={(e) => setPriceView(e.target.value as 'retail' | 'reseller')}
-                className="px-3 py-1 border rounded-md text-sm"
-              >
-                <option value="retail">Harga Retail</option>
-                <option value="reseller">Harga Reseller</option>
-              </select>
-            </div>
-          </div>
-
-          {/* Stats */}
-          <ProductCatalogStats 
-            products={products}
-            categories={categories}
-          />
-
-          {/* Filters */}
-          <ProductCatalogFilters
-            searchTerm={searchTerm}
-            onSearchChange={handleSearchChange}
-            categoryFilter={categoryFilter}
-            onCategoryChange={handleCategoryChange}
-            sortBy={sortBy}
-            onSortChange={handleSortChange}
-            categories={categories}
-            onResetFilters={handleResetFilters}
-            filteredCount={filteredAndSortedProducts.length}
-            totalCount={products.length}
-          />
-
-          {/* Product Grid dengan support harga reseller */}
-          <ProductCatalogGridCRM
-            products={paginatedProducts.map(product => ({
-              ...product,
-              displayPrice: priceView === 'reseller' && product.reseller_price 
-                ? product.reseller_price 
-                : product.price,
-              showResellerPrice: priceView === 'reseller'
-            }))}
-            currentPage={currentPage}
-            totalPages={totalPages}
-            onPageChange={setCurrentPage}
-            viewMode={viewMode}
+    <div className="container mx-auto max-w-7xl">
+      <div className="space-y-8 p-4 md:p-6">
+        {/* Header dengan toggle harga */}
+        <div className="flex justify-between items-center">
+          <ProductCatalogHeader
             canManageProducts={canManageProducts}
-            hasFilters={Boolean(searchTerm) || categoryFilter !== 'all'}
-            onResetFilters={handleResetFilters}
-            onEditProduct={handleEditProduct}
+            onAddProduct={() => setProductFormOpen(true)}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
           />
-
-          {/* Product Form Dialog */}
-          <Dialog open={productFormOpen} onOpenChange={handleCloseProductForm}>
-            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-              <ProductForm 
-                isOpen={productFormOpen} 
-                onClose={handleCloseProductForm}
-                product={editingProduct}
-              />
-            </DialogContent>
-          </Dialog>
+          
+          {/* Price View Toggle */}
+          <div className="flex items-center space-x-2">
+            <span className="text-sm text-muted-foreground">Tampilan Harga:</span>
+            <select 
+              value={priceView} 
+              onChange={(e) => setPriceView(e.target.value as 'retail' | 'reseller')}
+              className="px-3 py-1 border rounded-md text-sm"
+            >
+              <option value="retail">Harga Retail</option>
+              <option value="reseller">Harga Reseller</option>
+            </select>
+          </div>
         </div>
+
+        {/* Stats */}
+        <ProductCatalogStats 
+          products={products}
+          categories={categories}
+        />
+
+        {/* Filters */}
+        <ProductCatalogFilters
+          searchTerm={searchTerm}
+          onSearchChange={handleSearchChange}
+          categoryFilter={categoryFilter}
+          onCategoryChange={handleCategoryChange}
+          sortBy={sortBy}
+          onSortChange={handleSortChange}
+          categories={categories}
+          onResetFilters={handleResetFilters}
+          filteredCount={filteredAndSortedProducts.length}
+          totalCount={products.length}
+        />
+
+        {/* Product Grid dengan support harga reseller */}
+        <ProductCatalogGridCRM
+          products={paginatedProducts.map(product => ({
+            ...product,
+            displayPrice: priceView === 'reseller' && product.reseller_price 
+              ? product.reseller_price 
+              : product.price,
+            showResellerPrice: priceView === 'reseller'
+          }))}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          viewMode={viewMode}
+          canManageProducts={canManageProducts}
+          hasFilters={Boolean(searchTerm) || categoryFilter !== 'all'}
+          onResetFilters={handleResetFilters}
+          onEditProduct={handleEditProduct}
+        />
+
+        {/* Product Form Dialog */}
+        <Dialog open={productFormOpen} onOpenChange={handleCloseProductForm}>
+          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+            <ProductForm 
+              isOpen={productFormOpen} 
+              onClose={handleCloseProductForm}
+              product={editingProduct}
+            />
+          </DialogContent>
+        </Dialog>
       </div>
-    </ModernLayout>
+    </div>
   );
 };
 
