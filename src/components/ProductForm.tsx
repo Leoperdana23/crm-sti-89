@@ -8,7 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { useProducts, useCreateProduct, useUpdateProduct } from '@/hooks/useProducts';
+import { useCreateProduct, useUpdateProduct } from '@/hooks/useProducts';
 import { useProductCategories } from '@/hooks/useProductCategories';
 import { Product } from '@/types/product';
 
@@ -63,7 +63,12 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
       console.log('Form data submitted:', data);
       
       if (product) {
-        // For updates - prepare clean data
+        // For updates - ensure we have the product ID
+        if (!product.id) {
+          console.error('Product ID is missing for update');
+          return;
+        }
+
         const updateData = {
           id: product.id,
           name: data.name,

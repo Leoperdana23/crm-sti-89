@@ -1,33 +1,35 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Product, CreateProductData, UpdateProductData } from '@/types/product';
 import { useToast } from '@/hooks/use-toast';
+import { withAuth } from '@/utils/supabaseAuth';
 
 export const useProducts = () => {
   return useQuery({
     queryKey: ['products'],
     queryFn: async () => {
       console.log('Fetching products...');
-      const { data, error } = await supabase
-        .from('products')
-        .select(`
-          *,
-          product_categories (
-            name
-          )
-        `)
-        .eq('is_active', true)
-        .order('sort_order', { ascending: true })
-        .order('name', { ascending: true });
+      return withAuth(async () => {
+        const { data, error } = await supabase
+          .from('products')
+          .select(`
+            *,
+            product_categories (
+              name
+            )
+          `)
+          .eq('is_active', true)
+          .order('sort_order', { ascending: true })
+          .order('name', { ascending: true });
 
-      if (error) {
-        console.error('Error fetching products:', error);
-        throw error;
-      }
+        if (error) {
+          console.error('Error fetching products:', error);
+          throw error;
+        }
 
-      console.log('Products fetched successfully:', data);
-      return data as Product[];
+        console.log('Products fetched successfully:', data);
+        return data as Product[];
+      });
     },
   });
 };
@@ -37,19 +39,21 @@ export const useProductCategories = () => {
     queryKey: ['product-categories'],
     queryFn: async () => {
       console.log('Fetching product categories...');
-      const { data, error } = await supabase
-        .from('product_categories')
-        .select('*')
-        .eq('is_active', true)
-        .order('name');
+      return withAuth(async () => {
+        const { data, error } = await supabase
+          .from('product_categories')
+          .select('*')
+          .eq('is_active', true)
+          .order('name');
 
-      if (error) {
-        console.error('Error fetching product categories:', error);
-        throw error;
-      }
+        if (error) {
+          console.error('Error fetching product categories:', error);
+          throw error;
+        }
 
-      console.log('Product categories fetched successfully:', data);
-      return data;
+        console.log('Product categories fetched successfully:', data);
+        return data;
+      });
     },
   });
 };
@@ -62,19 +66,21 @@ export const useCreateProduct = () => {
     mutationFn: async (productData: CreateProductData) => {
       console.log('Creating product:', productData);
       
-      const { data, error } = await supabase
-        .from('products')
-        .insert(productData)
-        .select()
-        .single();
+      return withAuth(async () => {
+        const { data, error } = await supabase
+          .from('products')
+          .insert(productData)
+          .select()
+          .single();
 
-      if (error) {
-        console.error('Error creating product:', error);
-        throw error;
-      }
+        if (error) {
+          console.error('Error creating product:', error);
+          throw error;
+        }
 
-      console.log('Product created successfully:', data);
-      return data;
+        console.log('Product created successfully:', data);
+        return data;
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -100,29 +106,56 @@ export const useUpdateProduct = () => {
 
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateProductData) => {
-      console.log('Updating product:', id, updates);
+      console.log('Updating product with ID:', id);
+      console.log('Update data:', updates);
       
-      // Remove undefined and empty string values
-      const cleanUpdates = Object.fromEntries(
-        Object.entries(updates).filter(([_, value]) => value !== undefined && value !== '')
-      );
-      
-      console.log('Clean updates:', cleanUpdates);
-      
-      const { data, error } = await supabase
-        .from('products')
-        .update(cleanUpdates)
-        .eq('id', id)
-        .select()
-        .single();
+      return withAuth(async () => {
+        // First verify the product exists
+        const { data: existingProduct, error: fetchError } = await supabase
+          .from('products')
+          .select('id')
+          .eq('id', id)
+          .eq('is_active', true)
+          .maybeSingle();
 
-      if (error) {
-        console.error('Error updating product:', error);
-        throw error;
-      }
+        if (fetchError) {
+          console.error('Error checking product existence:', fetchError);
+          throw fetchError;
+        }
 
-      console.log('Product updated successfully:', data);
-      return data;
+        if (!existingProduct) {
+          console.error('Product not found with ID:', id);
+          throw new Error('Produk tidak ditemukan');
+        }
+
+        // Remove undefined and empty string values, but keep null values
+        const cleanUpdates = Object.fromEntries(
+          Object.entries(updates).filter(([_, value]) => value !== undefined && value !== '')
+        );
+        
+        console.log('Clean updates to apply:', cleanUpdates);
+        
+        const { data, error } = await supabase
+          .from('products')
+          .update(cleanUpdates)
+          .eq('id', id)
+          .eq('is_active', true)
+          .select()
+          .maybeSingle();
+
+        if (error) {
+          console.error('Error updating product:', error);
+          throw error;
+        }
+
+        if (!data) {
+          console.error('No product returned after update');
+          throw new Error('Gagal memperbarui produk - tidak ada data yang dikembalikan');
+        }
+
+        console.log('Product updated successfully:', data);
+        return data;
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
@@ -135,7 +168,7 @@ export const useUpdateProduct = () => {
       console.error('Error in useUpdateProduct:', error);
       toast({
         title: 'Error',
-        description: 'Gagal memperbarui produk',
+        description: error.message || 'Gagal memperbarui produk',
         variant: 'destructive',
       });
     },
@@ -149,17 +182,20 @@ export const useDeleteProduct = () => {
   return useMutation({
     mutationFn: async (id: string) => {
       console.log('Deleting product:', id);
-      const { error } = await supabase
-        .from('products')
-        .update({ is_active: false })
-        .eq('id', id);
+      
+      return withAuth(async () => {
+        const { error } = await supabase
+          .from('products')
+          .update({ is_active: false })
+          .eq('id', id);
 
-      if (error) {
-        console.error('Error deleting product:', error);
-        throw error;
-      }
+        if (error) {
+          console.error('Error deleting product:', error);
+          throw error;
+        }
 
-      console.log('Product deleted successfully');
+        console.log('Product deleted successfully');
+      });
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
