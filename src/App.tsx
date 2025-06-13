@@ -1,13 +1,13 @@
+
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
 import { AuthProvider } from '@/hooks/useAuth';
 import Index from '@/pages/Index';
 import Auth from '@/pages/Auth';
-import Dashboard from '@/pages/Dashboard';
 import ProductCatalog from '@/pages/ProductCatalog';
 import ProductCategories from '@/pages/ProductCategories';
-import PublicCatalog from '@/pages/PublicCatalog';
+import ModernPublicCatalog from '@/components/PublicCatalog/ModernPublicCatalog';
 import ResellerCatalog from '@/pages/ResellerCatalog';
 import Customers from '@/pages/Customers';
 import Users from '@/pages/Users';
@@ -25,7 +25,8 @@ import Birthday from '@/pages/Birthday';
 import DealHistory from '@/pages/DealHistory';
 import RolePermissions from '@/pages/RolePermissions';
 import NotFound from '@/pages/NotFound';
-import Layout from '@/components/Layout';
+import ModernLayout from '@/components/Layout/ModernLayout';
+import ModernDashboard from '@/components/Dashboard/ModernDashboard';
 import ProtectedRoute from '@/components/ProtectedRoute';
 import './App.css';
 
@@ -49,121 +50,121 @@ function App() {
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reseller-auth" element={<ResellerAuth />} />
-              <Route path="/catalog/:token" element={<PublicCatalog />} />
+              <Route path="/catalog/:token" element={<ModernPublicCatalog />} />
               <Route path="/produk" element={<ResellerCatalog />} />
               <Route path="/survey/:token" element={<PublicSurvey />} />
               
-              {/* Protected routes */}
+              {/* Protected routes with modern layout */}
               <Route path="/dashboard" element={
                 <ProtectedRoute>
-                  <Layout>
-                    <Dashboard />
-                  </Layout>
+                  <ModernLayout>
+                    <ModernDashboard />
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               <Route path="/catalog" element={
                 <ProtectedRoute>
-                  <Layout>
+                  <ModernLayout>
                     <ProductCatalog />
-                  </Layout>
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               <Route path="/categories" element={
                 <ProtectedRoute>
-                  <Layout>
+                  <ModernLayout>
                     <ProductCategories />
-                  </Layout>
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               <Route path="/customers" element={
                 <ProtectedRoute>
-                  <Layout>
+                  <ModernLayout>
                     <Customers />
-                  </Layout>
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               <Route path="/users" element={
                 <ProtectedRoute>
-                  <Layout>
+                  <ModernLayout>
                     <Users />
-                  </Layout>
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               <Route path="/branches" element={
                 <ProtectedRoute>
-                  <Layout>
+                  <ModernLayout>
                     <Branches />
-                  </Layout>
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               <Route path="/resellers" element={
                 <ProtectedRoute>
-                  <Layout>
+                  <ModernLayout>
                     <Resellers />
-                  </Layout>
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               <Route path="/orders" element={
                 <ProtectedRoute>
-                  <Layout>
+                  <ModernLayout>
                     <Orders />
-                  </Layout>
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               <Route path="/sales" element={
                 <ProtectedRoute>
-                  <Layout>
+                  <ModernLayout>
                     <Sales />
-                  </Layout>
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               <Route path="/follow-up" element={
                 <ProtectedRoute>
-                  <Layout>
+                  <ModernLayout>
                     <FollowUp />
-                  </Layout>
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               <Route path="/reports" element={
                 <ProtectedRoute>
-                  <Layout>
+                  <ModernLayout>
                     <Reports />
-                  </Layout>
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               <Route path="/survey" element={
                 <ProtectedRoute>
-                  <Layout>
+                  <ModernLayout>
                     <Survey />
-                  </Layout>
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               <Route path="/work-process" element={
                 <ProtectedRoute>
-                  <Layout>
+                  <ModernLayout>
                     <WorkProcess />
-                  </Layout>
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               <Route path="/birthday" element={
                 <ProtectedRoute>
-                  <Layout>
+                  <ModernLayout>
                     <Birthday />
-                  </Layout>
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               <Route path="/deal-history" element={
                 <ProtectedRoute>
-                  <Layout>
+                  <ModernLayout>
                     <DealHistory />
-                  </Layout>
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               <Route path="/role-permissions" element={
                 <ProtectedRoute>
-                  <Layout>
+                  <ModernLayout>
                     <RolePermissions />
-                  </Layout>
+                  </ModernLayout>
                 </ProtectedRoute>
               } />
               
