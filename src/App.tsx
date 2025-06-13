@@ -27,6 +27,15 @@ import PublicSurvey from './pages/PublicSurvey';
 import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
 
+// SEDEKAT App pages
+import ProductManagement from './pages/SedekatApp/ProductManagement';
+import ResellerManagement from './pages/SedekatApp/ResellerManagement';
+import OrderManagement from './pages/SedekatApp/OrderManagement';
+import Commission from './pages/SedekatApp/Commission';
+import AppSettings from './pages/SedekatApp/AppSettings';
+import Statistics from './pages/SedekatApp/Statistics';
+import ContactHelp from './pages/SedekatApp/ContactHelp';
+
 const queryClient = new QueryClient();
 
 function App() {
@@ -56,6 +65,15 @@ function App() {
               <Route path="/users" element={<ProtectedRoute><Layout><Users /></Layout></ProtectedRoute>} />
               <Route path="/sales" element={<ProtectedRoute><Layout><Sales /></Layout></ProtectedRoute>} />
               <Route path="/branches" element={<ProtectedRoute><Layout><Branches /></Layout></ProtectedRoute>} />
+              
+              {/* SEDEKAT App Routes */}
+              <Route path="/sedekat-app/products" element={<ProtectedRoute><Layout><ProductManagement /></Layout></ProtectedRoute>} />
+              <Route path="/sedekat-app/reseller-management" element={<ProtectedRoute><Layout><ResellerManagement /></Layout></ProtectedRoute>} />
+              <Route path="/sedekat-app/order-management" element={<ProtectedRoute><Layout><OrderManagement /></Layout></ProtectedRoute>} />
+              <Route path="/sedekat-app/commission" element={<ProtectedRoute><Layout><Commission /></Layout></ProtectedRoute>} />
+              <Route path="/sedekat-app/app-settings" element={<ProtectedRoute><Layout><AppSettings /></Layout></ProtectedRoute>} />
+              <Route path="/sedekat-app/statistics" element={<ProtectedRoute><Layout><Statistics /></Layout></ProtectedRoute>} />
+              <Route path="/sedekat-app/contact-help" element={<ProtectedRoute><Layout><ContactHelp /></Layout></ProtectedRoute>} />
               
               <Route path="*" element={<NotFound />} />
             </Routes>

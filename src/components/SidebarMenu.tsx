@@ -18,7 +18,12 @@ import {
   ChevronRight,
   UserCog,
   Store,
-  MessageSquare
+  MessageSquare,
+  Package,
+  Gift,
+  Bell,
+  PieChart,
+  HelpCircle
 } from 'lucide-react';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import MenuItem from './MenuItem';
@@ -30,6 +35,7 @@ interface SidebarMenuProps {
 const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
   const { hasPermission, loading } = useUserPermissions();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [sedekatAppOpen, setSedekatAppOpen] = useState(false);
 
   const menuItems = [
     {
@@ -91,6 +97,51 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
       icon: BarChart3,
       label: 'Laporan',
       permission: 'reports'
+    }
+  ];
+
+  const sedekatAppMenuItems = [
+    {
+      to: '/sedekat-app/products',
+      icon: Package,
+      label: 'Manajemen Produk',
+      permission: 'products'
+    },
+    {
+      to: '/sedekat-app/reseller-management',
+      icon: Store,
+      label: 'Daftar Reseller',
+      permission: 'resellers'
+    },
+    {
+      to: '/sedekat-app/order-management',
+      icon: ShoppingCart,
+      label: 'Manajemen Order',
+      permission: 'orders'
+    },
+    {
+      to: '/sedekat-app/commission',
+      icon: Gift,
+      label: 'Komisi & Poin',
+      permission: 'commission'
+    },
+    {
+      to: '/sedekat-app/app-settings',
+      icon: Settings,
+      label: 'Pengaturan Aplikasi',
+      permission: 'app_settings'
+    },
+    {
+      to: '/sedekat-app/statistics',
+      icon: PieChart,
+      label: 'Dashboard Statistik',
+      permission: 'statistics'
+    },
+    {
+      to: '/sedekat-app/contact-help',
+      icon: HelpCircle,
+      label: 'Kontak & Bantuan',
+      permission: 'contact_help'
     }
   ];
 
@@ -157,6 +208,48 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
           </MenuItem>
         );
       })}
+
+      {/* SEDEKAT APP Menu with Submenu */}
+      <div className="space-y-1">
+        <button
+          onClick={() => setSedekatAppOpen(!sedekatAppOpen)}
+          className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+        >
+          <div className="flex items-center space-x-3">
+            <Store className="h-5 w-5" />
+            <span>SEDEKAT APP</span>
+          </div>
+          {sedekatAppOpen ? (
+            <ChevronDown className="h-4 w-4" />
+          ) : (
+            <ChevronRight className="h-4 w-4" />
+          )}
+        </button>
+
+        {sedekatAppOpen && (
+          <div className="ml-6 space-y-1">
+            {sedekatAppMenuItems.map((item) => {
+              // Show item if user has permission to view it
+              const shouldShow = hasPermission(item.permission, 'view');
+              
+              if (!shouldShow) {
+                return null;
+              }
+
+              return (
+                <MenuItem
+                  key={item.to}
+                  to={item.to}
+                  icon={item.icon}
+                  onClick={onItemClick}
+                >
+                  {item.label}
+                </MenuItem>
+              );
+            })}
+          </div>
+        )}
+      </div>
 
       {/* Settings Menu with Submenu */}
       <div className="space-y-1">
