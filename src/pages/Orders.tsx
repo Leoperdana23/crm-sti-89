@@ -1,6 +1,7 @@
 
 import React, { useState } from 'react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useOrders, useDeleteOrder } from '@/hooks/useOrders';
 import { useBranches } from '@/hooks/useBranches';
 import { Order } from '@/types/order';
@@ -10,6 +11,7 @@ import OrdersFilters from '@/components/Orders/OrdersFilters';
 import OrdersList from '@/components/Orders/OrdersList';
 import OrdersLoadingState from '@/components/Orders/OrdersLoadingState';
 import OrdersErrorState from '@/components/Orders/OrdersErrorState';
+import CommissionTab from '@/components/Orders/CommissionTab';
 
 const Orders = () => {
   const { data: orders, isLoading, error } = useOrders();
@@ -21,6 +23,7 @@ const Orders = () => {
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isStatusDialogOpen, setIsStatusDialogOpen] = useState(false);
   const [deleteOrderId, setDeleteOrderId] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState('orders');
 
   const handleEditStatus = (order: Order) => {
     setSelectedOrder(order);
@@ -77,26 +80,39 @@ const Orders = () => {
       <OrdersHeader />
 
       <div className="max-w-6xl mx-auto px-4 py-6">
-        <OrdersFilters
-          searchTerm={searchTerm}
-          setSearchTerm={setSearchTerm}
-          statusFilter={statusFilter}
-          setStatusFilter={setStatusFilter}
-          branchFilter={branchFilter}
-          setBranchFilter={setBranchFilter}
-          branches={branches}
-        />
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="orders">Daftar Pesanan</TabsTrigger>
+            <TabsTrigger value="commission">Komisi</TabsTrigger>
+          </TabsList>
 
-        <OrdersList
-          filteredOrders={filteredOrders}
-          searchTerm={searchTerm}
-          statusFilter={statusFilter}
-          branchFilter={branchFilter}
-          onEditStatus={handleEditStatus}
-          onWhatsAppFollowUp={handleWhatsAppFollowUp}
-          onDelete={setDeleteOrderId}
-          onResetFilters={handleResetFilters}
-        />
+          <TabsContent value="orders" className="space-y-6">
+            <OrdersFilters
+              searchTerm={searchTerm}
+              setSearchTerm={setSearchTerm}
+              statusFilter={statusFilter}
+              setStatusFilter={setStatusFilter}
+              branchFilter={branchFilter}
+              setBranchFilter={setBranchFilter}
+              branches={branches}
+            />
+
+            <OrdersList
+              filteredOrders={filteredOrders}
+              searchTerm={searchTerm}
+              statusFilter={statusFilter}
+              branchFilter={branchFilter}
+              onEditStatus={handleEditStatus}
+              onWhatsAppFollowUp={handleWhatsAppFollowUp}
+              onDelete={setDeleteOrderId}
+              onResetFilters={handleResetFilters}
+            />
+          </TabsContent>
+
+          <TabsContent value="commission">
+            <CommissionTab />
+          </TabsContent>
+        </Tabs>
       </div>
 
       {/* Status Edit Dialog */}

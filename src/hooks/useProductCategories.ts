@@ -98,7 +98,6 @@ export const useUpdateProductCategory = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['product-categories'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
       toast({
         title: 'Sukses',
         description: 'Kategori produk berhasil diperbarui',
@@ -139,7 +138,6 @@ export const useDeleteProductCategory = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['product-categories'] });
-      queryClient.invalidateQueries({ queryKey: ['products'] });
       toast({
         title: 'Sukses',
         description: 'Kategori produk berhasil dihapus',
