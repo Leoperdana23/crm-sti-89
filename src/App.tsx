@@ -1,8 +1,9 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
-import Index from './pages';
+import Index from './pages/Index';
 import Auth from './pages/Auth';
 import SalesAuth from './pages/SalesAuth';
 import ResellerAuth from './pages/ResellerAuth';
@@ -50,26 +51,24 @@ function App() {
             <Route path="/reseller-catalog" element={<ResellerCatalog />} />
             <Route path="/survei/:token" element={<PublicSurvey />} />
             
-            <Route element={<ProtectedRoute />}>
-              <Route path="/dashboard" element={<Dashboard />} />
-              <Route path="/product-catalog-crm" element={<ProductCatalogCRM />} />
-              <Route path="/product-catalog" element={<ProductCatalog />} />
-              <Route path="/product-categories" element={<ProductCategories />} />
-              <Route path="/orders" element={<Orders />} />
-              <Route path="/customers" element={<Customers />} />
-              <Route path="/resellers" element={<Resellers />} />
-              <Route path="/follow-up" element={<FollowUp />} />
-              <Route path="/work-process" element={<WorkProcess />} />
-              <Route path="/survey" element={<Survey />} />
-              <Route path="/deal-history" element={<DealHistory />} />
-              <Route path="/birthday" element={<Birthday />} />
-              <Route path="/reports" element={<Reports />} />
-              <Route path="/role-permissions" element={<RolePermissions />} />
-              <Route path="/users" element={<Users />} />
-              <Route path="/sales" element={<Sales />} />
-              <Route path="/branches" element={<Branches />} />
-              <Route path="/attendance" element={<Attendance />} />
-            </Route>
+            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+            <Route path="/product-catalog-crm" element={<ProtectedRoute><ProductCatalogCRM /></ProtectedRoute>} />
+            <Route path="/product-catalog" element={<ProtectedRoute><ProductCatalog /></ProtectedRoute>} />
+            <Route path="/product-categories" element={<ProtectedRoute><ProductCategories /></ProtectedRoute>} />
+            <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+            <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
+            <Route path="/resellers" element={<ProtectedRoute><Resellers /></ProtectedRoute>} />
+            <Route path="/follow-up" element={<ProtectedRoute><FollowUp /></ProtectedRoute>} />
+            <Route path="/work-process" element={<ProtectedRoute><WorkProcess /></ProtectedRoute>} />
+            <Route path="/survey" element={<ProtectedRoute><Survey /></ProtectedRoute>} />
+            <Route path="/deal-history" element={<ProtectedRoute><DealHistory /></ProtectedRoute>} />
+            <Route path="/birthday" element={<ProtectedRoute><Birthday /></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+            <Route path="/role-permissions" element={<ProtectedRoute><RolePermissions /></ProtectedRoute>} />
+            <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+            <Route path="/sales" element={<ProtectedRoute><Sales /></ProtectedRoute>} />
+            <Route path="/branches" element={<ProtectedRoute><Branches /></ProtectedRoute>} />
+            <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
             
             <Route path="*" element={<NotFound />} />
           </Routes>
