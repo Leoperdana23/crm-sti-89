@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { useResellerOrders } from '@/hooks/useResellerOrders';
@@ -69,8 +70,6 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
 
   const getStatusColor = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'pending':
-        return 'bg-yellow-100 text-yellow-800';
       case 'processing':
       case 'proses':
         return 'bg-blue-100 text-blue-800';
@@ -87,8 +86,6 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
 
   const getStatusIcon = (status: string) => {
     switch (status.toLowerCase()) {
-      case 'pending':
-        return <Clock className="h-4 w-4" />;
       case 'processing':
       case 'proses':
         return <Package className="h-4 w-4" />;
@@ -105,7 +102,6 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
 
   const getStatusLabel = (status: string) => {
     const mapping: { [key: string]: string } = {
-      'pending': 'Menunggu',
       'processing': 'Proses',
       'proses': 'Proses', 
       'completed': 'Selesai',
@@ -134,7 +130,6 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
     if (status === 'all') return orders || [];
     return (orders || []).filter(order => {
       const orderStatus = order.status?.toLowerCase();
-      if (status === 'pending') return orderStatus === 'pending';
       if (status === 'proses') return orderStatus === 'processing' || orderStatus === 'proses';
       if (status === 'selesai') return orderStatus === 'completed' || orderStatus === 'selesai';
       if (status === 'batal') return orderStatus === 'cancelled' || orderStatus === 'batal';
@@ -238,9 +233,8 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
       <h2 className="text-xl font-bold">Riwayat Order</h2>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-        <TabsList className="grid w-full grid-cols-5">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="all">Semua ({(orders || []).length})</TabsTrigger>
-          <TabsTrigger value="pending">Menunggu ({filterOrdersByStatus('pending').length})</TabsTrigger>
           <TabsTrigger value="proses">Proses ({filterOrdersByStatus('proses').length})</TabsTrigger>
           <TabsTrigger value="selesai">Selesai ({filterOrdersByStatus('selesai').length})</TabsTrigger>
           <TabsTrigger value="batal">Batal ({filterOrdersByStatus('batal').length})</TabsTrigger>
@@ -248,10 +242,6 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
 
         <TabsContent value="all" className="space-y-4">
           {(orders || []).map(renderOrderCard)}
-        </TabsContent>
-
-        <TabsContent value="pending" className="space-y-4">
-          {filterOrdersByStatus('pending').map(renderOrderCard)}
         </TabsContent>
 
         <TabsContent value="proses" className="space-y-4">

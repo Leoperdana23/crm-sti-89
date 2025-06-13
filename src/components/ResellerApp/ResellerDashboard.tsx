@@ -28,7 +28,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
       <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-6 text-white">
         <h2 className="text-xl font-bold mb-2">Selamat datang, {reseller.name}!</h2>
         <p className="text-green-100">
-          Kelola bisnis reseller Anda dengan mudah
+          Kelola Order, RAB Project anda lebih mudah dan Sedekat ini.
         </p>
       </div>
 
@@ -134,14 +134,8 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
           <CardTitle className="text-lg">INFORMASI</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex justify-between items-center">
-            <span className="text-gray-600">Rate Komisi Anda:</span>
-            <span className="text-xl font-bold text-green-600">
-              {reseller.commission_rate}%
-            </span>
-          </div>
-          <p className="text-sm text-gray-500 mt-2">
-            Update di halaman backend secara manual informasi terintegrasi
+          <p className="text-sm text-gray-500">
+            Informasi dapat di update di halaman admin
           </p>
         </CardContent>
       </Card>

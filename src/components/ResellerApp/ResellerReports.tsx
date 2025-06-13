@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { useResellerStats } from '@/hooks/useResellerApp';
 import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TrendingUp, DollarSign, Users, Package } from 'lucide-react';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { TrendingUp, DollarSign, Award, Package } from 'lucide-react';
 
 interface ResellerReportsProps {
   reseller: ResellerSession;
@@ -14,6 +15,7 @@ interface ResellerReportsProps {
 const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
   const { data: stats, isLoading: statsLoading } = useResellerStats(reseller.id);
   const { data: orders, isLoading: ordersLoading } = useResellerOrders(reseller.id);
+  const [selectedPeriod, setSelectedPeriod] = useState('all');
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -33,7 +35,7 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
 
   // Calculate additional metrics using correct commission rate
   const completedOrders = (orders || []).filter(order => order.status === 'selesai');
-  const totalCustomers = new Set((orders || []).map(order => order.customer_name)).size;
+  const totalPoints = reseller.total_points || 0;
   const averageOrderValue = completedOrders.length > 0 
     ? completedOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) / completedOrders.length
     : 0;
@@ -43,18 +45,35 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
     return total + ((order.total_amount || 0) * (reseller.commission_rate / 100));
   }, 0);
 
-  const currentMonthOrders = (orders || []).filter(order => {
-    const orderDate = new Date(order.created_at);
-    const currentDate = new Date();
-    return orderDate.getMonth() === currentDate.getMonth() && 
-           orderDate.getFullYear() === currentDate.getFullYear();
-  });
+  // Filter orders by period
+  const getFilteredOrders = () => {
+    if (selectedPeriod === 'all') return orders || [];
+    
+    const now = new Date();
+    return (orders || []).filter(order => {
+      const orderDate = new Date(order.created_at);
+      
+      switch (selectedPeriod) {
+        case 'this_month':
+          return orderDate.getMonth() === now.getMonth() && 
+                 orderDate.getFullYear() === now.getFullYear();
+        case 'last_month':
+          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1);
+          return orderDate.getMonth() === lastMonth.getMonth() && 
+                 orderDate.getFullYear() === lastMonth.getFullYear();
+        case 'this_year':
+          return orderDate.getFullYear() === now.getFullYear();
+        default:
+          return true;
+      }
+    });
+  };
 
-  const currentMonthCommission = currentMonthOrders
-    .filter(order => order.status === 'selesai')
-    .reduce((total, order) => {
-      return total + ((order.total_amount || 0) * (reseller.commission_rate / 100));
-    }, 0);
+  const filteredOrders = getFilteredOrders();
+  const filteredCompletedOrders = filteredOrders.filter(order => order.status === 'selesai');
+  const filteredCommission = filteredCompletedOrders.reduce((total, order) => {
+    return total + ((order.total_amount || 0) * (reseller.commission_rate / 100));
+  }, 0);
 
   return (
     <div className="p-4 space-y-6">
@@ -101,8 +120,8 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-              <Users className="h-4 w-4 mr-2 text-purple-500" />
-              Total Customer
+              <Award className="h-4 w-4 mr-2 text-purple-500" />
+              Total Poin
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -110,7 +129,7 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
               <Skeleton className="h-8 w-16" />
             ) : (
               <div className="text-2xl font-bold text-purple-600">
-                {totalCustomers}
+                {totalPoints}
               </div>
             )}
           </CardContent>
@@ -141,24 +160,36 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
           <CardTitle className="text-lg">Breakdown Komisi</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="space-y-3">
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Rate Komisi:</span>
-              <span className="font-semibold">{reseller.commission_rate}%</span>
+          <div className="space-y-4">
+            <div className="flex gap-4">
+              <Select value={selectedPeriod} onValueChange={setSelectedPeriod}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Pilih periode" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Semua Periode</SelectItem>
+                  <SelectItem value="this_month">Bulan Ini</SelectItem>
+                  <SelectItem value="last_month">Bulan Lalu</SelectItem>
+                  <SelectItem value="this_year">Tahun Ini</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Komisi Bulan Ini:</span>
-              <span className="font-semibold text-green-600">
-                {formatCurrency(currentMonthCommission)}
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Order Bulan Ini:</span>
-              <span className="font-semibold">{currentMonthOrders.length}</span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span className="text-gray-600">Total Poin:</span>
-              <span className="font-semibold text-blue-600">{reseller.total_points || 0} poin</span>
+            
+            <div className="space-y-3">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Komisi Periode Ini:</span>
+                <span className="font-semibold text-green-600">
+                  {formatCurrency(filteredCommission)}
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Order Periode Ini:</span>
+                <span className="font-semibold">{filteredOrders.length}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Total Poin:</span>
+                <span className="font-semibold text-blue-600">{totalPoints} poin</span>
+              </div>
             </div>
           </div>
         </CardContent>
@@ -184,7 +215,7 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
             </div>
           ) : (
             <div className="space-y-3">
-              {(orders || []).slice(0, 5).map((order) => {
+              {filteredOrders.slice(0, 5).map((order) => {
                 const commission = (order.total_amount || 0) * (reseller.commission_rate / 100);
                 return (
                   <div key={order.id} className="flex justify-between items-center">
@@ -212,10 +243,10 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
         </CardContent>
       </Card>
 
-      {(orders || []).length === 0 && (
+      {filteredOrders.length === 0 && (
         <div className="text-center py-8 text-gray-500">
           <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-          <p>Belum ada data komisi</p>
+          <p>Belum ada data komisi untuk periode ini</p>
         </div>
       )}
     </div>
