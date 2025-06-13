@@ -48,7 +48,7 @@ export const menuItems = [
 
 export const customerMenuItems = [
   {
-    label: 'Pelanggan',
+    label: 'Pelanggan Umum',
     path: '/customers',
     icon: Users
   },

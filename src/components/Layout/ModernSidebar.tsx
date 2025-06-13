@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { X, ChevronDown, ChevronRight, Settings, Users, Cog } from 'lucide-react';
@@ -62,31 +61,27 @@ const ModernSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
-                  {menuItems.map((item) => {
-                    const isActive = location.pathname === item.path;
-                    return (
-                      <li key={item.path}>
-                        <Link
-                          to={item.path}
-                          className={cn(
-                            "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors",
-                            isActive
-                              ? "bg-blue-50 text-blue-700"
-                              : "text-gray-700 hover:text-blue-700 hover:bg-gray-50"
-                          )}
-                          onClick={() => onClose()}
-                        >
-                          <item.icon
-                            className={cn(
-                              "h-5 w-5 shrink-0",
-                              isActive ? "text-blue-700" : "text-gray-400 group-hover:text-blue-700"
-                            )}
-                          />
-                          {item.label}
-                        </Link>
-                      </li>
-                    );
-                  })}
+                  {/* Dashboard */}
+                  <li>
+                    <Link
+                      to="/dashboard"
+                      className={cn(
+                        "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors",
+                        location.pathname === "/dashboard"
+                          ? "bg-blue-50 text-blue-700"
+                          : "text-gray-700 hover:text-blue-700 hover:bg-gray-50"
+                      )}
+                      onClick={() => onClose()}
+                    >
+                      <menuItems[0].icon
+                        className={cn(
+                          "h-5 w-5 shrink-0",
+                          location.pathname === "/dashboard" ? "text-blue-700" : "text-gray-400 group-hover:text-blue-700"
+                        )}
+                      />
+                      Dashboard
+                    </Link>
+                  </li>
                   
                   {/* Customer Menu with Submenu */}
                   <li>
@@ -200,6 +195,91 @@ const ModernSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
                         })}
                       </ul>
                     )}
+                  </li>
+
+                  {/* Other Menu Items in Order */}
+                  <li>
+                    <Link
+                      to="/orders"
+                      className={cn(
+                        "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors",
+                        location.pathname === "/orders"
+                          ? "bg-blue-50 text-blue-700"
+                          : "text-gray-700 hover:text-blue-700 hover:bg-gray-50"
+                      )}
+                      onClick={() => onClose()}
+                    >
+                      <menuItems[1].icon
+                        className={cn(
+                          "h-5 w-5 shrink-0",
+                          location.pathname === "/orders" ? "text-blue-700" : "text-gray-400 group-hover:text-blue-700"
+                        )}
+                      />
+                      Daftar Pesanan
+                    </Link>
+                  </li>
+
+                  <li>
+                    <Link
+                      to="/deal-history"
+                      className={cn(
+                        "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors",
+                        location.pathname === "/deal-history"
+                          ? "bg-blue-50 text-blue-700"
+                          : "text-gray-700 hover:text-blue-700 hover:bg-gray-50"
+                      )}
+                      onClick={() => onClose()}
+                    >
+                      <menuItems[2].icon
+                        className={cn(
+                          "h-5 w-5 shrink-0",
+                          location.pathname === "/deal-history" ? "text-blue-700" : "text-gray-400 group-hover:text-blue-700"
+                        )}
+                      />
+                      Histori Deal
+                    </Link>
+                  </li>
+
+                  <li>
+                    <Link
+                      to="/birthday"
+                      className={cn(
+                        "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors",
+                        location.pathname === "/birthday"
+                          ? "bg-blue-50 text-blue-700"
+                          : "text-gray-700 hover:text-blue-700 hover:bg-gray-50"
+                      )}
+                      onClick={() => onClose()}
+                    >
+                      <menuItems[3].icon
+                        className={cn(
+                          "h-5 w-5 shrink-0",
+                          location.pathname === "/birthday" ? "text-blue-700" : "text-gray-400 group-hover:text-blue-700"
+                        )}
+                      />
+                      Ulang Tahun
+                    </Link>
+                  </li>
+
+                  <li>
+                    <Link
+                      to="/reports"
+                      className={cn(
+                        "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors",
+                        location.pathname === "/reports"
+                          ? "bg-blue-50 text-blue-700"
+                          : "text-gray-700 hover:text-blue-700 hover:bg-gray-50"
+                      )}
+                      onClick={() => onClose()}
+                    >
+                      <menuItems[4].icon
+                        className={cn(
+                          "h-5 w-5 shrink-0",
+                          location.pathname === "/reports" ? "text-blue-700" : "text-gray-400 group-hover:text-blue-700"
+                        )}
+                      />
+                      Laporan
+                    </Link>
                   </li>
 
                   {/* Settings Menu with Submenu */}
