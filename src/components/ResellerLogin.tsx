@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useResellerAuth } from '@/hooks/useResellerAuth';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,7 +13,15 @@ const ResellerLogin = () => {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const { toast } = useToast();
-  const { authenticateReseller } = useResellerAuth();
+  const { authenticateReseller, session } = useResellerAuth();
+
+  // If already logged in, this component shouldn't render
+  // The parent component should handle the redirect
+  useEffect(() => {
+    if (session) {
+      console.log('User already logged in:', session);
+    }
+  }, [session]);
 
   const handleResellerLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -30,8 +38,9 @@ const ResellerLogin = () => {
           title: "Login Berhasil",
           description: `Selamat datang, ${result.session.name}!`,
         });
-
-        // Page will refresh automatically as session state changes
+        
+        console.log('Login successful, session should be updated');
+        // The parent component will handle the redirect when session changes
       }
 
     } catch (error: any) {

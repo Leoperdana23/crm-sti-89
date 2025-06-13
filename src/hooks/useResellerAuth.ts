@@ -27,6 +27,9 @@ export const useResellerAuth = () => {
 
   const authenticateReseller = async (phone: string, password: string) => {
     try {
+      console.log('=== RESELLER AUTH START ===');
+      console.log('Phone:', phone);
+      
       // Find reseller by phone number
       const { data: resellerData, error: resellerError } = await supabase
         .from('resellers')
@@ -34,6 +37,8 @@ export const useResellerAuth = () => {
         .eq('phone', phone)
         .eq('is_active', true)
         .single();
+
+      console.log('Reseller query result:', { resellerData, resellerError });
 
       if (resellerError || !resellerData) {
         throw new Error('Reseller tidak ditemukan atau tidak aktif');
@@ -44,52 +49,24 @@ export const useResellerAuth = () => {
         throw new Error('Password salah');
       }
 
-      // Generate or get catalog token (unlimited expiry)
-      let catalogToken = '';
-      
-      const { data: existingToken } = await supabase
-        .from('catalog_tokens')
-        .select('*')
-        .eq('reseller_id', resellerData.id)
-        .eq('is_active', true)
-        .maybeSingle();
+      console.log('Password verified, creating session...');
 
-      if (existingToken) {
-        // Use existing token (no expiry check since tokens are unlimited)
-        catalogToken = existingToken.token;
-      } else {
-        // Create new token without expiry
-        const { data: newToken, error: createTokenError } = await supabase
-          .from('catalog_tokens')
-          .insert({
-            name: `Token for ${resellerData.name}`,
-            reseller_id: resellerData.id,
-            token: `reseller_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
-            expires_at: null, // No expiry
-            is_active: true
-          })
-          .select()
-          .single();
-
-        if (createTokenError || !newToken) {
-          throw new Error('Gagal membuat token akses');
-        }
-
-        catalogToken = newToken.token;
-      }
-
+      // Create a simple session without requiring catalog token from database
       const sessionData: ResellerSession = {
         id: resellerData.id,
         name: resellerData.name,
         phone: resellerData.phone,
-        catalogToken: catalogToken
+        catalogToken: `reseller_${resellerData.id}_${Date.now()}` // Simple token generation
       };
+
+      console.log('Session created:', sessionData);
 
       localStorage.setItem('resellerSession', JSON.stringify(sessionData));
       setSession(sessionData);
 
       return { success: true, session: sessionData };
     } catch (error: any) {
+      console.error('=== RESELLER AUTH ERROR ===', error);
       throw error;
     }
   };
