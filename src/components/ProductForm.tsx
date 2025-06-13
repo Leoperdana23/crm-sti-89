@@ -76,12 +76,20 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
         console.log('Sending update data:', updateData);
         await updateProductMutation.mutateAsync(updateData);
       } else {
-        // For creates
+        // For creates - ensure all required fields are present
         const createData = {
-          ...data,
-          category_id: data.category_id || null,
+          name: data.name, // Required field
+          price: data.price, // Required field
+          unit: data.unit, // Required field
           description: data.description || null,
+          category_id: data.category_id || null,
           reseller_price: data.reseller_price || null,
+          points_value: data.points_value || 0,
+          commission_value: data.commission_value || 0,
+          stock_quantity: data.stock_quantity || 0,
+          min_stock_level: data.min_stock_level || 0,
+          featured: data.featured || false,
+          sort_order: data.sort_order || 0,
         };
         
         console.log('Sending create data:', createData);
