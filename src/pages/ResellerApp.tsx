@@ -15,6 +15,28 @@ type TabType = 'dashboard' | 'catalog' | 'orders' | 'reports' | 'profile' | 'hel
 const ResellerApp = () => {
   const { session } = useResellerApp();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Check for session changes and handle loading state
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setIsLoading(false);
+    }, 100);
+
+    return () => clearTimeout(timer);
+  }, [session]);
+
+  // Show loading for a brief moment to handle session transitions
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-green-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Memuat...</p>
+        </div>
+      </div>
+    );
+  }
 
   if (!session) {
     return <ResellerLogin />;

@@ -27,6 +27,11 @@ const ResellerLogin = () => {
           title: "Login Berhasil",
           description: `Selamat datang, ${result.session.name}!`,
         });
+        
+        // Force a page refresh to ensure proper state reset
+        setTimeout(() => {
+          window.location.reload();
+        }, 500);
       }
     } catch (error: any) {
       toast({
