@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -37,7 +36,7 @@ interface ProductFormProps {
 }
 
 const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
-  const { data: categories } = useProductCategories();
+  const { data: categories, isLoading: categoriesLoading } = useProductCategories();
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
 
@@ -109,7 +108,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
     }
   };
 
-  const isLoading = createProductMutation.isPending || updateProductMutation.isPending;
+  const isLoading = createProductMutation.isPending || updateProductMutation.isPending || categoriesLoading;
 
   return (
     <Form {...form}>
@@ -138,6 +137,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                 <Select 
                   onValueChange={(value) => field.onChange(value === 'no-category' ? undefined : value)} 
                   value={field.value || 'no-category'}
+                  disabled={categoriesLoading}
                 >
                   <FormControl>
                     <SelectTrigger>
