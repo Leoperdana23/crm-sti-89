@@ -1,4 +1,3 @@
-
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/sonner';
@@ -9,6 +8,7 @@ import Dashboard from '@/pages/Dashboard';
 import ProductCatalog from '@/pages/ProductCatalog';
 import ProductCategories from '@/pages/ProductCategories';
 import PublicCatalog from '@/pages/PublicCatalog';
+import ResellerCatalog from '@/pages/ResellerCatalog';
 import Customers from '@/pages/Customers';
 import Users from '@/pages/Users';
 import Branches from '@/pages/Branches';
@@ -50,6 +50,7 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/reseller-auth" element={<ResellerAuth />} />
               <Route path="/catalog/:token" element={<PublicCatalog />} />
+              <Route path="/produk" element={<ResellerCatalog />} />
               <Route path="/survey/:token" element={<PublicSurvey />} />
               
               {/* Protected routes */}

@@ -28,6 +28,7 @@ interface CatalogContentProps {
   onRemoveFromCart: (productId: string) => void;
   onResetSearch: () => void;
   hasFilters: boolean;
+  showResellerPrice?: boolean;
 }
 
 const CatalogContent = ({
@@ -47,7 +48,8 @@ const CatalogContent = ({
   onAddToCart,
   onRemoveFromCart,
   onResetSearch,
-  hasFilters
+  hasFilters,
+  showResellerPrice = false
 }: CatalogContentProps) => {
   return (
     <div className="w-full max-w-7xl mx-auto px-2 sm:px-4 lg:px-6 py-3 sm:py-4 lg:py-6 space-y-3 sm:space-y-4 lg:space-y-6">
@@ -84,6 +86,7 @@ const CatalogContent = ({
           onRemoveFromCart={onRemoveFromCart}
           onResetSearch={onResetSearch}
           hasFilters={hasFilters}
+          showResellerPrice={showResellerPrice}
         />
       </div>
     </div>

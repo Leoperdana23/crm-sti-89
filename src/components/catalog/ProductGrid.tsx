@@ -25,6 +25,7 @@ interface ProductGridProps {
   onResetSearch: () => void;
   hasFilters: boolean;
   viewMode?: 'grid' | 'list';
+  showResellerPrice?: boolean;
 }
 
 const ProductGrid = ({
@@ -37,7 +38,8 @@ const ProductGrid = ({
   onRemoveFromCart = () => {},
   onResetSearch,
   hasFilters,
-  viewMode = 'grid'
+  viewMode = 'grid',
+  showResellerPrice = false
 }: ProductGridProps) => {
   if (products.length === 0) {
     return (
@@ -80,6 +82,7 @@ const ProductGrid = ({
               quantity={getProductQuantity(product.id)}
               onAddToCart={onAddToCart}
               onRemoveFromCart={onRemoveFromCart}
+              showResellerPrice={showResellerPrice}
             />
           ))}
         </div>
@@ -89,6 +92,7 @@ const ProductGrid = ({
           getProductQuantity={getProductQuantity}
           onAddToCart={onAddToCart}
           onRemoveFromCart={onRemoveFromCart}
+          showResellerPrice={showResellerPrice}
         />
       )}
 
