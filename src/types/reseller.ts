@@ -10,6 +10,7 @@ export interface Reseller {
   notes?: string;
   branch_id?: string;
   commission_rate?: number;
+  total_points?: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
