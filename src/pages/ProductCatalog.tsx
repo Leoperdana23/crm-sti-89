@@ -90,93 +90,88 @@ const ProductCatalog = () => {
     <ModernLayout>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex flex-col space-y-4">
-          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground">
-                Katalog Produk
-              </h1>
-              <p className="text-sm text-muted-foreground">
-                Kelola produk dan inventori Anda
-              </p>
-            </div>
-            
-            <ProductActions
-              canManageProducts={canManageProducts}
-              setProductFormOpen={setProductFormOpen}
-              viewMode={viewMode}
-              setViewMode={setViewMode}
-            />
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+          <div>
+            <h1 className="text-2xl font-bold text-foreground">
+              Katalog Produk
+            </h1>
+            <p className="text-sm text-muted-foreground">
+              Kelola produk dan inventori Anda
+            </p>
           </div>
+          
+          <ProductActions
+            canManageProducts={canManageProducts}
+            setProductFormOpen={setProductFormOpen}
+            viewMode={viewMode}
+            setViewMode={setViewMode}
+          />
+        </div>
 
-          {/* Stats Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Package className="h-4 w-4 text-primary" />
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Total Produk</p>
-                    <p className="text-2xl font-bold">{products.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Package className="h-4 w-4 text-green-600" />
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Produk Aktif</p>
-                    <p className="text-2xl font-bold">{products.filter(p => p.is_active).length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Package className="h-4 w-4 text-yellow-600" />
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Stok Rendah</p>
-                    <p className="text-2xl font-bold">
-                      {products.filter(p => p.stock_quantity <= p.min_stock_level).length}
-                    </p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <div className="flex items-center space-x-2">
-                  <Package className="h-4 w-4 text-blue-600" />
-                  <div className="space-y-1">
-                    <p className="text-sm font-medium text-muted-foreground">Kategori</p>
-                    <p className="text-2xl font-bold">{categories.length}</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Search and Filter */}
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Filter & Pencarian</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <SearchAndFilter
-                searchTerm={searchTerm}
-                onSearchChange={handleSearchChange}
-                categoryFilter={categoryFilter}
-                onCategoryChange={handleCategoryChange}
-                sortBy={sortBy}
-                onSortChange={setSortBy}
-                categories={categories}
-              />
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Package className="h-4 w-4 text-primary" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Total Produk</p>
+                  <p className="text-2xl font-bold">{products.length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Package className="h-4 w-4 text-green-600" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Produk Aktif</p>
+                  <p className="text-2xl font-bold">{products.filter(p => p.is_active).length}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Package className="h-4 w-4 text-yellow-600" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Stok Rendah</p>
+                  <p className="text-2xl font-bold">
+                    {products.filter(p => p.stock_quantity <= p.min_stock_level).length}
+                  </p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex items-center space-x-2">
+                <Package className="h-4 w-4 text-blue-600" />
+                <div className="space-y-1">
+                  <p className="text-sm font-medium text-muted-foreground">Kategori</p>
+                  <p className="text-2xl font-bold">{categories.length}</p>
+                </div>
+              </div>
             </CardContent>
           </Card>
         </div>
+
+        {/* Search and Filter */}
+        <Card>
+          <CardContent className="p-6">
+            <SearchAndFilter
+              searchTerm={searchTerm}
+              onSearchChange={handleSearchChange}
+              categoryFilter={categoryFilter}
+              onCategoryChange={handleCategoryChange}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              categories={categories}
+            />
+          </CardContent>
+        </Card>
 
         {/* Product Grid */}
         <Card>
