@@ -94,56 +94,58 @@ const ProductCatalog = () => {
 
   return (
     <ModernLayout>
-      <div className="space-y-6 p-6">
-        {/* Header */}
-        <ProductCatalogHeader
-          canManageProducts={canManageProducts}
-          onAddProduct={() => setProductFormOpen(true)}
-          viewMode={viewMode}
-          onViewModeChange={setViewMode}
-        />
+      <div className="container mx-auto max-w-7xl">
+        <div className="space-y-8 p-4 md:p-6">
+          {/* Header */}
+          <ProductCatalogHeader
+            canManageProducts={canManageProducts}
+            onAddProduct={() => setProductFormOpen(true)}
+            viewMode={viewMode}
+            onViewModeChange={setViewMode}
+          />
 
-        {/* Stats */}
-        <ProductCatalogStats 
-          products={products}
-          categories={categories}
-        />
+          {/* Stats */}
+          <ProductCatalogStats 
+            products={products}
+            categories={categories}
+          />
 
-        {/* Filters */}
-        <ProductCatalogFilters
-          searchTerm={searchTerm}
-          onSearchChange={handleSearchChange}
-          categoryFilter={categoryFilter}
-          onCategoryChange={handleCategoryChange}
-          sortBy={sortBy}
-          onSortChange={handleSortChange}
-          categories={categories}
-          onResetFilters={handleResetFilters}
-          filteredCount={filteredAndSortedProducts.length}
-          totalCount={products.length}
-        />
+          {/* Filters */}
+          <ProductCatalogFilters
+            searchTerm={searchTerm}
+            onSearchChange={handleSearchChange}
+            categoryFilter={categoryFilter}
+            onCategoryChange={handleCategoryChange}
+            sortBy={sortBy}
+            onSortChange={handleSortChange}
+            categories={categories}
+            onResetFilters={handleResetFilters}
+            filteredCount={filteredAndSortedProducts.length}
+            totalCount={products.length}
+          />
 
-        {/* Product Grid */}
-        <ProductCatalogGrid
-          products={paginatedProducts}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          viewMode={viewMode}
-          canManageProducts={canManageProducts}
-          hasFilters={Boolean(searchTerm) || categoryFilter !== 'all'}
-          onResetFilters={handleResetFilters}
-        />
+          {/* Product Grid */}
+          <ProductCatalogGrid
+            products={paginatedProducts}
+            currentPage={currentPage}
+            totalPages={totalPages}
+            onPageChange={setCurrentPage}
+            viewMode={viewMode}
+            canManageProducts={canManageProducts}
+            hasFilters={Boolean(searchTerm) || categoryFilter !== 'all'}
+            onResetFilters={handleResetFilters}
+          />
 
-        {/* Product Form Dialog */}
-        <Dialog open={productFormOpen} onOpenChange={setProductFormOpen}>
-          <DialogContent className="max-w-2xl">
-            <ProductForm 
-              isOpen={productFormOpen} 
-              onClose={() => setProductFormOpen(false)} 
-            />
-          </DialogContent>
-        </Dialog>
+          {/* Product Form Dialog */}
+          <Dialog open={productFormOpen} onOpenChange={setProductFormOpen}>
+            <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+              <ProductForm 
+                isOpen={productFormOpen} 
+                onClose={() => setProductFormOpen(false)} 
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
     </ModernLayout>
   );
