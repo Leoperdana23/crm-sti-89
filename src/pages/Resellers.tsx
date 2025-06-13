@@ -3,12 +3,11 @@ import React, { useState } from 'react';
 import { Plus, Search, Filter } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import ResellerCard from '@/components/ResellerCard';
 import ResellerForm from '@/components/ResellerForm';
-import { useResellers, useCreateReseller, useUpdateReseller, useDeleteReseller } from '@/hooks/useResellers';
+import { useResellers, useDeleteReseller } from '@/hooks/useResellers';
 import { useBranches } from '@/hooks/useBranches';
 import { Reseller } from '@/types/reseller';
 
@@ -22,8 +21,6 @@ const Resellers = () => {
 
   const { data: resellers = [], isLoading } = useResellers();
   const { branches } = useBranches();
-  const createMutation = useCreateReseller();
-  const updateMutation = useUpdateReseller();
   const deleteMutation = useDeleteReseller();
 
   const filteredResellers = resellers.filter(reseller => {
@@ -38,20 +35,6 @@ const Resellers = () => {
     
     return matchesSearch && matchesBranch && matchesStatus;
   });
-
-  const handleSubmit = async (data: any) => {
-    try {
-      if (editingReseller) {
-        await updateMutation.mutateAsync({ id: editingReseller.id, ...data });
-        setEditingReseller(null);
-      } else {
-        await createMutation.mutateAsync(data);
-      }
-      setIsFormOpen(false);
-    } catch (error) {
-      console.error('Error submitting reseller:', error);
-    }
-  };
 
   const handleEdit = (reseller: Reseller) => {
     setEditingReseller(reseller);
@@ -183,20 +166,11 @@ const Resellers = () => {
       )}
 
       {/* Form Dialog */}
-      <Dialog open={isFormOpen} onOpenChange={handleCloseForm}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
-          <DialogHeader>
-            <DialogTitle>
-              {editingReseller ? 'Edit Reseller' : 'Tambah Reseller Baru'}
-            </DialogTitle>
-          </DialogHeader>
-          <ResellerForm
-            reseller={editingReseller}
-            onSubmit={handleSubmit}
-            onCancel={handleCloseForm}
-          />
-        </DialogContent>
-      </Dialog>
+      <ResellerForm
+        isOpen={isFormOpen}
+        onClose={handleCloseForm}
+        reseller={editingReseller}
+      />
 
       {/* Delete Confirmation */}
       <AlertDialog open={!!deleteResellerId} onOpenChange={() => setDeleteResellerId(null)}>
