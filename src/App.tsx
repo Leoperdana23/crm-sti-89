@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter as Router, Route, Routes } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/hooks/useAuth';
 import Index from './pages/Index';
 import Auth from './pages/Auth';
 import SalesAuth from './pages/SalesAuth';
@@ -38,42 +39,44 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Router>
-        <div className="App">
-          <Routes>
-            <Route path="/" element={<Index />} />
-            <Route path="/auth" element={<Auth />} />
-            <Route path="/sales-auth" element={<SalesAuth />} />
-            <Route path="/reseller-auth" element={<ResellerAuth />} />
-            <Route path="/attendance-app" element={<AttendanceApp />} />
-            <Route path="/reseller-app" element={<ResellerApp />} />
-            <Route path="/produk" element={<PublicCatalog />} />
-            <Route path="/reseller-catalog" element={<ResellerCatalog />} />
-            <Route path="/survei/:token" element={<PublicSurvey />} />
-            
-            <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-            <Route path="/product-catalog-crm" element={<ProtectedRoute><ProductCatalogCRM /></ProtectedRoute>} />
-            <Route path="/product-catalog" element={<ProtectedRoute><ProductCatalog /></ProtectedRoute>} />
-            <Route path="/product-categories" element={<ProtectedRoute><ProductCategories /></ProtectedRoute>} />
-            <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
-            <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
-            <Route path="/resellers" element={<ProtectedRoute><Resellers /></ProtectedRoute>} />
-            <Route path="/follow-up" element={<ProtectedRoute><FollowUp /></ProtectedRoute>} />
-            <Route path="/work-process" element={<ProtectedRoute><WorkProcess /></ProtectedRoute>} />
-            <Route path="/survey" element={<ProtectedRoute><Survey /></ProtectedRoute>} />
-            <Route path="/deal-history" element={<ProtectedRoute><DealHistory /></ProtectedRoute>} />
-            <Route path="/birthday" element={<ProtectedRoute><Birthday /></ProtectedRoute>} />
-            <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
-            <Route path="/role-permissions" element={<ProtectedRoute><RolePermissions /></ProtectedRoute>} />
-            <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
-            <Route path="/sales" element={<ProtectedRoute><Sales /></ProtectedRoute>} />
-            <Route path="/branches" element={<ProtectedRoute><Branches /></ProtectedRoute>} />
-            <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
-            
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </div>
-      </Router>
+      <AuthProvider>
+        <Router>
+          <div className="App">
+            <Routes>
+              <Route path="/" element={<Index />} />
+              <Route path="/auth" element={<Auth />} />
+              <Route path="/sales-auth" element={<SalesAuth />} />
+              <Route path="/reseller-auth" element={<ResellerAuth />} />
+              <Route path="/attendance-app" element={<AttendanceApp />} />
+              <Route path="/reseller-app" element={<ResellerApp />} />
+              <Route path="/produk" element={<PublicCatalog />} />
+              <Route path="/reseller-catalog" element={<ResellerCatalog />} />
+              <Route path="/survei/:token" element={<PublicSurvey />} />
+              
+              <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+              <Route path="/product-catalog-crm" element={<ProtectedRoute><ProductCatalogCRM /></ProtectedRoute>} />
+              <Route path="/product-catalog" element={<ProtectedRoute><ProductCatalog /></ProtectedRoute>} />
+              <Route path="/product-categories" element={<ProtectedRoute><ProductCategories /></ProtectedRoute>} />
+              <Route path="/orders" element={<ProtectedRoute><Orders /></ProtectedRoute>} />
+              <Route path="/customers" element={<ProtectedRoute><Customers /></ProtectedRoute>} />
+              <Route path="/resellers" element={<ProtectedRoute><Resellers /></ProtectedRoute>} />
+              <Route path="/follow-up" element={<ProtectedRoute><FollowUp /></ProtectedRoute>} />
+              <Route path="/work-process" element={<ProtectedRoute><WorkProcess /></ProtectedRoute>} />
+              <Route path="/survey" element={<ProtectedRoute><Survey /></ProtectedRoute>} />
+              <Route path="/deal-history" element={<ProtectedRoute><DealHistory /></ProtectedRoute>} />
+              <Route path="/birthday" element={<ProtectedRoute><Birthday /></ProtectedRoute>} />
+              <Route path="/reports" element={<ProtectedRoute><Reports /></ProtectedRoute>} />
+              <Route path="/role-permissions" element={<ProtectedRoute><RolePermissions /></ProtectedRoute>} />
+              <Route path="/users" element={<ProtectedRoute><Users /></ProtectedRoute>} />
+              <Route path="/sales" element={<ProtectedRoute><Sales /></ProtectedRoute>} />
+              <Route path="/branches" element={<ProtectedRoute><Branches /></ProtectedRoute>} />
+              <Route path="/attendance" element={<ProtectedRoute><Attendance /></ProtectedRoute>} />
+              
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </div>
+        </Router>
+      </AuthProvider>
       <Toaster />
     </QueryClientProvider>
   );
