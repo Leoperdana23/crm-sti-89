@@ -27,6 +27,7 @@ import NotFound from '@/pages/NotFound';
 import ModernLayout from '@/components/Layout/ModernLayout';
 import ModernDashboard from '@/components/Dashboard/ModernDashboard';
 import ProtectedRoute from '@/components/ProtectedRoute';
+import ResellerApp from '@/pages/ResellerApp';
 import './App.css';
 
 const queryClient = new QueryClient({
@@ -49,6 +50,7 @@ function App() {
               <Route path="/" element={<Index />} />
               <Route path="/auth" element={<Auth />} />
               <Route path="/reseller-auth" element={<ResellerAuth />} />
+              <Route path="/reseller-app" element={<ResellerApp />} />
               <Route path="/catalog/:token" element={<ModernPublicCatalog />} />
               <Route path="/produk" element={<ResellerCatalog />} />
               <Route path="/survey/:token" element={<PublicSurvey />} />

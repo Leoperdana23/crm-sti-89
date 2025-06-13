@@ -1019,11 +1019,139 @@ export type Database = {
           },
         ]
       }
+      reseller_orders: {
+        Row: {
+          commission_amount: number | null
+          commission_rate: number | null
+          created_at: string
+          id: string
+          order_id: string | null
+          reseller_id: string | null
+          status: string | null
+          updated_at: string
+        }
+        Insert: {
+          commission_amount?: number | null
+          commission_rate?: number | null
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          reseller_id?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Update: {
+          commission_amount?: number | null
+          commission_rate?: number | null
+          created_at?: string
+          id?: string
+          order_id?: string | null
+          reseller_id?: string | null
+          status?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reseller_orders_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "reseller_orders_reseller_id_fkey"
+            columns: ["reseller_id"]
+            isOneToOne: false
+            referencedRelation: "resellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reseller_sessions: {
+        Row: {
+          created_at: string
+          expires_at: string | null
+          id: string
+          is_active: boolean
+          reseller_id: string | null
+          token: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          reseller_id?: string | null
+          token: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string | null
+          id?: string
+          is_active?: boolean
+          reseller_id?: string | null
+          token?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reseller_sessions_reseller_id_fkey"
+            columns: ["reseller_id"]
+            isOneToOne: false
+            referencedRelation: "resellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      reseller_stats: {
+        Row: {
+          created_at: string
+          id: string
+          month_year: string
+          reseller_id: string | null
+          total_commission: number | null
+          total_orders: number | null
+          total_points: number | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          month_year: string
+          reseller_id?: string | null
+          total_commission?: number | null
+          total_orders?: number | null
+          total_points?: number | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          month_year?: string
+          reseller_id?: string | null
+          total_commission?: number | null
+          total_orders?: number | null
+          total_points?: number | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reseller_stats_reseller_id_fkey"
+            columns: ["reseller_id"]
+            isOneToOne: false
+            referencedRelation: "resellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       resellers: {
         Row: {
           address: string
           birth_date: string | null
           branch_id: string | null
+          commission_rate: number | null
           created_at: string
           email: string | null
           id: string
@@ -1031,13 +1159,18 @@ export type Database = {
           is_active: boolean
           name: string
           notes: string | null
+          password_hash: string | null
           phone: string
+          pin_hash: string | null
+          total_points: number | null
           updated_at: string
+          whatsapp_number: string | null
         }
         Insert: {
           address: string
           birth_date?: string | null
           branch_id?: string | null
+          commission_rate?: number | null
           created_at?: string
           email?: string | null
           id?: string
@@ -1045,13 +1178,18 @@ export type Database = {
           is_active?: boolean
           name: string
           notes?: string | null
+          password_hash?: string | null
           phone: string
+          pin_hash?: string | null
+          total_points?: number | null
           updated_at?: string
+          whatsapp_number?: string | null
         }
         Update: {
           address?: string
           birth_date?: string | null
           branch_id?: string | null
+          commission_rate?: number | null
           created_at?: string
           email?: string | null
           id?: string
@@ -1059,8 +1197,12 @@ export type Database = {
           is_active?: boolean
           name?: string
           notes?: string | null
+          password_hash?: string | null
           phone?: string
+          pin_hash?: string | null
+          total_points?: number | null
           updated_at?: string
+          whatsapp_number?: string | null
         }
         Relationships: [
           {
@@ -1276,6 +1418,10 @@ export type Database = {
         Args: { email_input: string; password_input: string }
         Returns: Json
       }
+      authenticate_reseller_app: {
+        Args: { phone_input: string; password_input: string }
+        Returns: Json
+      }
       authenticate_sales_user: {
         Args: { email_input: string; password_input: string }
         Returns: Json
@@ -1287,6 +1433,10 @@ export type Database = {
       get_current_user_role: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      get_reseller_stats: {
+        Args: { reseller_id_input: string }
+        Returns: Json
       }
     }
     Enums: {
