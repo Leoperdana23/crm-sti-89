@@ -13,7 +13,8 @@ import {
   TrendingUp,
   Building2,
   UserCog,
-  ClipboardList
+  ClipboardList,
+  Briefcase
 } from 'lucide-react';
 
 export const menuItems = [
@@ -23,9 +24,19 @@ export const menuItems = [
     icon: LayoutDashboard
   },
   {
-    label: 'Customers',
+    label: 'Daftar Pesanan',
+    path: '/orders',
+    icon: ShoppingCart
+  },
+  {
+    label: 'Pelanggan',
     path: '/customers',
     icon: Users
+  },
+  {
+    label: 'Reseller',
+    path: '/resellers',
+    icon: Store
   },
   {
     label: 'Follow Up',
@@ -33,63 +44,56 @@ export const menuItems = [
     icon: UserCheck
   },
   {
-    label: 'Categories',
-    path: '/categories',
-    icon: ClipboardList
+    label: 'Proses Pekerjaan',
+    path: '/work-process',
+    icon: Briefcase
   },
   {
-    label: 'Orders',
-    path: '/orders',
-    icon: ShoppingCart
-  },
-  {
-    label: 'Resellers',
-    path: '/resellers',
-    icon: Store
-  },
-  {
-    label: 'Sales Team',
-    path: '/sales',
-    icon: TrendingUp
-  },
-  {
-    label: 'Branches',
-    path: '/branches',
-    icon: Building2
-  },
-  {
-    label: 'Users',
-    path: '/users',
-    icon: UserCog
-  },
-  {
-    label: 'Reports',
-    path: '/reports',
-    icon: BarChart3
-  },
-  {
-    label: 'Survey',
+    label: 'Survei',
     path: '/survey',
     icon: MessageSquare
   },
   {
-    label: 'Work Process',
-    path: '/work-process',
-    icon: Calendar
-  },
-  {
-    label: 'Birthday',
-    path: '/birthday',
-    icon: Calendar
-  },
-  {
-    label: 'Deal History',
+    label: 'Histori Deal',
     path: '/deal-history',
     icon: FileText
   },
   {
-    label: 'Role Permissions',
+    label: 'Ulang Tahun',
+    path: '/birthday',
+    icon: Calendar
+  },
+  {
+    label: 'Laporan',
+    path: '/reports',
+    icon: BarChart3
+  }
+];
+
+export const settingsMenuItems = [
+  {
+    label: 'Hak Akses Role',
     path: '/role-permissions',
     icon: Settings
+  },
+  {
+    label: 'Master User',
+    path: '/users',
+    icon: UserCog
+  },
+  {
+    label: 'Sales',
+    path: '/sales',
+    icon: TrendingUp
+  },
+  {
+    label: 'Cabang',
+    path: '/branches',
+    icon: Building2
+  },
+  {
+    label: 'Kategori',
+    path: '/categories',
+    icon: ClipboardList
   }
 ];
