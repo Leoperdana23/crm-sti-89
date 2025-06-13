@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,7 +11,7 @@ import { Switch } from '@/components/ui/switch';
 import { useCreateProduct, useUpdateProduct } from '@/hooks/useProducts';
 import { useProductCategories } from '@/hooks/useProductCategories';
 import { useSuppliers } from '@/hooks/useSuppliers';
-import { Product } from '@/types/product';
+import { Product, CreateProductData } from '@/types/product';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nama produk wajib diisi').max(255, 'Nama produk terlalu panjang'),
@@ -83,7 +82,29 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
           ...data
         });
       } else {
-        await createProductMutation.mutateAsync(data);
+        // Ensure required fields are present for create operation
+        const createData: CreateProductData = {
+          name: data.name, // This is guaranteed to be present due to form validation
+          unit: data.unit, // This is guaranteed to be present due to form validation
+          price: data.price, // This is guaranteed to be present due to form validation
+          description: data.description,
+          category_id: data.category_id || undefined,
+          supplier_id: data.supplier_id || undefined,
+          cost_price: data.cost_price,
+          reseller_price: data.reseller_price,
+          points_value: data.points_value,
+          commission_value: data.commission_value,
+          stock_quantity: data.stock_quantity,
+          min_stock_level: data.min_stock_level,
+          barcode: data.barcode,
+          weight: data.weight,
+          dimensions: data.dimensions,
+          warranty_period: data.warranty_period,
+          featured: data.featured,
+          sort_order: data.sort_order,
+        };
+        
+        await createProductMutation.mutateAsync(createData);
       }
       
       form.reset();
