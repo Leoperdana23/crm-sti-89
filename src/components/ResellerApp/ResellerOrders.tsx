@@ -122,7 +122,8 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
 
   const calculateTotalPoints = (orderItems: any[]) => {
     return orderItems.reduce((total, item) => {
-      return total + (item.points_earned || 0);
+      const productPoints = item.products?.points_value || 0;
+      return total + (productPoints * item.quantity);
     }, 0);
   };
 
@@ -175,12 +176,10 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
               <span className="text-gray-600">Komisi:</span>
               <span className="font-medium text-green-600">{formatCurrency(commission)}</span>
             </div>
-            {totalPoints > 0 && (
-              <div className="flex justify-between text-sm">
-                <span className="text-gray-600">Poin:</span>
-                <span className="font-medium text-blue-600">{totalPoints} poin</span>
-              </div>
-            )}
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Poin:</span>
+              <span className="font-medium text-blue-600">{totalPoints} poin</span>
+            </div>
             
             {/* Order Items */}
             {order.order_items && order.order_items.length > 0 && (
@@ -192,8 +191,8 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
                     <div className="text-right">
                       <div>{formatCurrency(item.subtotal)}</div>
                       <div className="flex gap-2">
-                        {item.points_earned > 0 && (
-                          <div className="text-blue-600">{item.points_earned} poin</div>
+                        {item.products?.points_value > 0 && (
+                          <div className="text-blue-600">{item.products.points_value * item.quantity} poin</div>
                         )}
                         {item.products?.commission_value > 0 && (
                           <div className="text-green-600">

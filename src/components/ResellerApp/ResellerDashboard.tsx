@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { ResellerSession } from '@/types/resellerApp';
-import { useResellerStats } from '@/hooks/useResellerApp';
+import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingUp, ShoppingBag, Award, DollarSign, Package, ShoppingCart } from 'lucide-react';
@@ -12,7 +12,7 @@ interface ResellerDashboardProps {
 }
 
 const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabChange }) => {
-  const { data: stats, isLoading: loading } = useResellerStats(reseller.id);
+  const { data: orders, isLoading: loading } = useResellerOrders(reseller.id);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -21,6 +21,35 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
       minimumFractionDigits: 0,
     }).format(amount);
   };
+
+  // Filter only completed orders
+  const completedOrders = (orders || []).filter(order => 
+    order.status === 'selesai' || order.status === 'completed'
+  );
+
+  // Calculate total commission from completed orders using product commission values
+  const totalCommission = completedOrders.reduce((total, order) => {
+    return total + (order.order_items || []).reduce((orderTotal, item) => {
+      const productCommission = item.products?.commission_value || 0;
+      return orderTotal + (productCommission * item.quantity);
+    }, 0);
+  }, 0);
+
+  // Calculate total points from completed orders using product points values
+  const totalPoints = completedOrders.reduce((total, order) => {
+    return total + (order.order_items || []).reduce((orderTotal, item) => {
+      const productPoints = item.products?.points_value || 0;
+      return orderTotal + (productPoints * item.quantity);
+    }, 0);
+  }, 0);
+
+  // Calculate current month stats
+  const currentMonth = new Date().getMonth();
+  const currentYear = new Date().getFullYear();
+  const currentMonthOrders = completedOrders.filter(order => {
+    const orderDate = new Date(order.created_at);
+    return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
+  });
 
   return (
     <div className="p-4 space-y-6">
@@ -46,7 +75,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
               <Skeleton className="h-8 w-16" />
             ) : (
               <div className="text-2xl font-bold text-blue-600">
-                {stats?.total_orders || 0}
+                {(orders || []).length}
               </div>
             )}
           </CardContent>
@@ -64,9 +93,12 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
               <Skeleton className="h-8 w-20" />
             ) : (
               <div className="text-lg font-bold text-green-600">
-                {formatCurrency(stats?.total_commission || 0)}
+                {formatCurrency(totalCommission)}
               </div>
             )}
+            <p className="text-xs text-gray-500 mt-1">
+              Dari order selesai
+            </p>
           </CardContent>
         </Card>
 
@@ -82,7 +114,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
               <Skeleton className="h-8 w-16" />
             ) : (
               <div className="text-2xl font-bold text-orange-600">
-                {stats?.current_month_orders || 0}
+                {currentMonthOrders.length}
               </div>
             )}
           </CardContent>
@@ -97,8 +129,11 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-purple-600">
-              {reseller.total_points}
+              {totalPoints}
             </div>
+            <p className="text-xs text-gray-500 mt-1">
+              Dari order selesai
+            </p>
           </CardContent>
         </Card>
       </div>
@@ -135,7 +170,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
         </CardHeader>
         <CardContent>
           <p className="text-sm text-gray-500">
-            Informasi dapat di update di halaman admin
+            Informasi dapat di update di halaman admin secara manual. Informasi terintegrasi.
           </p>
         </CardContent>
       </Card>

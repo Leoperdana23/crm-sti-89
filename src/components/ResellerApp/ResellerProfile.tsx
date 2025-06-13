@@ -7,7 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { User, Phone, Mail, MapPin, Calendar, LogOut, Edit, Save, X } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { User, Phone, Mail, MapPin, Calendar, LogOut, Edit, Save, X, Lock } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -19,6 +20,7 @@ const ResellerProfile: React.FC<ResellerProfileProps> = ({ reseller }) => {
   const { logout } = useResellerApp();
   const { toast } = useToast();
   const [isEditing, setIsEditing] = useState(false);
+  const [isPasswordDialogOpen, setIsPasswordDialogOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: reseller.name,
     email: reseller.email || '',
@@ -26,7 +28,13 @@ const ResellerProfile: React.FC<ResellerProfileProps> = ({ reseller }) => {
     address: reseller.address,
     birth_date: ''
   });
+  const [passwordData, setPasswordData] = useState({
+    currentPassword: '',
+    newPassword: '',
+    confirmPassword: ''
+  });
   const [saving, setSaving] = useState(false);
+  const [changingPassword, setChangingPassword] = useState(false);
 
   const handleLogout = () => {
     logout();
@@ -77,6 +85,62 @@ const ResellerProfile: React.FC<ResellerProfileProps> = ({ reseller }) => {
     }
   };
 
+  const handleChangePassword = async () => {
+    if (passwordData.newPassword !== passwordData.confirmPassword) {
+      toast({
+        title: "Error",
+        description: "Password baru dan konfirmasi password tidak sama",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (passwordData.newPassword.length < 6) {
+      toast({
+        title: "Error",
+        description: "Password baru minimal 6 karakter",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    try {
+      setChangingPassword(true);
+      
+      // Update password hash in resellers table
+      const { error } = await supabase
+        .from('resellers')
+        .update({
+          password_hash: passwordData.newPassword, // This will be hashed by the trigger
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', reseller.id);
+
+      if (error) throw error;
+
+      toast({
+        title: "Berhasil",
+        description: "Password berhasil diubah",
+      });
+      
+      setPasswordData({
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      });
+      setIsPasswordDialogOpen(false);
+    } catch (error) {
+      console.error('Error changing password:', error);
+      toast({
+        title: "Error",
+        description: "Gagal mengubah password",
+        variant: "destructive",
+      });
+    } finally {
+      setChangingPassword(false);
+    }
+  };
+
   const handleCancel = () => {
     setFormData({
       name: reseller.name,
@@ -114,14 +178,73 @@ const ResellerProfile: React.FC<ResellerProfileProps> = ({ reseller }) => {
           <div className="flex justify-between items-center">
             <CardTitle>Informasi Profil</CardTitle>
             {!isEditing ? (
-              <Button 
-                variant="outline" 
-                size="sm"
-                onClick={() => setIsEditing(true)}
-              >
-                <Edit className="h-4 w-4 mr-2" />
-                Edit
-              </Button>
+              <div className="flex gap-2">
+                <Dialog open={isPasswordDialogOpen} onOpenChange={setIsPasswordDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline" size="sm">
+                      <Lock className="h-4 w-4 mr-2" />
+                      Ubah Password
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>Ubah Password</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="currentPassword">Password Saat Ini</Label>
+                        <Input
+                          id="currentPassword"
+                          type="password"
+                          value={passwordData.currentPassword}
+                          onChange={(e) => setPasswordData({...passwordData, currentPassword: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="newPassword">Password Baru</Label>
+                        <Input
+                          id="newPassword"
+                          type="password"
+                          value={passwordData.newPassword}
+                          onChange={(e) => setPasswordData({...passwordData, newPassword: e.target.value})}
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="confirmPassword">Konfirmasi Password Baru</Label>
+                        <Input
+                          id="confirmPassword"
+                          type="password"
+                          value={passwordData.confirmPassword}
+                          onChange={(e) => setPasswordData({...passwordData, confirmPassword: e.target.value})}
+                        />
+                      </div>
+                      <div className="flex gap-2 justify-end">
+                        <Button 
+                          variant="outline" 
+                          onClick={() => setIsPasswordDialogOpen(false)}
+                          disabled={changingPassword}
+                        >
+                          Batal
+                        </Button>
+                        <Button 
+                          onClick={handleChangePassword}
+                          disabled={changingPassword}
+                        >
+                          {changingPassword ? 'Mengubah...' : 'Ubah Password'}
+                        </Button>
+                      </div>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                >
+                  <Edit className="h-4 w-4 mr-2" />
+                  Edit
+                </Button>
+              </div>
             ) : (
               <div className="flex gap-2">
                 <Button 
@@ -228,7 +351,7 @@ const ResellerProfile: React.FC<ResellerProfileProps> = ({ reseller }) => {
                 <Calendar className="h-5 w-5 text-gray-500" />
                 <div>
                   <p className="text-sm text-gray-600">Tanggal Lahir</p>
-                  <p className="font-medium">{formatDate(null)}</p>
+                  <p className="font-medium">{formatDate(formData.birth_date)}</p>
                 </div>
               </div>
               
