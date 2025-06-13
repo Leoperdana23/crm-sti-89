@@ -68,9 +68,9 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
           price: data.price,
           unit: data.unit,
           description: data.description,
-          category_id: data.category_id,
+          category_id: data.category_id === 'no-category' ? undefined : data.category_id,
           reseller_price: data.reseller_price,
-          points_value: data.points_value,
+          points_value: data.points_value || 0,
           stock_quantity: data.stock_quantity,
           min_stock_level: data.min_stock_level,
           featured: data.featured,
@@ -117,7 +117,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Tanpa Kategori</SelectItem>
+                    <SelectItem value="no-category">Tanpa Kategori</SelectItem>
                     {categories?.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
