@@ -32,7 +32,7 @@ import { useResellers } from '@/hooks/useResellers';
 const Commission = () => {
   const { data: resellers, isLoading } = useResellers();
   const [searchTerm, setSearchTerm] = useState('');
-  const [dateFilter, setDateFilter] = useState('');
+  const [dateFilter, setDateFilter] = useState('all');
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -149,7 +149,7 @@ const Commission = () => {
                 <SelectValue placeholder="Filter Periode" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Periode</SelectItem>
+                <SelectItem value="all">Semua Periode</SelectItem>
                 <SelectItem value="today">Hari Ini</SelectItem>
                 <SelectItem value="week">Minggu Ini</SelectItem>
                 <SelectItem value="month">Bulan Ini</SelectItem>

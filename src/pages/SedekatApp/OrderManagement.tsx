@@ -34,7 +34,7 @@ const OrderManagement = () => {
   const { data: orders, isLoading } = useOrders();
   const updateOrderStatus = useUpdateOrderStatus();
   const [searchTerm, setSearchTerm] = useState('');
-  const [statusFilter, setStatusFilter] = useState('');
+  const [statusFilter, setStatusFilter] = useState('all');
   const [resellerFilter, setResellerFilter] = useState('');
 
   const formatCurrency = (amount: number) => {
@@ -95,7 +95,7 @@ const OrderManagement = () => {
       order.id.includes(searchTerm) ||
       order.customer_phone.includes(searchTerm);
     
-    const matchesStatus = !statusFilter || order.status === statusFilter;
+    const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     const matchesReseller = !resellerFilter || order.reseller?.name?.toLowerCase().includes(resellerFilter.toLowerCase());
     
     return matchesSearch && matchesStatus && matchesReseller;
@@ -205,7 +205,7 @@ const OrderManagement = () => {
                 <SelectValue placeholder="Filter Status" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Status</SelectItem>
+                <SelectItem value="all">Semua Status</SelectItem>
                 <SelectItem value="pending">Pending</SelectItem>
                 <SelectItem value="processing">Diproses</SelectItem>
                 <SelectItem value="completed">Selesai</SelectItem>
