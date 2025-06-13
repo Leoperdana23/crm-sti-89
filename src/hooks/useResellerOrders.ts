@@ -10,7 +10,7 @@ export const useResellerOrders = (resellerId: string | null) => {
       
       console.log('Fetching reseller orders for reseller ID:', resellerId);
       
-      // Langsung ambil dari reseller_orders table dengan join ke orders
+      // Fetch from reseller_orders table with join to orders and order_items including snapshot data
       const { data, error } = await supabase
         .from('reseller_orders')
         .select(`
@@ -19,6 +19,8 @@ export const useResellerOrders = (resellerId: string | null) => {
             *,
             order_items (
               *,
+              product_commission_snapshot,
+              product_points_snapshot,
               products (
                 points_value,
                 commission_value
@@ -36,20 +38,20 @@ export const useResellerOrders = (resellerId: string | null) => {
 
       console.log('Reseller orders fetched successfully:', data);
       
-      // Transform data untuk mengembalikan format yang diharapkan dengan kalkulasi komisi berdasarkan produk
+      // Transform data to return format expected with snapshot-based commission calculation
       return (data || []).map(resellerOrder => {
         const order = resellerOrder.orders;
         
-        // Calculate total commission from product commission values
-        const totalCommissionFromProducts = order.order_items?.reduce((total: number, item: any) => {
-          const productCommission = item.products?.commission_value || 0;
-          return total + (productCommission * item.quantity);
+        // Calculate total commission from snapshot values in order_items
+        const totalCommissionFromSnapshot = order.order_items?.reduce((total: number, item: any) => {
+          const snapshotCommission = item.product_commission_snapshot || 0;
+          return total + (snapshotCommission * item.quantity);
         }, 0) || 0;
 
         return {
           ...order,
           commission_rate: resellerOrder.commission_rate,
-          commission_amount: totalCommissionFromProducts, // Use calculated commission from products
+          commission_amount: totalCommissionFromSnapshot, // Use snapshot-based commission
           reseller_order_status: resellerOrder.status
         };
       }) || [];

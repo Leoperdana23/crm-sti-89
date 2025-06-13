@@ -744,8 +744,10 @@ export type Database = {
           id: string
           order_id: string
           points_earned: number | null
+          product_commission_snapshot: number | null
           product_id: string
           product_name: string
+          product_points_snapshot: number | null
           product_price: number
           quantity: number
           subtotal: number
@@ -755,8 +757,10 @@ export type Database = {
           id?: string
           order_id: string
           points_earned?: number | null
+          product_commission_snapshot?: number | null
           product_id: string
           product_name: string
+          product_points_snapshot?: number | null
           product_price: number
           quantity?: number
           subtotal: number
@@ -766,8 +770,10 @@ export type Database = {
           id?: string
           order_id?: string
           points_earned?: number | null
+          product_commission_snapshot?: number | null
           product_id?: string
           product_name?: string
+          product_points_snapshot?: number | null
           product_price?: number
           quantity?: number
           subtotal?: number

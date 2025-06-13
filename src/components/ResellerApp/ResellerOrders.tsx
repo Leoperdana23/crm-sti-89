@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { useResellerOrders } from '@/hooks/useResellerOrders';
@@ -113,17 +112,18 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
   };
 
   const calculateCommission = (orderItems: any[]) => {
-    // Calculate commission based on individual product commission values
+    // Use snapshot commission values instead of current product values
     return orderItems.reduce((total, item) => {
-      const productCommission = item.products?.commission_value || 0;
-      return total + (productCommission * item.quantity);
+      const snapshotCommission = item.product_commission_snapshot || 0;
+      return total + (snapshotCommission * item.quantity);
     }, 0);
   };
 
   const calculateTotalPoints = (orderItems: any[]) => {
+    // Use snapshot points values instead of current product values
     return orderItems.reduce((total, item) => {
-      const productPoints = item.products?.points_value || 0;
-      return total + (productPoints * item.quantity);
+      const snapshotPoints = item.product_points_snapshot || 0;
+      return total + (snapshotPoints * item.quantity);
     }, 0);
   };
 
@@ -191,12 +191,12 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
                     <div className="text-right">
                       <div>{formatCurrency(item.subtotal)}</div>
                       <div className="flex gap-2">
-                        {item.products?.points_value > 0 && (
-                          <div className="text-blue-600">{item.products.points_value * item.quantity} poin</div>
+                        {item.product_points_snapshot > 0 && (
+                          <div className="text-blue-600">{item.product_points_snapshot * item.quantity} poin</div>
                         )}
-                        {item.products?.commission_value > 0 && (
+                        {item.product_commission_snapshot > 0 && (
                           <div className="text-green-600">
-                            +{formatCurrency(item.products.commission_value * item.quantity)}
+                            +{formatCurrency(item.product_commission_snapshot * item.quantity)}
                           </div>
                         )}
                       </div>

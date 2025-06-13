@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { useResellerOrders } from '@/hooks/useResellerOrders';
@@ -27,19 +26,19 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
     order.status === 'selesai' || order.status === 'completed'
   );
 
-  // Calculate total commission from completed orders using product commission values
+  // Calculate total commission from completed orders using snapshot values
   const totalCommission = completedOrders.reduce((total, order) => {
     return total + (order.order_items || []).reduce((orderTotal, item) => {
-      const productCommission = item.products?.commission_value || 0;
-      return orderTotal + (productCommission * item.quantity);
+      const snapshotCommission = item.product_commission_snapshot || 0;
+      return orderTotal + (snapshotCommission * item.quantity);
     }, 0);
   }, 0);
 
-  // Calculate total points from completed orders using product points values
+  // Calculate total points from completed orders using snapshot values
   const totalPoints = completedOrders.reduce((total, order) => {
     return total + (order.order_items || []).reduce((orderTotal, item) => {
-      const productPoints = item.products?.points_value || 0;
-      return orderTotal + (productPoints * item.quantity);
+      const snapshotPoints = item.product_points_snapshot || 0;
+      return orderTotal + (snapshotPoints * item.quantity);
     }, 0);
   }, 0);
 
