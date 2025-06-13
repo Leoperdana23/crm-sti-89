@@ -102,16 +102,28 @@ export const useUpdateProduct = () => {
     mutationFn: async ({ id, ...updates }: UpdateProductData) => {
       console.log('Updating product:', id, updates);
       
+      // Clean up the updates object to remove undefined values
+      const cleanUpdates = Object.fromEntries(
+        Object.entries(updates).filter(([_, value]) => value !== undefined)
+      );
+      
+      console.log('Clean updates:', cleanUpdates);
+      
       const { data, error } = await supabase
         .from('products')
-        .update(updates)
+        .update(cleanUpdates)
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error updating product:', error);
         throw error;
+      }
+
+      if (!data) {
+        console.error('Product not found or no changes made');
+        throw new Error('Product not found or no changes were made');
       }
 
       console.log('Product updated successfully:', data);

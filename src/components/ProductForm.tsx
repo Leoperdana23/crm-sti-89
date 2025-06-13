@@ -60,24 +60,46 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
 
   const onSubmit = async (data: FormData) => {
     try {
+      console.log('Form data submitted:', data);
+      
       if (product) {
-        await updateProductMutation.mutateAsync({ id: product.id, ...data });
+        // For updates, only send changed values
+        const updateData = {
+          id: product.id,
+          name: data.name,
+          description: data.description || null,
+          category_id: data.category_id === 'no-category' ? null : data.category_id || null,
+          price: data.price,
+          reseller_price: data.reseller_price || null,
+          points_value: data.points_value || 0,
+          commission_value: data.commission_value || 0,
+          unit: data.unit,
+          stock_quantity: data.stock_quantity || 0,
+          min_stock_level: data.min_stock_level || 0,
+          featured: data.featured || false,
+          sort_order: data.sort_order || 0,
+        };
+        
+        console.log('Sending update data:', updateData);
+        await updateProductMutation.mutateAsync(updateData);
       } else {
-        // Ensure required fields are present for create
+        // For creates, prepare the data properly
         const createData = {
           name: data.name,
           price: data.price,
           unit: data.unit,
-          description: data.description,
-          category_id: data.category_id === 'no-category' ? undefined : data.category_id,
-          reseller_price: data.reseller_price,
+          description: data.description || null,
+          category_id: data.category_id === 'no-category' ? null : data.category_id || null,
+          reseller_price: data.reseller_price || null,
           points_value: data.points_value || 0,
           commission_value: data.commission_value || 0,
-          stock_quantity: data.stock_quantity,
-          min_stock_level: data.min_stock_level,
-          featured: data.featured,
-          sort_order: data.sort_order,
+          stock_quantity: data.stock_quantity || 0,
+          min_stock_level: data.min_stock_level || 0,
+          featured: data.featured || false,
+          sort_order: data.sort_order || 0,
         };
+        
+        console.log('Sending create data:', createData);
         await createProductMutation.mutateAsync(createData);
       }
       onSuccess?.();
@@ -112,7 +134,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Kategori</FormLabel>
-                <Select onValueChange={field.onChange} value={field.value}>
+                <Select onValueChange={field.onChange} value={field.value || ''}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih kategori" />
