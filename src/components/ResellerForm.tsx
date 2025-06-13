@@ -80,7 +80,7 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
         email: data.email || null,
         id_number: data.id_number || null,
         notes: data.notes || null,
-        branch_id: data.branch_id || null,
+        branch_id: data.branch_id === 'no-branch' ? null : data.branch_id || null,
         commission_rate: Number(data.commission_rate) || 10,
       };
       
@@ -231,14 +231,14 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>Cabang</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || ""}>
+                    <Select onValueChange={field.onChange} value={field.value || "no-branch"}>
                       <FormControl>
                         <SelectTrigger>
                           <SelectValue placeholder="Pilih cabang" />
                         </SelectTrigger>
                       </FormControl>
                       <SelectContent>
-                        <SelectItem value="">Tanpa Cabang</SelectItem>
+                        <SelectItem value="no-branch">Tanpa Cabang</SelectItem>
                         {branches?.map((branch) => (
                           <SelectItem key={branch.id} value={branch.id}>
                             {branch.name} ({branch.code})
