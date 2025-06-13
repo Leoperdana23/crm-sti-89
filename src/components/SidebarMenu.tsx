@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Home, 
@@ -28,7 +29,7 @@ interface SidebarMenuProps {
 }
 
 const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
-  const { hasPermission } = useUserPermissions();
+  const { hasPermission, loading } = useUserPermissions();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
   const menuItems = [
@@ -127,11 +128,28 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
     }
   ];
 
+  // Show loading state while permissions are being loaded
+  if (loading) {
+    return (
+      <nav className="space-y-1">
+        <div className="animate-pulse">
+          {[...Array(6)].map((_, i) => (
+            <div key={i} className="h-10 bg-gray-200 rounded-lg mb-2"></div>
+          ))}
+        </div>
+      </nav>
+    );
+  }
+
   return (
     <nav className="space-y-1">
       {menuItems.map((item) => {
-        // Show item if user has permission to view it
-        if (!hasPermission(item.permission, 'view')) {
+        // Show all items for super_admin, or check permission for others
+        const shouldShow = hasPermission(item.permission, 'view');
+        
+        console.log(`Menu item ${item.label}: permission=${item.permission}, shouldShow=${shouldShow}`);
+        
+        if (!shouldShow) {
           return null;
         }
 
@@ -168,7 +186,9 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
           <div className="ml-6 space-y-1">
             {settingsMenuItems.map((item) => {
               // Show item if user has permission to view it
-              if (!hasPermission(item.permission, 'view')) {
+              const shouldShow = hasPermission(item.permission, 'view');
+              
+              if (!shouldShow) {
                 return null;
               }
 
