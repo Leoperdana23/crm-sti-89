@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { X, ChevronDown, ChevronRight, Settings, Users, Cog } from 'lucide-react';
@@ -41,10 +42,11 @@ const ModernSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
           {/* Logo */}
           <div className="flex h-16 shrink-0 items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="h-8 w-8 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 flex items-center justify-center">
-                <span className="text-white font-bold text-sm">PT</span>
-              </div>
-              <span className="font-bold text-lg text-gray-900">SLASH CRM</span>
+              <img 
+                src="/lovable-uploads/5d604fae-db57-4398-80e4-3a113ce7cf56.png" 
+                alt="STI Logo" 
+                className="h-10 w-auto"
+              />
             </div>
             <Button
               variant="ghost"
