@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -8,13 +8,39 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Package, Clock, CheckCircle, XCircle, Eye } from 'lucide-react';
 import { ORDER_STATUS_MAPPING } from '@/types/order';
+import { supabase } from '@/integrations/supabase/client';
 
 interface ResellerOrdersProps {
   reseller: ResellerSession;
 }
 
 const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
-  const { data: orders, isLoading: loading } = useResellerOrders(reseller.id);
+  const { data: orders, isLoading: loading, refetch } = useResellerOrders(reseller.id);
+  const [activeTab, setActiveTab] = useState('all');
+
+  // Set up real-time subscription for order updates
+  useEffect(() => {
+    const channel = supabase
+      .channel('order-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('Order updated:', payload);
+          // Refresh data when any order is updated
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [refetch]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -63,12 +89,18 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
   };
 
   const getStatusLabel = (status: string) => {
-    return ORDER_STATUS_MAPPING[status as keyof typeof ORDER_STATUS_MAPPING] || status;
+    const mapping: { [key: string]: string } = {
+      'pending': 'Menunggu',
+      'proses': 'Proses', 
+      'selesai': 'Selesai',
+      'batal': 'Batal'
+    };
+    return mapping[status.toLowerCase()] || status;
   };
 
   const filterOrdersByStatus = (status: string) => {
     if (status === 'all') return orders || [];
-    return (orders || []).filter(order => order.orders?.status?.toLowerCase() === status.toLowerCase());
+    return (orders || []).filter(order => order.status?.toLowerCase() === status.toLowerCase());
   };
 
   const renderOrderCard = (order: any) => (
@@ -77,16 +109,16 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-sm">
-              Order #{order.order_id?.slice(-8)}
+              Order #{order.id?.slice(-8)}
             </CardTitle>
             <p className="text-xs text-gray-500">
               {formatDate(order.created_at)}
             </p>
           </div>
-          <Badge className={getStatusColor(order.orders?.status || 'pending')}>
+          <Badge className={getStatusColor(order.status || 'pending')}>
             <span className="flex items-center gap-1">
-              {getStatusIcon(order.orders?.status || 'pending')}
-              {getStatusLabel(order.orders?.status || 'pending')}
+              {getStatusIcon(order.status || 'pending')}
+              {getStatusLabel(order.status || 'pending')}
             </span>
           </Badge>
         </div>
@@ -95,24 +127,18 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Customer:</span>
-            <span className="font-medium">{order.orders?.customer_name}</span>
+            <span className="font-medium">{order.customer_name}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Total Order:</span>
-            <span className="font-medium">{formatCurrency(order.orders?.total_amount || 0)}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Komisi ({order.commission_rate}%):</span>
-            <span className="font-semibold text-green-600">
-              {formatCurrency(order.commission_amount)}
-            </span>
+            <span className="font-medium">{formatCurrency(order.total_amount || 0)}</span>
           </div>
           
           {/* Order Items */}
-          {order.orders?.order_items && order.orders.order_items.length > 0 && (
+          {order.order_items && order.order_items.length > 0 && (
             <div className="mt-3 pt-3 border-t">
               <p className="text-xs text-gray-600 mb-2">Produk:</p>
-              {order.orders.order_items.map((item: any, index: number) => (
+              {order.order_items.map((item: any, index: number) => (
                 <div key={index} className="flex justify-between text-xs">
                   <span>{item.quantity}x {item.product_name}</span>
                   <span>{formatCurrency(item.subtotal)}</span>
@@ -145,7 +171,7 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
     <div className="p-4 space-y-4">
       <h2 className="text-xl font-bold">Riwayat Order</h2>
 
-      <Tabs defaultValue="all" className="w-full">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="all">Semua ({(orders || []).length})</TabsTrigger>
           <TabsTrigger value="pending">Menunggu ({filterOrdersByStatus('pending').length})</TabsTrigger>

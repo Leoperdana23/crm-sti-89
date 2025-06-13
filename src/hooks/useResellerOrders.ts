@@ -11,15 +11,18 @@ export const useResellerOrders = (resellerId: string | null) => {
       console.log('Fetching reseller orders for reseller ID:', resellerId);
       
       const { data, error } = await supabase
-        .from('reseller_orders')
+        .from('orders')
         .select(`
           *,
-          orders (
-            *,
-            order_items (*)
-          )
+          order_items (*)
         `)
-        .eq('reseller_id', resellerId)
+        .eq('catalog_token', (
+          await supabase
+            .from('catalog_tokens')
+            .select('token')
+            .eq('reseller_id', resellerId)
+            .single()
+        ).data?.token || '')
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -31,5 +34,6 @@ export const useResellerOrders = (resellerId: string | null) => {
       return data || [];
     },
     enabled: !!resellerId,
+    refetchInterval: 5000, // Refresh every 5 seconds to catch status changes
   });
 };
