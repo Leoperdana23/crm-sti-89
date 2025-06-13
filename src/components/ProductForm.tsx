@@ -78,54 +78,12 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
       console.log('Form data submitted:', data);
       
       if (product?.id) {
-        const updateData = {
+        await updateProductMutation.mutateAsync({
           id: product.id,
-          name: data.name,
-          description: data.description || null,
-          category_id: data.category_id === 'no-category' ? null : data.category_id || null,
-          supplier_id: data.supplier_id === 'no-supplier' ? null : data.supplier_id || null,
-          price: data.price,
-          cost_price: data.cost_price || null,
-          reseller_price: data.reseller_price || null,
-          points_value: data.points_value || 0,
-          commission_value: data.commission_value || 0,
-          unit: data.unit,
-          stock_quantity: data.stock_quantity || 0,
-          min_stock_level: data.min_stock_level || 0,
-          barcode: data.barcode || null,
-          weight: data.weight || null,
-          dimensions: data.dimensions || null,
-          warranty_period: data.warranty_period || null,
-          featured: data.featured || false,
-          sort_order: data.sort_order || 0,
-        };
-        
-        console.log('Sending update data:', updateData);
-        await updateProductMutation.mutateAsync(updateData);
+          ...data
+        });
       } else {
-        const createData = {
-          name: data.name,
-          description: data.description || null,
-          category_id: data.category_id === 'no-category' ? null : data.category_id || null,
-          supplier_id: data.supplier_id === 'no-supplier' ? null : data.supplier_id || null,
-          price: data.price,
-          cost_price: data.cost_price || null,
-          reseller_price: data.reseller_price || null,
-          points_value: data.points_value || 0,
-          commission_value: data.commission_value || 0,
-          unit: data.unit,
-          stock_quantity: data.stock_quantity || 0,
-          min_stock_level: data.min_stock_level || 0,
-          barcode: data.barcode || null,
-          weight: data.weight || null,
-          dimensions: data.dimensions || null,
-          warranty_period: data.warranty_period || null,
-          featured: data.featured || false,
-          sort_order: data.sort_order || 0,
-        };
-        
-        console.log('Sending create data:', createData);
-        await createProductMutation.mutateAsync(createData);
+        await createProductMutation.mutateAsync(data);
       }
       
       form.reset();
@@ -177,7 +135,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                 <FormLabel>Kategori</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  value={field.value || 'no-category'}
+                  value={field.value || ''}
                   disabled={categoriesLoading}
                 >
                   <FormControl>
@@ -186,7 +144,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="no-category">Tanpa Kategori</SelectItem>
+                    <SelectItem value="">Tanpa Kategori</SelectItem>
                     {categories?.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
@@ -207,7 +165,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                 <FormLabel>Supplier</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  value={field.value || 'no-supplier'}
+                  value={field.value || ''}
                   disabled={suppliersLoading}
                 >
                   <FormControl>
@@ -216,7 +174,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="no-supplier">Tanpa Supplier</SelectItem>
+                    <SelectItem value="">Tanpa Supplier</SelectItem>
                     {suppliers?.map((supplier) => (
                       <SelectItem key={supplier.id} value={supplier.id}>
                         {supplier.name}

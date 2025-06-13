@@ -22,8 +22,7 @@ export const useProducts = () => {
           )
         `)
         .eq('is_active', true)
-        .order('sort_order', { ascending: true })
-        .order('name', { ascending: true });
+        .order('sort_order', { ascending: true });
 
       if (error) {
         console.error('Error fetching products:', error);
@@ -47,8 +46,8 @@ export const useCreateProduct = () => {
       const insertData = {
         name: productData.name?.trim(),
         description: productData.description?.trim() || null,
-        category_id: productData.category_id === 'no-category' ? null : productData.category_id || null,
-        supplier_id: productData.supplier_id === 'no-supplier' ? null : productData.supplier_id || null,
+        category_id: productData.category_id || null,
+        supplier_id: productData.supplier_id || null,
         price: Number(productData.price) || 0,
         cost_price: productData.cost_price ? Number(productData.cost_price) : null,
         reseller_price: productData.reseller_price ? Number(productData.reseller_price) : null,
@@ -101,19 +100,9 @@ export const useCreateProduct = () => {
     },
     onError: (error: any) => {
       console.error('Error in useCreateProduct:', error);
-      let errorMessage = 'Gagal menambahkan produk';
-      
-      if (error?.code === '42501') {
-        errorMessage = 'Anda tidak memiliki izin untuk menambahkan produk';
-      } else if (error?.code === '23505') {
-        errorMessage = 'Produk dengan nama ini sudah ada';
-      } else if (error?.message) {
-        errorMessage = error.message;
-      }
-      
       toast({
         title: 'Error',
-        description: errorMessage,
+        description: error?.message || 'Gagal menambahkan produk',
         variant: 'destructive',
       });
     },
@@ -133,10 +122,8 @@ export const useUpdateProduct = () => {
       
       Object.entries(updates).forEach(([key, value]) => {
         if (value !== undefined) {
-          if (key === 'category_id') {
-            cleanUpdates[key] = value === 'no-category' ? null : value || null;
-          } else if (key === 'supplier_id') {
-            cleanUpdates[key] = value === 'no-supplier' ? null : value || null;
+          if (key === 'category_id' || key === 'supplier_id') {
+            cleanUpdates[key] = value || null;
           } else if (key === 'description') {
             cleanUpdates[key] = value ? String(value).trim() : null;
           } else if (key === 'name' || key === 'unit' || key === 'barcode' || key === 'dimensions') {
@@ -153,23 +140,6 @@ export const useUpdateProduct = () => {
       
       console.log('Clean updates to apply:', cleanUpdates);
       
-      const { data: existingProduct, error: checkError } = await supabase
-        .from('products')
-        .select('id, name')
-        .eq('id', id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Error checking product existence:', checkError);
-        throw checkError;
-      }
-
-      if (!existingProduct) {
-        console.error('Product not found with ID:', id);
-        throw new Error('Produk tidak ditemukan atau sudah dihapus');
-      }
-
       const { data, error } = await supabase
         .from('products')
         .update(cleanUpdates)
@@ -184,16 +154,11 @@ export const useUpdateProduct = () => {
             name
           )
         `)
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error('Error updating product:', error);
         throw error;
-      }
-
-      if (!data) {
-        console.error('No product returned after update');
-        throw new Error('Gagal memperbarui produk - tidak ada data yang dikembalikan');
       }
 
       console.log('Product updated successfully:', data);
@@ -208,19 +173,9 @@ export const useUpdateProduct = () => {
     },
     onError: (error: any) => {
       console.error('Error in useUpdateProduct:', error);
-      let errorMessage = 'Gagal memperbarui produk';
-      
-      if (error?.code === '42501') {
-        errorMessage = 'Anda tidak memiliki izin untuk memperbarui produk';
-      } else if (error?.code === '23505') {
-        errorMessage = 'Produk dengan nama ini sudah ada';
-      } else if (error?.message) {
-        errorMessage = error.message;
-      }
-      
       toast({
         title: 'Error',
-        description: errorMessage,
+        description: error?.message || 'Gagal memperbarui produk',
         variant: 'destructive',
       });
     },
@@ -235,22 +190,6 @@ export const useDeleteProduct = () => {
     mutationFn: async (id: string) => {
       console.log('Deleting product:', id);
       
-      const { data: existingProduct, error: checkError } = await supabase
-        .from('products')
-        .select('id, name')
-        .eq('id', id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (checkError) {
-        console.error('Error checking product existence:', checkError);
-        throw checkError;
-      }
-
-      if (!existingProduct) {
-        throw new Error('Produk tidak ditemukan atau sudah dihapus');
-      }
-
       const { error } = await supabase
         .from('products')
         .update({ is_active: false })

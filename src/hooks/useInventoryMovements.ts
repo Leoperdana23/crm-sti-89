@@ -68,14 +68,26 @@ export const useCreateInventoryMovement = () => {
         throw error;
       }
 
-      // Update product stock quantity
+      // Update product stock quantity manually
       const stockChange = movementData.movement_type === 'out' ? -movementData.quantity : movementData.quantity;
+      
+      // Get current stock first
+      const { data: currentProduct, error: fetchError } = await supabase
+        .from('products')
+        .select('stock_quantity')
+        .eq('id', movementData.product_id)
+        .single();
+
+      if (fetchError) {
+        console.error('Error fetching current stock:', fetchError);
+        throw fetchError;
+      }
+
+      const newStockQuantity = (currentProduct.stock_quantity || 0) + stockChange;
       
       const { error: stockError } = await supabase
         .from('products')
-        .update({ 
-          stock_quantity: supabase.raw(`stock_quantity + ${stockChange}`) 
-        })
+        .update({ stock_quantity: Math.max(0, newStockQuantity) })
         .eq('id', movementData.product_id);
 
       if (stockError) {
