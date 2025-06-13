@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -374,16 +373,63 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                       <div className="flex justify-between items-start mb-2">
                         <div>
                           <h3 className="font-semibold text-lg text-gray-900">{product.name}</h3>
-                          {product.product_categories && (
-                            <p className="text-sm text-gray-500">{product.product_categories.name}</p>
-                          )}
                         </div>
                         <div className="text-right">
-                          <p className="text-sm text-gray-500">Stok: {product.stock_quantity || 0}</p>
+                          {/* Quantity Controls - Positioned where stock was */}
+                          {cartItem ? (
+                            <div className="flex items-center gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateQuantity(product.id, cartItem.quantity - 1)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Minus className="h-4 w-4" />
+                              </Button>
+                              
+                              {editingQuantity === product.id ? (
+                                <Input
+                                  value={tempQuantity}
+                                  onChange={(e) => setTempQuantity(e.target.value)}
+                                  onBlur={() => handleQuantitySubmit(product.id)}
+                                  onKeyDown={(e) => handleQuantityKeyPress(e, product.id)}
+                                  className="w-16 h-8 text-center p-1"
+                                  type="number"
+                                  min="1"
+                                  autoFocus
+                                />
+                              ) : (
+                                <span 
+                                  className="w-8 text-center font-medium cursor-pointer hover:bg-gray-100 rounded px-1"
+                                  onClick={() => handleQuantityClick(product.id, cartItem.quantity)}
+                                >
+                                  {cartItem.quantity}
+                                </span>
+                              )}
+                              
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
+                                className="h-8 w-8 p-0"
+                              >
+                                <Plus className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          ) : (
+                            <Button
+                              size="sm"
+                              onClick={() => addToCart(product)}
+                              className="bg-green-600 hover:bg-green-700 text-white"
+                            >
+                              <Plus className="h-4 w-4 mr-1" />
+                              Tambah
+                            </Button>
+                          )}
                         </div>
                       </div>
                       
-                      {/* Price */}
+                      {/* Price Information */}
                       <div className="mb-3">
                         <div className="text-xl font-bold text-gray-900">
                           {formatPrice(displayPrice)}
@@ -394,69 +440,6 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                           </div>
                         )}
                         <div className="text-sm text-gray-500">per {product.unit}</div>
-                      </div>
-                      
-                      {/* Category Badge */}
-                      {product.product_categories && (
-                        <div className="mb-3">
-                          <Badge variant="secondary" className="text-xs">
-                            {product.product_categories.name}
-                          </Badge>
-                        </div>
-                      )}
-                      
-                      {/* Quantity Controls and Add to Cart - Positioned Right */}
-                      <div className="flex justify-end items-center gap-3">
-                        {cartItem ? (
-                          <div className="flex items-center gap-2">
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => updateQuantity(product.id, cartItem.quantity - 1)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Minus className="h-4 w-4" />
-                            </Button>
-                            
-                            {editingQuantity === product.id ? (
-                              <Input
-                                value={tempQuantity}
-                                onChange={(e) => setTempQuantity(e.target.value)}
-                                onBlur={() => handleQuantitySubmit(product.id)}
-                                onKeyDown={(e) => handleQuantityKeyPress(e, product.id)}
-                                className="w-16 h-8 text-center p-1"
-                                type="number"
-                                min="1"
-                                autoFocus
-                              />
-                            ) : (
-                              <span 
-                                className="w-8 text-center font-medium cursor-pointer hover:bg-gray-100 rounded px-1"
-                                onClick={() => handleQuantityClick(product.id, cartItem.quantity)}
-                              >
-                                {cartItem.quantity}
-                              </span>
-                            )}
-                            
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
-                              className="h-8 w-8 p-0"
-                            >
-                              <Plus className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        ) : (
-                          <Button
-                            size="sm"
-                            onClick={() => addToCart(product)}
-                            className="bg-green-600 hover:bg-green-700 text-white"
-                          >
-                            <Plus className="h-4 w-4 mr-1" />
-                            Tambah
-                          </Button>
-                        )}
                       </div>
                     </div>
                   </div>
