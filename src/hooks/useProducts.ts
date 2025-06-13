@@ -16,6 +16,9 @@ export const useProducts = () => {
           *,
           product_categories (
             name
+          ),
+          suppliers (
+            name
           )
         `)
         .eq('is_active', true)
@@ -41,12 +44,13 @@ export const useCreateProduct = () => {
     mutationFn: async (productData: CreateProductData) => {
       console.log('Creating product with data:', productData);
       
-      // Build the insert data object with proper validation
       const insertData = {
         name: productData.name?.trim(),
         description: productData.description?.trim() || null,
         category_id: productData.category_id === 'no-category' ? null : productData.category_id || null,
+        supplier_id: productData.supplier_id === 'no-supplier' ? null : productData.supplier_id || null,
         price: Number(productData.price) || 0,
+        cost_price: productData.cost_price ? Number(productData.cost_price) : null,
         reseller_price: productData.reseller_price ? Number(productData.reseller_price) : null,
         points_value: Number(productData.points_value) || 0,
         commission_value: Number(productData.commission_value) || 0,
@@ -54,6 +58,10 @@ export const useCreateProduct = () => {
         image_url: productData.image_url?.trim() || null,
         stock_quantity: Number(productData.stock_quantity) || 0,
         min_stock_level: Number(productData.min_stock_level) || 0,
+        barcode: productData.barcode?.trim() || null,
+        weight: productData.weight ? Number(productData.weight) : null,
+        dimensions: productData.dimensions?.trim() || null,
+        warranty_period: productData.warranty_period ? Number(productData.warranty_period) : null,
         tags: productData.tags || null,
         featured: Boolean(productData.featured),
         sort_order: Number(productData.sort_order) || 0,
@@ -68,6 +76,9 @@ export const useCreateProduct = () => {
         .select(`
           *,
           product_categories (
+            name
+          ),
+          suppliers (
             name
           )
         `)
@@ -118,18 +129,19 @@ export const useUpdateProduct = () => {
       console.log('Updating product with ID:', id);
       console.log('Update data:', updates);
       
-      // Clean and validate updates
       const cleanUpdates: any = {};
       
       Object.entries(updates).forEach(([key, value]) => {
         if (value !== undefined) {
           if (key === 'category_id') {
             cleanUpdates[key] = value === 'no-category' ? null : value || null;
+          } else if (key === 'supplier_id') {
+            cleanUpdates[key] = value === 'no-supplier' ? null : value || null;
           } else if (key === 'description') {
             cleanUpdates[key] = value ? String(value).trim() : null;
-          } else if (key === 'name' || key === 'unit') {
+          } else if (key === 'name' || key === 'unit' || key === 'barcode' || key === 'dimensions') {
             cleanUpdates[key] = value ? String(value).trim() : value;
-          } else if (['price', 'reseller_price', 'points_value', 'commission_value', 'stock_quantity', 'min_stock_level', 'sort_order'].includes(key)) {
+          } else if (['price', 'cost_price', 'reseller_price', 'points_value', 'commission_value', 'stock_quantity', 'min_stock_level', 'weight', 'warranty_period', 'sort_order'].includes(key)) {
             cleanUpdates[key] = value ? Number(value) : (key === 'price' ? 0 : value);
           } else if (key === 'featured') {
             cleanUpdates[key] = Boolean(value);
@@ -141,7 +153,6 @@ export const useUpdateProduct = () => {
       
       console.log('Clean updates to apply:', cleanUpdates);
       
-      // First check if the product exists
       const { data: existingProduct, error: checkError } = await supabase
         .from('products')
         .select('id, name')
@@ -159,7 +170,6 @@ export const useUpdateProduct = () => {
         throw new Error('Produk tidak ditemukan atau sudah dihapus');
       }
 
-      // Now perform the update
       const { data, error } = await supabase
         .from('products')
         .update(cleanUpdates)
@@ -168,6 +178,9 @@ export const useUpdateProduct = () => {
         .select(`
           *,
           product_categories (
+            name
+          ),
+          suppliers (
             name
           )
         `)
@@ -222,7 +235,6 @@ export const useDeleteProduct = () => {
     mutationFn: async (id: string) => {
       console.log('Deleting product:', id);
       
-      // First check if the product exists
       const { data: existingProduct, error: checkError } = await supabase
         .from('products')
         .select('id, name')

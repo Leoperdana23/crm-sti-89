@@ -350,14 +350,19 @@ export type Database = {
           assigned_employees: string | null
           birth_date: string | null
           branch_id: string | null
+          company_name: string | null
           created_at: string
+          credit_limit: number | null
+          customer_type: string | null
           deal_date: string | null
+          email: string | null
           estimated_days: number | null
           id: string
           id_number: string | null
           name: string
           needs: string | null
           notes: string | null
+          payment_terms: number | null
           phone: string
           sales_id: string | null
           status: string
@@ -373,14 +378,19 @@ export type Database = {
           assigned_employees?: string | null
           birth_date?: string | null
           branch_id?: string | null
+          company_name?: string | null
           created_at?: string
+          credit_limit?: number | null
+          customer_type?: string | null
           deal_date?: string | null
+          email?: string | null
           estimated_days?: number | null
           id?: string
           id_number?: string | null
           name: string
           needs?: string | null
           notes?: string | null
+          payment_terms?: number | null
           phone: string
           sales_id?: string | null
           status: string
@@ -396,14 +406,19 @@ export type Database = {
           assigned_employees?: string | null
           birth_date?: string | null
           branch_id?: string | null
+          company_name?: string | null
           created_at?: string
+          credit_limit?: number | null
+          customer_type?: string | null
           deal_date?: string | null
+          email?: string | null
           estimated_days?: number | null
           id?: string
           id_number?: string | null
           name?: string
           needs?: string | null
           notes?: string | null
+          payment_terms?: number | null
           phone?: string
           sales_id?: string | null
           status?: string
@@ -585,6 +600,57 @@ export type Database = {
           },
         ]
       }
+      inventory_movements: {
+        Row: {
+          created_at: string
+          created_by: string | null
+          id: string
+          movement_type: string
+          notes: string | null
+          product_id: string
+          quantity: number
+          reference_id: string | null
+          reference_type: string | null
+        }
+        Insert: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          movement_type: string
+          notes?: string | null
+          product_id: string
+          quantity: number
+          reference_id?: string | null
+          reference_type?: string | null
+        }
+        Update: {
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          movement_type?: string
+          notes?: string | null
+          product_id?: string
+          quantity?: number
+          reference_id?: string | null
+          reference_type?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "inventory_movements_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "inventory_movements_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       leave_requests: {
         Row: {
           approved_at: string | null
@@ -730,13 +796,18 @@ export type Database = {
           customer_name: string
           customer_phone: string
           delivery_method: string | null
+          discount_amount: number | null
           expedisi: string | null
           fulfillment_status: string | null
           id: string
           notes: string | null
+          order_source: string | null
+          payment_method: string | null
           payment_status: string | null
+          priority: string | null
           shipping_address: string | null
           status: string
+          tax_amount: number | null
           total_amount: number
           tracking_number: string | null
           updated_at: string
@@ -747,13 +818,18 @@ export type Database = {
           customer_name: string
           customer_phone: string
           delivery_method?: string | null
+          discount_amount?: number | null
           expedisi?: string | null
           fulfillment_status?: string | null
           id?: string
           notes?: string | null
+          order_source?: string | null
+          payment_method?: string | null
           payment_status?: string | null
+          priority?: string | null
           shipping_address?: string | null
           status?: string
+          tax_amount?: number | null
           total_amount?: number
           tracking_number?: string | null
           updated_at?: string
@@ -764,13 +840,18 @@ export type Database = {
           customer_name?: string
           customer_phone?: string
           delivery_method?: string | null
+          discount_amount?: number | null
           expedisi?: string | null
           fulfillment_status?: string | null
           id?: string
           notes?: string | null
+          order_source?: string | null
+          payment_method?: string | null
           payment_status?: string | null
+          priority?: string | null
           shipping_address?: string | null
           status?: string
+          tax_amount?: number | null
           total_amount?: number
           tracking_number?: string | null
           updated_at?: string
@@ -830,6 +911,76 @@ export type Database = {
             columns: ["employee_id"]
             isOneToOne: false
             referencedRelation: "employees"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      payments: {
+        Row: {
+          amount: number
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          id: string
+          notes: string | null
+          order_id: string | null
+          payment_date: string
+          payment_method: string
+          payment_number: string
+          reference_number: string | null
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          payment_date?: string
+          payment_method: string
+          payment_number: string
+          reference_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          id?: string
+          notes?: string | null
+          order_id?: string | null
+          payment_date?: string
+          payment_method?: string
+          payment_number?: string
+          reference_number?: string | null
+          status?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "payments_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "payments_order_id_fkey"
+            columns: ["order_id"]
+            isOneToOne: false
+            referencedRelation: "orders"
             referencedColumns: ["id"]
           },
         ]
@@ -959,10 +1110,13 @@ export type Database = {
       }
       products: {
         Row: {
+          barcode: string | null
           category_id: string | null
           commission_value: number | null
+          cost_price: number | null
           created_at: string
           description: string | null
+          dimensions: string | null
           featured: boolean | null
           id: string
           image_url: string | null
@@ -974,15 +1128,21 @@ export type Database = {
           reseller_price: number | null
           sort_order: number | null
           stock_quantity: number | null
+          supplier_id: string | null
           tags: string[] | null
           unit: string
           updated_at: string
+          warranty_period: number | null
+          weight: number | null
         }
         Insert: {
+          barcode?: string | null
           category_id?: string | null
           commission_value?: number | null
+          cost_price?: number | null
           created_at?: string
           description?: string | null
+          dimensions?: string | null
           featured?: boolean | null
           id?: string
           image_url?: string | null
@@ -994,15 +1154,21 @@ export type Database = {
           reseller_price?: number | null
           sort_order?: number | null
           stock_quantity?: number | null
+          supplier_id?: string | null
           tags?: string[] | null
           unit?: string
           updated_at?: string
+          warranty_period?: number | null
+          weight?: number | null
         }
         Update: {
+          barcode?: string | null
           category_id?: string | null
           commission_value?: number | null
+          cost_price?: number | null
           created_at?: string
           description?: string | null
+          dimensions?: string | null
           featured?: boolean | null
           id?: string
           image_url?: string | null
@@ -1014,16 +1180,271 @@ export type Database = {
           reseller_price?: number | null
           sort_order?: number | null
           stock_quantity?: number | null
+          supplier_id?: string | null
           tags?: string[] | null
           unit?: string
           updated_at?: string
+          warranty_period?: number | null
+          weight?: number | null
         }
         Relationships: [
+          {
+            foreignKeyName: "fk_products_supplier"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "products_category_id_fkey"
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "product_categories"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_order_items: {
+        Row: {
+          created_at: string
+          id: string
+          product_id: string
+          purchase_order_id: string
+          quantity: number
+          received_quantity: number | null
+          total_cost: number
+          unit_cost: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          product_id: string
+          purchase_order_id: string
+          quantity: number
+          received_quantity?: number | null
+          total_cost: number
+          unit_cost: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          product_id?: string
+          purchase_order_id?: string
+          quantity?: number
+          received_quantity?: number | null
+          total_cost?: number
+          unit_cost?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_order_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_order_items_purchase_order_id_fkey"
+            columns: ["purchase_order_id"]
+            isOneToOne: false
+            referencedRelation: "purchase_orders"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      purchase_orders: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          expected_date: string | null
+          id: string
+          notes: string | null
+          order_date: string
+          po_number: string
+          status: string
+          supplier_id: string | null
+          total_amount: number
+          updated_at: string
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          expected_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          po_number: string
+          status?: string
+          supplier_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          expected_date?: string | null
+          id?: string
+          notes?: string | null
+          order_date?: string
+          po_number?: string
+          status?: string
+          supplier_id?: string | null
+          total_amount?: number
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_orders_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_orders_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotation_items: {
+        Row: {
+          created_at: string
+          discount_percent: number | null
+          id: string
+          product_id: string
+          quantity: number
+          quotation_id: string
+          total_price: number
+          unit_price: number
+        }
+        Insert: {
+          created_at?: string
+          discount_percent?: number | null
+          id?: string
+          product_id: string
+          quantity: number
+          quotation_id: string
+          total_price: number
+          unit_price: number
+        }
+        Update: {
+          created_at?: string
+          discount_percent?: number | null
+          id?: string
+          product_id?: string
+          quantity?: number
+          quotation_id?: string
+          total_price?: number
+          unit_price?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotation_items_product_id_fkey"
+            columns: ["product_id"]
+            isOneToOne: false
+            referencedRelation: "products"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotation_items_quotation_id_fkey"
+            columns: ["quotation_id"]
+            isOneToOne: false
+            referencedRelation: "quotations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      quotations: {
+        Row: {
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          created_by: string | null
+          customer_id: string | null
+          discount_amount: number | null
+          id: string
+          notes: string | null
+          quote_date: string
+          quote_number: string
+          status: string
+          tax_amount: number | null
+          terms_conditions: string | null
+          total_amount: number
+          updated_at: string
+          valid_until: string | null
+        }
+        Insert: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          discount_amount?: number | null
+          id?: string
+          notes?: string | null
+          quote_date?: string
+          quote_number: string
+          status?: string
+          tax_amount?: number | null
+          terms_conditions?: string | null
+          total_amount?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Update: {
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          created_by?: string | null
+          customer_id?: string | null
+          discount_amount?: number | null
+          id?: string
+          notes?: string | null
+          quote_date?: string
+          quote_number?: string
+          status?: string
+          tax_amount?: number | null
+          terms_conditions?: string | null
+          total_amount?: number
+          updated_at?: string
+          valid_until?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "quotations_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "quotations_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
             referencedColumns: ["id"]
           },
         ]
@@ -1308,6 +1729,48 @@ export type Database = {
           },
         ]
       }
+      suppliers: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          payment_terms: number | null
+          phone: string | null
+          tax_number: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          payment_terms?: number | null
+          phone?: string | null
+          tax_number?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          payment_terms?: number | null
+          phone?: string | null
+          tax_number?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       surveys: {
         Row: {
           completed_at: string | null
@@ -1434,6 +1897,18 @@ export type Database = {
       authenticate_sales_user: {
         Args: { email_input: string; password_input: string }
         Returns: Json
+      }
+      generate_payment_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_po_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
+      }
+      generate_quote_number: {
+        Args: Record<PropertyKey, never>
+        Returns: string
       }
       generate_short_token: {
         Args: Record<PropertyKey, never>

@@ -8,6 +8,20 @@ export interface ProductCategory {
   updated_at: string;
 }
 
+export interface Supplier {
+  id: string;
+  name: string;
+  contact_person: string | null;
+  phone: string | null;
+  email: string | null;
+  address: string | null;
+  payment_terms: number;
+  tax_number: string | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Product {
   id: string;
   name: string;
@@ -25,9 +39,18 @@ export interface Product {
   tags: string[] | null;
   featured: boolean;
   sort_order: number;
+  barcode: string | null;
+  weight: number | null;
+  dimensions: string | null;
+  warranty_period: number | null;
+  supplier_id: string | null;
+  cost_price: number | null;
   created_at: string;
   updated_at: string;
   product_categories?: {
+    name: string;
+  };
+  suppliers?: {
     name: string;
   };
 }
@@ -47,6 +70,12 @@ export interface CreateProductData {
   tags?: string[];
   featured?: boolean;
   sort_order?: number;
+  barcode?: string;
+  weight?: number;
+  dimensions?: string;
+  warranty_period?: number;
+  supplier_id?: string;
+  cost_price?: number;
 }
 
 export interface UpdateProductData extends Partial<CreateProductData> {
@@ -60,4 +89,33 @@ export interface CreateProductCategoryData {
 
 export interface UpdateProductCategoryData extends Partial<CreateProductCategoryData> {
   id: string;
+}
+
+export interface CreateSupplierData {
+  name: string;
+  contact_person?: string;
+  phone?: string;
+  email?: string;
+  address?: string;
+  payment_terms?: number;
+  tax_number?: string;
+}
+
+export interface UpdateSupplierData extends Partial<CreateSupplierData> {
+  id: string;
+}
+
+export interface InventoryMovement {
+  id: string;
+  product_id: string;
+  movement_type: 'in' | 'out' | 'adjustment';
+  quantity: number;
+  reference_type: string | null;
+  reference_id: string | null;
+  notes: string | null;
+  created_by: string | null;
+  created_at: string;
+  products?: {
+    name: string;
+  };
 }

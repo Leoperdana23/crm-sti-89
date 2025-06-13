@@ -11,19 +11,26 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Switch } from '@/components/ui/switch';
 import { useCreateProduct, useUpdateProduct } from '@/hooks/useProducts';
 import { useProductCategories } from '@/hooks/useProductCategories';
+import { useSuppliers } from '@/hooks/useSuppliers';
 import { Product } from '@/types/product';
 
 const formSchema = z.object({
   name: z.string().min(1, 'Nama produk wajib diisi').max(255, 'Nama produk terlalu panjang'),
   description: z.string().optional(),
   category_id: z.string().optional(),
+  supplier_id: z.string().optional(),
   price: z.number().min(0, 'Harga harus 0 atau lebih'),
+  cost_price: z.number().min(0, 'Harga beli harus 0 atau lebih').optional(),
   reseller_price: z.number().min(0, 'Harga reseller harus 0 atau lebih').optional(),
   points_value: z.number().min(0, 'Nilai poin harus 0 atau lebih').optional(),
   commission_value: z.number().min(0, 'Nilai komisi harus 0 atau lebih').optional(),
   unit: z.string().min(1, 'Satuan wajib diisi').max(50, 'Satuan terlalu panjang'),
   stock_quantity: z.number().min(0, 'Stok harus 0 atau lebih').optional(),
   min_stock_level: z.number().min(0, 'Minimal stok harus 0 atau lebih').optional(),
+  barcode: z.string().optional(),
+  weight: z.number().min(0, 'Berat harus 0 atau lebih').optional(),
+  dimensions: z.string().optional(),
+  warranty_period: z.number().min(0, 'Periode garansi harus 0 atau lebih').optional(),
   featured: z.boolean().optional(),
   sort_order: z.number().min(0, 'Urutan harus 0 atau lebih').optional(),
 });
@@ -38,6 +45,7 @@ interface ProductFormProps {
 
 const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
   const { data: categories = [], isLoading: categoriesLoading } = useProductCategories();
+  const { data: suppliers = [], isLoading: suppliersLoading } = useSuppliers();
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
 
@@ -47,13 +55,19 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
       name: product?.name || '',
       description: product?.description || '',
       category_id: product?.category_id || '',
+      supplier_id: product?.supplier_id || '',
       price: product?.price || 0,
+      cost_price: product?.cost_price || undefined,
       reseller_price: product?.reseller_price || undefined,
       points_value: product?.points_value || 0,
       commission_value: product?.commission_value || 0,
       unit: product?.unit || 'unit',
       stock_quantity: product?.stock_quantity || 0,
       min_stock_level: product?.min_stock_level || 0,
+      barcode: product?.barcode || '',
+      weight: product?.weight || undefined,
+      dimensions: product?.dimensions || '',
+      warranty_period: product?.warranty_period || undefined,
       featured: product?.featured || false,
       sort_order: product?.sort_order || 0,
     },
@@ -64,19 +78,24 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
       console.log('Form data submitted:', data);
       
       if (product?.id) {
-        // For updates - prepare clean update data
         const updateData = {
           id: product.id,
           name: data.name,
           description: data.description || null,
           category_id: data.category_id === 'no-category' ? null : data.category_id || null,
+          supplier_id: data.supplier_id === 'no-supplier' ? null : data.supplier_id || null,
           price: data.price,
+          cost_price: data.cost_price || null,
           reseller_price: data.reseller_price || null,
           points_value: data.points_value || 0,
           commission_value: data.commission_value || 0,
           unit: data.unit,
           stock_quantity: data.stock_quantity || 0,
           min_stock_level: data.min_stock_level || 0,
+          barcode: data.barcode || null,
+          weight: data.weight || null,
+          dimensions: data.dimensions || null,
+          warranty_period: data.warranty_period || null,
           featured: data.featured || false,
           sort_order: data.sort_order || 0,
         };
@@ -84,18 +103,23 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
         console.log('Sending update data:', updateData);
         await updateProductMutation.mutateAsync(updateData);
       } else {
-        // For creates - prepare create data
         const createData = {
           name: data.name,
           description: data.description || null,
           category_id: data.category_id === 'no-category' ? null : data.category_id || null,
+          supplier_id: data.supplier_id === 'no-supplier' ? null : data.supplier_id || null,
           price: data.price,
+          cost_price: data.cost_price || null,
           reseller_price: data.reseller_price || null,
           points_value: data.points_value || 0,
           commission_value: data.commission_value || 0,
           unit: data.unit,
           stock_quantity: data.stock_quantity || 0,
           min_stock_level: data.min_stock_level || 0,
+          barcode: data.barcode || null,
+          weight: data.weight || null,
+          dimensions: data.dimensions || null,
+          warranty_period: data.warranty_period || null,
           featured: data.featured || false,
           sort_order: data.sort_order || 0,
         };
@@ -104,7 +128,6 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
         await createProductMutation.mutateAsync(createData);
       }
       
-      // Reset form and call success callback
       form.reset();
       onSuccess?.();
     } catch (error) {
@@ -112,7 +135,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
     }
   };
 
-  const isLoading = createProductMutation.isPending || updateProductMutation.isPending || categoriesLoading;
+  const isLoading = createProductMutation.isPending || updateProductMutation.isPending || categoriesLoading || suppliersLoading;
 
   return (
     <Form {...form}>
@@ -126,6 +149,20 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                 <FormLabel>Nama Produk *</FormLabel>
                 <FormControl>
                   <Input placeholder="Masukkan nama produk" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="barcode"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Barcode</FormLabel>
+                <FormControl>
+                  <Input placeholder="Masukkan barcode" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -164,10 +201,62 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
 
           <FormField
             control={form.control}
+            name="supplier_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Supplier</FormLabel>
+                <Select 
+                  onValueChange={field.onChange} 
+                  value={field.value || 'no-supplier'}
+                  disabled={suppliersLoading}
+                >
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih supplier" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="no-supplier">Tanpa Supplier</SelectItem>
+                    {suppliers?.map((supplier) => (
+                      <SelectItem key={supplier.id} value={supplier.id}>
+                        {supplier.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="cost_price"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Harga Beli</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0"
+                    {...field}
+                    value={field.value || ''}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
             name="price"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Harga Normal *</FormLabel>
+                <FormLabel>Harga Jual *</FormLabel>
                 <FormControl>
                   <Input
                     type="number"
@@ -293,6 +382,63 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     placeholder="0"
                     {...field}
                     onChange={(e) => field.onChange(Number(e.target.value) || 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="weight"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Berat (kg)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    placeholder="0"
+                    {...field}
+                    value={field.value || ''}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="dimensions"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Dimensi</FormLabel>
+                <FormControl>
+                  <Input placeholder="P x L x T (cm)" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="warranty_period"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Periode Garansi (bulan)</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    min="0"
+                    placeholder="0"
+                    {...field}
+                    value={field.value || ''}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
                   />
                 </FormControl>
                 <FormMessage />
