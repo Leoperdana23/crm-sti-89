@@ -131,7 +131,7 @@ const ProductCatalog = () => {
           onPageChange={setCurrentPage}
           viewMode={viewMode}
           canManageProducts={canManageProducts}
-          hasFilters={searchTerm || categoryFilter !== 'all'}
+          hasFilters={Boolean(searchTerm) || categoryFilter !== 'all'}
           onResetFilters={handleResetFilters}
         />
 
