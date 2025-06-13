@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +40,7 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
   
   // Form state
   const [orderForm, setOrderForm] = useState({
-    customerName: '',
+    customerName: reseller.name,
     customerPhone: reseller.phone,
     shippingAddress: reseller.address,
     deliveryMethod: 'pickup' as 'pickup' | 'delivery',
@@ -184,26 +185,19 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
 
   const handleSubmitOrder = async () => {
     if (cart.length === 0) return;
-    if (!orderForm.customerName.trim()) {
-      toast({
-        title: 'Error',
-        description: 'Nama pemesan harus diisi',
-        variant: 'destructive',
-      });
-      return;
-    }
 
     try {
       setSubmittingOrder(true);
 
-      // Create order
+      // Create order with reseller token
       const orderData = {
-        customer_name: orderForm.customerName,
-        customer_phone: orderForm.customerPhone,
+        customer_name: reseller.name,
+        customer_phone: reseller.phone,
         catalog_token: reseller.token,
         total_amount: getTotalAmount(),
         delivery_method: orderForm.deliveryMethod,
         expedisi: orderForm.deliveryMethod === 'delivery' ? orderForm.expedisi : null,
+        shipping_address: orderForm.shippingAddress,
         notes: orderForm.notes || null
       };
 
@@ -235,15 +229,28 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
 
       if (itemsError) throw itemsError;
 
+      // Create reseller order record for commission tracking
+      const { error: resellerOrderError } = await supabase
+        .from('reseller_orders')
+        .insert({
+          order_id: order.id,
+          reseller_id: reseller.id,
+          commission_rate: reseller.commission_rate,
+          commission_amount: (getTotalAmount() * reseller.commission_rate) / 100,
+          status: 'pending'
+        });
+
+      if (resellerOrderError) throw resellerOrderError;
+
       toast({
         title: 'Sukses',
-        description: 'Pesanan berhasil dibuat',
+        description: 'Pesanan berhasil dibuat dan akan diproses',
       });
 
       // Reset form and cart
       setCart([]);
       setOrderForm({
-        customerName: '',
+        customerName: reseller.name,
         customerPhone: reseller.phone,
         shippingAddress: reseller.address,
         deliveryMethod: 'pickup',
@@ -373,11 +380,6 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                         </div>
                         <div className="text-right">
                           <p className="text-sm text-gray-500">Stok: {product.stock_quantity || 0}</p>
-                          {product.product_categories && (
-                            <Badge variant="secondary" className="text-xs">
-                              {product.product_categories.name}
-                            </Badge>
-                          )}
                         </div>
                       </div>
                       
@@ -403,8 +405,8 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                         </div>
                       )}
                       
-                      {/* Add to Cart Button or Quantity Controls */}
-                      <div className="flex items-center gap-3">
+                      {/* Quantity Controls and Add to Cart - Positioned Right */}
+                      <div className="flex justify-end items-center gap-3">
                         {cartItem ? (
                           <div className="flex items-center gap-2">
                             <Button
@@ -513,12 +515,12 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
             {/* Customer Info */}
             <div className="space-y-3">
               <div>
-                <Label htmlFor="customerName">Nama Pemesan *</Label>
+                <Label htmlFor="customerName">Nama Pemesan</Label>
                 <Input
                   id="customerName"
                   value={orderForm.customerName}
-                  onChange={(e) => setOrderForm(prev => ({ ...prev, customerName: e.target.value }))}
-                  placeholder="Masukkan nama pemesan"
+                  readOnly
+                  className="bg-gray-100"
                 />
               </div>
 
@@ -595,7 +597,7 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
               </Button>
               <Button
                 onClick={handleSubmitOrder}
-                disabled={submittingOrder || !orderForm.customerName.trim()}
+                disabled={submittingOrder}
                 className="flex-1 bg-green-600 hover:bg-green-700"
               >
                 {submittingOrder ? (
