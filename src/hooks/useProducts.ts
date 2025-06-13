@@ -102,9 +102,9 @@ export const useUpdateProduct = () => {
     mutationFn: async ({ id, ...updates }: UpdateProductData) => {
       console.log('Updating product:', id, updates);
       
-      // Clean up the updates object to remove undefined values
+      // Remove undefined and empty string values
       const cleanUpdates = Object.fromEntries(
-        Object.entries(updates).filter(([_, value]) => value !== undefined)
+        Object.entries(updates).filter(([_, value]) => value !== undefined && value !== '')
       );
       
       console.log('Clean updates:', cleanUpdates);
@@ -114,16 +114,11 @@ export const useUpdateProduct = () => {
         .update(cleanUpdates)
         .eq('id', id)
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error('Error updating product:', error);
         throw error;
-      }
-
-      if (!data) {
-        console.error('Product not found or no changes made');
-        throw new Error('Product not found or no changes were made');
       }
 
       console.log('Product updated successfully:', data);

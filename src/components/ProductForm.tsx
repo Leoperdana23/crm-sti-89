@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -45,9 +46,9 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
     defaultValues: {
       name: product?.name || '',
       description: product?.description || '',
-      category_id: product?.category_id || undefined,
+      category_id: product?.category_id || '',
       price: product?.price || 0,
-      reseller_price: product?.reseller_price || undefined,
+      reseller_price: product?.reseller_price || 0,
       points_value: product?.points_value || 0,
       commission_value: product?.commission_value || 0,
       unit: product?.unit || 'unit',
@@ -63,12 +64,12 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
       console.log('Form data submitted:', data);
       
       if (product) {
-        // For updates, only send changed values
+        // For updates - prepare clean data
         const updateData = {
           id: product.id,
           name: data.name,
           description: data.description || null,
-          category_id: data.category_id === 'no-category' ? null : data.category_id || null,
+          category_id: data.category_id && data.category_id !== '' && data.category_id !== 'no-category' ? data.category_id : null,
           price: data.price,
           reseller_price: data.reseller_price || null,
           points_value: data.points_value || 0,
@@ -83,13 +84,13 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
         console.log('Sending update data:', updateData);
         await updateProductMutation.mutateAsync(updateData);
       } else {
-        // For creates, prepare the data properly
+        // For creates - prepare clean data
         const createData = {
           name: data.name,
           price: data.price,
           unit: data.unit,
           description: data.description || null,
-          category_id: data.category_id === 'no-category' ? null : data.category_id || null,
+          category_id: data.category_id && data.category_id !== '' && data.category_id !== 'no-category' ? data.category_id : null,
           reseller_price: data.reseller_price || null,
           points_value: data.points_value || 0,
           commission_value: data.commission_value || 0,
@@ -141,7 +142,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="no-category">Tanpa Kategori</SelectItem>
+                    <SelectItem value="">Tanpa Kategori</SelectItem>
                     {categories?.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
@@ -165,7 +166,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     type="number"
                     placeholder="0"
                     {...field}
-                    onChange={(e) => field.onChange(Number(e.target.value))}
+                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -184,7 +185,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     type="number"
                     placeholder="0"
                     {...field}
-                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -203,7 +204,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     type="number"
                     placeholder="0"
                     {...field}
-                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -222,7 +223,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     type="number"
                     placeholder="0"
                     {...field}
-                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -255,7 +256,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     type="number"
                     placeholder="0"
                     {...field}
-                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -274,7 +275,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     type="number"
                     placeholder="0"
                     {...field}
-                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -293,7 +294,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     type="number"
                     placeholder="0"
                     {...field}
-                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
                 <FormMessage />
