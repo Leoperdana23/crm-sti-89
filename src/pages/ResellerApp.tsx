@@ -45,7 +45,7 @@ const ResellerApp = () => {
   const renderContent = () => {
     switch (activeTab) {
       case 'dashboard':
-        return <ResellerDashboard reseller={session} />;
+        return <ResellerDashboard reseller={session} onTabChange={setActiveTab} />;
       case 'catalog':
         return <ResellerCatalog reseller={session} />;
       case 'orders':
@@ -57,7 +57,7 @@ const ResellerApp = () => {
       case 'help':
         return <ResellerHelp reseller={session} />;
       default:
-        return <ResellerDashboard reseller={session} />;
+        return <ResellerDashboard reseller={session} onTabChange={setActiveTab} />;
     }
   };
 
@@ -67,7 +67,7 @@ const ResellerApp = () => {
       <div className="bg-white border-b border-gray-200 sticky top-0 z-10">
         <div className="px-4 py-3">
           <div className="flex items-center justify-between">
-            <h1 className="text-lg font-semibold text-gray-900">Reseller App</h1>
+            <h1 className="text-lg font-semibold text-gray-900">SEDEKAT</h1>
             <div className="text-sm text-gray-600">
               {session.name}
             </div>

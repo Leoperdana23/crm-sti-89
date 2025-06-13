@@ -8,9 +8,10 @@ import { TrendingUp, ShoppingBag, Award, DollarSign, Package, ShoppingCart } fro
 
 interface ResellerDashboardProps {
   reseller: ResellerSession;
+  onTabChange: (tab: 'dashboard' | 'catalog' | 'orders' | 'reports' | 'profile' | 'help') => void;
 }
 
-const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller }) => {
+const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabChange }) => {
   const { data: stats, isLoading: loading } = useResellerStats(reseller.id);
 
   const formatCurrency = (amount: number) => {
@@ -109,11 +110,17 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller }) => {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-2 gap-3">
-            <button className="p-4 bg-blue-50 rounded-lg text-center text-blue-700 hover:bg-blue-100">
+            <button 
+              onClick={() => onTabChange('catalog')}
+              className="p-4 bg-blue-50 rounded-lg text-center text-blue-700 hover:bg-blue-100"
+            >
               <Package className="h-6 w-6 mx-auto mb-2" />
               <div className="text-sm font-medium">Lihat Katalog</div>
             </button>
-            <button className="p-4 bg-green-50 rounded-lg text-center text-green-700 hover:bg-green-100">
+            <button 
+              onClick={() => onTabChange('orders')}
+              className="p-4 bg-green-50 rounded-lg text-center text-green-700 hover:bg-green-100"
+            >
               <ShoppingCart className="h-6 w-6 mx-auto mb-2" />
               <div className="text-sm font-medium">Riwayat Order</div>
             </button>
@@ -121,10 +128,10 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller }) => {
         </CardContent>
       </Card>
 
-      {/* Commission Rate Info */}
+      {/* Info Section */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Info Komisi</CardTitle>
+          <CardTitle className="text-lg">INFORMASI</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex justify-between items-center">
@@ -134,7 +141,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller }) => {
             </span>
           </div>
           <p className="text-sm text-gray-500 mt-2">
-            Anda akan mendapat komisi {reseller.commission_rate}% dari setiap penjualan melalui link reseller Anda
+            Update di halaman backend secara manual informasi terintegrasi
           </p>
         </CardContent>
       </Card>

@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,7 +10,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Package, Search, Plus, Minus, ShoppingCart, Loader2 } from 'lucide-react';
+import { Package, Search, Plus, Minus, ShoppingCart, Loader2, Award, DollarSign } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Product, ProductCategory } from '@/types/product';
 import { useToast } from '@/hooks/use-toast';
@@ -371,11 +372,28 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                     {/* Product Info */}
                     <div className="flex-1">
                       <div className="flex justify-between items-start mb-2">
-                        <div>
-                          <h3 className="font-semibold text-lg text-gray-900">{product.name}</h3>
+                        <div className="flex-1 pr-2">
+                          <h3 className="font-semibold text-sm md:text-lg text-gray-900">{product.name}</h3>
+                          
+                          {/* Points and Commission - Mobile friendly */}
+                          <div className="flex gap-3 mt-1">
+                            {product.points_value && product.points_value > 0 && (
+                              <div className="flex items-center gap-1">
+                                <Award className="h-3 w-3 text-yellow-500" />
+                                <span className="text-xs text-yellow-600">{product.points_value} poin</span>
+                              </div>
+                            )}
+                            {product.commission_value && product.commission_value > 0 && (
+                              <div className="flex items-center gap-1">
+                                <DollarSign className="h-3 w-3 text-green-500" />
+                                <span className="text-xs text-green-600">{formatPrice(product.commission_value)}</span>
+                              </div>
+                            )}
+                          </div>
                         </div>
+                        
                         <div className="text-right">
-                          {/* Quantity Controls - Positioned where stock was */}
+                          {/* Quantity Controls */}
                           {cartItem ? (
                             <div className="flex items-center gap-2">
                               <Button
@@ -431,7 +449,7 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                       
                       {/* Price Information */}
                       <div className="mb-3">
-                        <div className="text-xl font-bold text-gray-900">
+                        <div className="text-lg md:text-xl font-bold text-gray-900">
                           {formatPrice(displayPrice)}
                         </div>
                         {priceType === 'reseller' && product.reseller_price && product.reseller_price < originalPrice && (
