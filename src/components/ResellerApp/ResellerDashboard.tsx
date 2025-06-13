@@ -4,7 +4,7 @@ import { ResellerSession } from '@/types/resellerApp';
 import { useResellerStats } from '@/hooks/useResellerApp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
-import { TrendingUp, ShoppingBag, Award, DollarSign } from 'lucide-react';
+import { TrendingUp, ShoppingBag, Award, DollarSign, Package, ShoppingCart } from 'lucide-react';
 
 interface ResellerDashboardProps {
   reseller: ResellerSession;

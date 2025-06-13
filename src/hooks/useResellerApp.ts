@@ -36,20 +36,22 @@ export const useResellerApp = () => {
 
       console.log('Auth result:', data);
 
-      if (!data.success) {
-        throw new Error(data.message);
+      const result = data as any;
+
+      if (!result.success) {
+        throw new Error(result.message);
       }
 
       const sessionData: ResellerSession = {
-        id: data.reseller.id,
-        name: data.reseller.name,
-        phone: data.reseller.phone,
-        email: data.reseller.email,
-        address: data.reseller.address,
-        commission_rate: data.reseller.commission_rate,
-        total_points: data.reseller.total_points,
-        token: data.token,
-        expires_at: data.expires_at
+        id: result.reseller.id,
+        name: result.reseller.name,
+        phone: result.reseller.phone,
+        email: result.reseller.email,
+        address: result.reseller.address,
+        commission_rate: result.reseller.commission_rate,
+        total_points: result.reseller.total_points,
+        token: result.token,
+        expires_at: result.expires_at
       };
 
       localStorage.setItem('resellerAppSession', JSON.stringify(sessionData));
@@ -85,7 +87,7 @@ export const useResellerStats = (resellerId: string | null) => {
         });
 
         if (error) throw error;
-        setStats(data);
+        setStats(data as ResellerStats);
       } catch (error) {
         console.error('Error fetching reseller stats:', error);
       } finally {

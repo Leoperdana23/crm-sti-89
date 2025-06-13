@@ -1,103 +1,114 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
-import { useProducts } from '@/hooks/useProducts';
-import { useProductCategories } from '@/hooks/useProductCategories';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Search, Filter, ShoppingCart, Eye } from 'lucide-react';
+import { Package, Search, Filter, Loader2 } from 'lucide-react';
+import { supabase } from '@/integrations/supabase/client';
+import { Product, ProductCategory } from '@/types/product';
 
 interface ResellerCatalogProps {
   reseller: ResellerSession;
 }
 
 const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
+  const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<ProductCategory[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [selectedCategory, setSelectedCategory] = useState<string>('all');
-  const [priceView, setPriceView] = useState<'reseller' | 'public'>('reseller');
+  const [categoryFilter, setCategoryFilter] = useState('all');
+  const [priceType, setPriceType] = useState<'retail' | 'reseller'>('reseller');
 
-  const { products, loading: productsLoading } = useProducts();
-  const { categories } = useProductCategories();
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      
+      // Fetch products
+      const { data: productsData, error: productsError } = await supabase
+        .from('products')
+        .select(`
+          *,
+          product_categories (
+            name
+          )
+        `)
+        .eq('is_active', true)
+        .order('name');
+
+      if (productsError) throw productsError;
+
+      // Fetch categories
+      const { data: categoriesData, error: categoriesError } = await supabase
+        .from('product_categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (categoriesError) throw categoriesError;
+
+      setProducts(productsData || []);
+      setCategories(categoriesData || []);
+    } catch (error) {
+      console.error('Error fetching data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const filteredProducts = products.filter(product => {
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
                          product.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = selectedCategory === 'all' || product.category_id === selectedCategory;
-    return matchesSearch && matchesCategory && product.is_active;
+    const matchesCategory = categoryFilter === 'all' || product.category_id === categoryFilter;
+    
+    return matchesSearch && matchesCategory;
   });
 
-  const formatCurrency = (amount: number) => {
+  const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
       currency: 'IDR',
       minimumFractionDigits: 0,
-    }).format(amount);
+    }).format(price);
   };
 
-  const getProductPrice = (product: any) => {
-    if (priceView === 'reseller' && product.reseller_price) {
+  const getDisplayPrice = (product: Product) => {
+    if (priceType === 'reseller' && product.reseller_price) {
       return product.reseller_price;
     }
     return product.price;
   };
 
-  const handleOrderProduct = (productId: string) => {
-    // Navigate to order form or handle order logic
-    console.log('Order product:', productId);
-  };
-
-  const handleViewDetails = (productId: string) => {
-    // Navigate to product details or show modal
-    console.log('View product details:', productId);
-  };
-
-  if (productsLoading) {
+  if (loading) {
     return (
       <div className="p-4 space-y-4">
-        {Array.from({ length: 6 }).map((_, i) => (
-          <Card key={i}>
-            <CardContent className="p-4">
-              <Skeleton className="h-32 w-full mb-4 rounded" />
-              <Skeleton className="h-4 w-3/4 mb-2" />
-              <Skeleton className="h-4 w-1/2" />
-            </CardContent>
-          </Card>
-        ))}
+        <div className="space-y-4">
+          <Skeleton className="h-10 w-full" />
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {[...Array(6)].map((_, i) => (
+              <Skeleton key={i} className="h-32" />
+            ))}
+          </div>
+        </div>
       </div>
     );
   }
 
   return (
-    <div className="p-4 space-y-4">
-      {/* Header */}
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Katalog Produk</h2>
-        <div className="flex gap-2">
-          <Button
-            variant={priceView === 'reseller' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setPriceView('reseller')}
-          >
-            Harga Reseller
-          </Button>
-          <Button
-            variant={priceView === 'public' ? 'default' : 'outline'}
-            size="sm"
-            onClick={() => setPriceView('public')}
-          >
-            Harga Umum
-          </Button>
-        </div>
-      </div>
+    <div className="p-4 space-y-6">
+      <h2 className="text-xl font-bold">Katalog Produk</h2>
 
       {/* Search and Filter */}
-      <div className="space-y-3">
+      <div className="space-y-4">
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+          <Search className="absolute left-3 top-3 h-4 w-4 text-gray-400" />
           <Input
             placeholder="Cari produk..."
             value={searchTerm}
@@ -106,98 +117,93 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
           />
         </div>
         
-        <Select value={selectedCategory} onValueChange={setSelectedCategory}>
-          <SelectTrigger>
-            <SelectValue placeholder="Pilih kategori" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Semua Kategori</SelectItem>
-            {categories.map((category) => (
-              <SelectItem key={category.id} value={category.id}>
-                {category.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex gap-4">
+          <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+            <SelectTrigger className="w-full">
+              <SelectValue placeholder="Pilih kategori" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Semua Kategori</SelectItem>
+              {categories.map((category) => (
+                <SelectItem key={category.id} value={category.id}>
+                  {category.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+
+          <Select value={priceType} onValueChange={(value: 'retail' | 'reseller') => setPriceType(value)}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="reseller">Harga Reseller</SelectItem>
+              <SelectItem value="retail">Harga Retail</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
       </div>
 
       {/* Products Grid */}
-      <div className="space-y-4">
-        {filteredProducts.map((product) => (
-          <Card key={product.id} className="overflow-hidden">
-            <CardContent className="p-0">
-              <div className="flex">
-                {/* Product Image */}
-                <div className="w-24 h-24 bg-gray-100 flex-shrink-0">
-                  {product.image_url ? (
-                    <img 
-                      src={product.image_url} 
-                      alt={product.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-gray-400">
-                      <Package className="h-8 w-8" />
+      {filteredProducts.length === 0 ? (
+        <Card>
+          <CardContent className="text-center py-8">
+            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-lg font-medium text-gray-900 mb-2">Tidak Ada Produk</h3>
+            <p className="text-gray-600">
+              {searchTerm || categoryFilter !== 'all' 
+                ? 'Tidak ada produk yang sesuai dengan filter' 
+                : 'Belum ada produk tersedia'
+              }
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {filteredProducts.map((product) => (
+            <Card key={product.id} className="overflow-hidden">
+              {product.image_url && (
+                <div className="aspect-video bg-gray-100">
+                  <img
+                    src={product.image_url}
+                    alt={product.name}
+                    className="w-full h-full object-cover"
+                  />
+                </div>
+              )}
+              <CardHeader className="pb-3">
+                <div className="flex justify-between items-start">
+                  <CardTitle className="text-lg">{product.name}</CardTitle>
+                  {product.featured && (
+                    <Badge variant="secondary">Featured</Badge>
+                  )}
+                </div>
+                <div className="text-xl font-bold text-green-600">
+                  {formatPrice(getDisplayPrice(product))}
+                  {priceType === 'reseller' && product.reseller_price && (
+                    <div className="text-sm text-gray-500 line-through">
+                      {formatPrice(product.price)}
                     </div>
                   )}
                 </div>
-                
-                {/* Product Info */}
-                <div className="flex-1 p-3">
-                  <div className="flex justify-between items-start mb-2">
-                    <h3 className="font-semibold text-sm line-clamp-2">{product.name}</h3>
-                    {product.featured && (
-                      <Badge variant="secondary" className="text-xs">
-                        Featured
-                      </Badge>
-                    )}
-                  </div>
-                  
-                  <p className="text-xs text-gray-600 line-clamp-2 mb-2">
+              </CardHeader>
+              <CardContent>
+                {product.description && (
+                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
                     {product.description}
                   </p>
-                  
-                  <div className="flex justify-between items-center">
-                    <div>
-                      <div className="text-lg font-bold text-green-600">
-                        {formatCurrency(getProductPrice(product))}
-                      </div>
-                      {priceView === 'reseller' && product.reseller_price && product.reseller_price !== product.price && (
-                        <div className="text-xs text-gray-500 line-through">
-                          {formatCurrency(product.price)}
-                        </div>
-                      )}
-                    </div>
-                    
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleViewDetails(product.id)}
-                        className="p-2"
-                      >
-                        <Eye className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        onClick={() => handleOrderProduct(product.id)}
-                        className="p-2"
-                      >
-                        <ShoppingCart className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </div>
+                )}
+                <div className="flex gap-2">
+                  <Button variant="outline" className="flex-1">
+                    Lihat Detail
+                  </Button>
+                  <Button className="flex-1 bg-green-600 hover:bg-green-700">
+                    Order Produk
+                  </Button>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      {filteredProducts.length === 0 && (
-        <div className="text-center py-8 text-gray-500">
-          <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-          <p>Tidak ada produk yang ditemukan</p>
+              </CardContent>
+            </Card>
+          ))}
         </div>
       )}
     </div>
