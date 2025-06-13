@@ -235,10 +235,10 @@ const PublicCatalog = () => {
 
   if (isLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin text-green-500" />
-          <span className="text-gray-700">Memuat katalog produk...</span>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <div className="flex flex-col items-center space-y-4 text-center">
+          <Loader2 className="h-8 w-8 sm:h-12 sm:w-12 animate-spin text-green-500" />
+          <span className="text-sm sm:text-base text-gray-700">Memuat katalog produk...</span>
         </div>
       </div>
     );
@@ -246,14 +246,14 @@ const PublicCatalog = () => {
 
   if (error) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gray-50">
-        <Card className="max-w-md">
-          <CardContent className="text-center py-8">
-            <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-lg font-medium text-gray-900 mb-2">Akses Ditolak</h3>
-            <p className="text-gray-600 mb-4">{error}</p>
+      <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
+        <Card className="w-full max-w-md mx-auto">
+          <CardContent className="text-center py-6 sm:py-8 px-4 sm:px-6">
+            <Package className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Akses Ditolak</h3>
+            <p className="text-sm sm:text-base text-gray-600 mb-4 break-words">{error}</p>
             {!session && (
-              <Button onClick={handleLogin} className="bg-green-600 hover:bg-green-700">
+              <Button onClick={handleLogin} className="w-full bg-green-600 hover:bg-green-700">
                 Login Reseller
               </Button>
             )}

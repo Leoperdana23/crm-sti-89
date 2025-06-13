@@ -24,44 +24,69 @@ const ProductActions = ({
 
   return (
     <>
-      <div className="flex items-center space-x-2">
+      <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
         {canManageProducts && (
-          <>
-            <Button onClick={() => setTokenManagerOpen(true)} variant="outline" size="sm">
-              <Link className="h-4 w-4 mr-2" />
-              Link Publik
+          <div className="flex flex-col sm:flex-row gap-2 flex-1 sm:flex-none">
+            <Button 
+              onClick={() => setTokenManagerOpen(true)} 
+              variant="outline" 
+              size="sm"
+              className="w-full sm:w-auto text-xs sm:text-sm"
+            >
+              <Link className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Link Publik</span>
+              <span className="sm:hidden">Link</span>
             </Button>
-            <Button onClick={() => setCategoryManagementOpen(true)} variant="outline" size="sm">
-              <Tags className="h-4 w-4 mr-2" />
-              Kelola Kategori
+            
+            <Button 
+              onClick={() => setCategoryManagementOpen(true)} 
+              variant="outline" 
+              size="sm"
+              className="w-full sm:w-auto text-xs sm:text-sm"
+            >
+              <Tags className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Kelola Kategori</span>
+              <span className="sm:hidden">Kategori</span>
             </Button>
-            <Button onClick={() => setProductFormOpen(true)} size="sm">
-              <Plus className="h-4 w-4 mr-2" />
-              Tambah Produk
+            
+            <Button 
+              onClick={() => setProductFormOpen(true)} 
+              size="sm"
+              className="w-full sm:w-auto text-xs sm:text-sm"
+            >
+              <Plus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+              <span className="hidden sm:inline">Tambah Produk</span>
+              <span className="sm:hidden">Tambah</span>
             </Button>
-          </>
+          </div>
         )}
         
-        <Button
-          variant={viewMode === 'grid' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setViewMode('grid')}
-        >
-          <Grid className="h-4 w-4" />
-        </Button>
-        <Button
-          variant={viewMode === 'list' ? 'default' : 'outline'}
-          size="sm"
-          onClick={() => setViewMode('list')}
-        >
-          <List className="h-4 w-4" />
-        </Button>
+        <div className="flex gap-1 sm:gap-2 mt-2 sm:mt-0">
+          <Button
+            variant={viewMode === 'grid' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('grid')}
+            className="flex-1 sm:flex-none"
+          >
+            <Grid className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="ml-1 sm:hidden">Grid</span>
+          </Button>
+          <Button
+            variant={viewMode === 'list' ? 'default' : 'outline'}
+            size="sm"
+            onClick={() => setViewMode('list')}
+            className="flex-1 sm:flex-none"
+          >
+            <List className="h-3 w-3 sm:h-4 sm:w-4" />
+            <span className="ml-1 sm:hidden">List</span>
+          </Button>
+        </div>
       </div>
 
       <Dialog open={categoryManagementOpen} onOpenChange={setCategoryManagementOpen}>
-        <DialogContent className="max-w-4xl max-h-[80vh] overflow-y-auto">
+        <DialogContent className="w-full max-w-6xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
           <DialogHeader>
-            <DialogTitle>Kelola Kategori Produk</DialogTitle>
+            <DialogTitle className="text-lg sm:text-xl">Kelola Kategori Produk</DialogTitle>
           </DialogHeader>
           <CategoryManagement />
         </DialogContent>
