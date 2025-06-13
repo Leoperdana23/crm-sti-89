@@ -72,16 +72,8 @@ export const useCreateProduct = () => {
       const { data, error } = await supabase
         .from('products')
         .insert([insertData])
-        .select(`
-          *,
-          product_categories (
-            name
-          ),
-          suppliers (
-            name
-          )
-        `)
-        .single();
+        .select()
+        .maybeSingle();
 
       if (error) {
         console.error('Error creating product:', error);
@@ -145,20 +137,16 @@ export const useUpdateProduct = () => {
         .update(cleanUpdates)
         .eq('id', id)
         .eq('is_active', true)
-        .select(`
-          *,
-          product_categories (
-            name
-          ),
-          suppliers (
-            name
-          )
-        `)
-        .single();
+        .select()
+        .maybeSingle();
 
       if (error) {
         console.error('Error updating product:', error);
         throw error;
+      }
+
+      if (!data) {
+        throw new Error('Produk tidak ditemukan atau sudah tidak aktif');
       }
 
       console.log('Product updated successfully:', data);
