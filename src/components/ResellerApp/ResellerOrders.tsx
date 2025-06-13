@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
-import { useResellerOrders } from '@/hooks/useResellerApp';
+import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -14,7 +14,7 @@ interface ResellerOrdersProps {
 }
 
 const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
-  const { orders, loading } = useResellerOrders(reseller.id);
+  const { data: orders, isLoading: loading } = useResellerOrders(reseller.id);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -36,11 +36,11 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
     switch (status.toLowerCase()) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
-      case 'processing':
+      case 'proses':
         return 'bg-blue-100 text-blue-800';
-      case 'completed':
+      case 'selesai':
         return 'bg-green-100 text-green-800';
-      case 'cancelled':
+      case 'batal':
         return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
@@ -51,11 +51,11 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
     switch (status.toLowerCase()) {
       case 'pending':
         return <Clock className="h-4 w-4" />;
-      case 'processing':
+      case 'proses':
         return <Package className="h-4 w-4" />;
-      case 'completed':
+      case 'selesai':
         return <CheckCircle className="h-4 w-4" />;
-      case 'cancelled':
+      case 'batal':
         return <XCircle className="h-4 w-4" />;
       default:
         return <Package className="h-4 w-4" />;
@@ -67,8 +67,8 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
   };
 
   const filterOrdersByStatus = (status: string) => {
-    if (status === 'all') return orders;
-    return orders.filter(order => order.order?.status.toLowerCase() === status.toLowerCase());
+    if (status === 'all') return orders || [];
+    return (orders || []).filter(order => order.orders?.status?.toLowerCase() === status.toLowerCase());
   };
 
   const renderOrderCard = (order: any) => (
@@ -77,16 +77,16 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
         <div className="flex justify-between items-start">
           <div>
             <CardTitle className="text-sm">
-              Order #{order.order_id.slice(-8)}
+              Order #{order.order_id?.slice(-8)}
             </CardTitle>
             <p className="text-xs text-gray-500">
               {formatDate(order.created_at)}
             </p>
           </div>
-          <Badge className={getStatusColor(order.order?.status || 'pending')}>
+          <Badge className={getStatusColor(order.orders?.status || 'pending')}>
             <span className="flex items-center gap-1">
-              {getStatusIcon(order.order?.status || 'pending')}
-              {getStatusLabel(order.order?.status || 'pending')}
+              {getStatusIcon(order.orders?.status || 'pending')}
+              {getStatusLabel(order.orders?.status || 'pending')}
             </span>
           </Badge>
         </div>
@@ -95,11 +95,11 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
         <div className="space-y-2">
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Customer:</span>
-            <span className="font-medium">{order.order?.customer_name}</span>
+            <span className="font-medium">{order.orders?.customer_name}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Total Order:</span>
-            <span className="font-medium">{formatCurrency(order.order?.total_amount || 0)}</span>
+            <span className="font-medium">{formatCurrency(order.orders?.total_amount || 0)}</span>
           </div>
           <div className="flex justify-between text-sm">
             <span className="text-gray-600">Komisi ({order.commission_rate}%):</span>
@@ -109,10 +109,10 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
           </div>
           
           {/* Order Items */}
-          {order.order?.order_items && order.order.order_items.length > 0 && (
+          {order.orders?.order_items && order.orders.order_items.length > 0 && (
             <div className="mt-3 pt-3 border-t">
               <p className="text-xs text-gray-600 mb-2">Produk:</p>
-              {order.order.order_items.map((item: any, index: number) => (
+              {order.orders.order_items.map((item: any, index: number) => (
                 <div key={index} className="flex justify-between text-xs">
                   <span>{item.quantity}x {item.product_name}</span>
                   <span>{formatCurrency(item.subtotal)}</span>
@@ -147,35 +147,35 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
 
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
-          <TabsTrigger value="all">Semua ({orders.length})</TabsTrigger>
+          <TabsTrigger value="all">Semua ({(orders || []).length})</TabsTrigger>
           <TabsTrigger value="pending">Menunggu ({filterOrdersByStatus('pending').length})</TabsTrigger>
-          <TabsTrigger value="processing">Proses ({filterOrdersByStatus('processing').length})</TabsTrigger>
-          <TabsTrigger value="completed">Selesai ({filterOrdersByStatus('completed').length})</TabsTrigger>
-          <TabsTrigger value="cancelled">Batal ({filterOrdersByStatus('cancelled').length})</TabsTrigger>
+          <TabsTrigger value="proses">Proses ({filterOrdersByStatus('proses').length})</TabsTrigger>
+          <TabsTrigger value="selesai">Selesai ({filterOrdersByStatus('selesai').length})</TabsTrigger>
+          <TabsTrigger value="batal">Batal ({filterOrdersByStatus('batal').length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
-          {orders.map(renderOrderCard)}
+          {(orders || []).map(renderOrderCard)}
         </TabsContent>
 
         <TabsContent value="pending" className="space-y-4">
           {filterOrdersByStatus('pending').map(renderOrderCard)}
         </TabsContent>
 
-        <TabsContent value="processing" className="space-y-4">
-          {filterOrdersByStatus('processing').map(renderOrderCard)}
+        <TabsContent value="proses" className="space-y-4">
+          {filterOrdersByStatus('proses').map(renderOrderCard)}
         </TabsContent>
 
-        <TabsContent value="completed" className="space-y-4">
-          {filterOrdersByStatus('completed').map(renderOrderCard)}
+        <TabsContent value="selesai" className="space-y-4">
+          {filterOrdersByStatus('selesai').map(renderOrderCard)}
         </TabsContent>
 
-        <TabsContent value="cancelled" className="space-y-4">
-          {filterOrdersByStatus('cancelled').map(renderOrderCard)}
+        <TabsContent value="batal" className="space-y-4">
+          {filterOrdersByStatus('batal').map(renderOrderCard)}
         </TabsContent>
       </Tabs>
 
-      {orders.length === 0 && (
+      {(orders || []).length === 0 && (
         <div className="text-center py-8 text-gray-500">
           <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
           <p>Belum ada order</p>

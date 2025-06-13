@@ -139,6 +139,9 @@ export const useUpdateOrderStatus = () => {
 
   return useMutation({
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
+      console.log('Updating order status:', orderId, status);
+      
+      // Update orders table
       const { data, error } = await supabase
         .from('orders')
         .update({ 
@@ -150,11 +153,12 @@ export const useUpdateOrderStatus = () => {
         .single();
 
       if (error) {
+        console.error('Error updating orders table:', error);
         throw error;
       }
 
       // Also update reseller_orders status if it exists
-      await supabase
+      const { error: resellerOrderError } = await supabase
         .from('reseller_orders')
         .update({ 
           status,
@@ -162,6 +166,12 @@ export const useUpdateOrderStatus = () => {
         })
         .eq('order_id', orderId);
 
+      if (resellerOrderError) {
+        console.error('Error updating reseller_orders table:', resellerOrderError);
+        // Don't throw here as the main update succeeded
+      }
+
+      console.log('Order status updated successfully');
       return data;
     },
     onSuccess: () => {

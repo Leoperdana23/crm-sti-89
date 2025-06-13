@@ -1,25 +1,25 @@
 
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Order, OrderItem } from '@/types/order';
 
-export const useResellerOrders = (catalogToken: string | null) => {
+export const useResellerOrders = (resellerId: string | null) => {
   return useQuery({
-    queryKey: ['reseller-orders', catalogToken],
+    queryKey: ['reseller-orders', resellerId],
     queryFn: async () => {
-      if (!catalogToken) return [];
+      if (!resellerId) return [];
       
-      console.log('Fetching reseller orders for token:', catalogToken);
+      console.log('Fetching reseller orders for reseller ID:', resellerId);
       
       const { data, error } = await supabase
-        .from('orders')
+        .from('reseller_orders')
         .select(`
           *,
-          order_items (
-            *
+          orders (
+            *,
+            order_items (*)
           )
         `)
-        .eq('catalog_token', catalogToken)
+        .eq('reseller_id', resellerId)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -28,8 +28,8 @@ export const useResellerOrders = (catalogToken: string | null) => {
       }
 
       console.log('Reseller orders fetched successfully:', data);
-      return data as (Order & { order_items: OrderItem[] })[];
+      return data || [];
     },
-    enabled: !!catalogToken,
+    enabled: !!resellerId,
   });
 };
