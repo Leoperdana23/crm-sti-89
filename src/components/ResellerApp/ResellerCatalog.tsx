@@ -7,21 +7,44 @@ import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Package, Search, Filter, Loader2 } from 'lucide-react';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Package, Search, Plus, Minus, ShoppingCart, Loader2 } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Product, ProductCategory } from '@/types/product';
+import { useToast } from '@/hooks/use-toast';
+
+interface CartItem {
+  product: Product;
+  quantity: number;
+}
 
 interface ResellerCatalogProps {
   reseller: ResellerSession;
 }
 
 const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
+  const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [priceType, setPriceType] = useState<'retail' | 'reseller'>('reseller');
+  const [cart, setCart] = useState<CartItem[]>([]);
+  const [showOrderForm, setShowOrderForm] = useState(false);
+  const [submittingOrder, setSubmittingOrder] = useState(false);
+  
+  // Form state
+  const [orderForm, setOrderForm] = useState({
+    customerName: '',
+    customerPhone: reseller.phone,
+    shippingAddress: reseller.address,
+    deliveryMethod: 'pickup' as 'pickup' | 'delivery',
+    expedisi: '',
+    notes: ''
+  });
 
   useEffect(() => {
     fetchData();
@@ -58,6 +81,11 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
       setCategories(categoriesData || []);
     } catch (error) {
       console.error('Error fetching data:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal memuat data produk',
+        variant: 'destructive',
+      });
     } finally {
       setLoading(false);
     }
@@ -84,6 +112,134 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
       return product.reseller_price;
     }
     return product.price;
+  };
+
+  const addToCart = (product: Product) => {
+    setCart(prev => {
+      const existing = prev.find(item => item.product.id === product.id);
+      if (existing) {
+        return prev.map(item =>
+          item.product.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
+        );
+      }
+      return [...prev, { product, quantity: 1 }];
+    });
+  };
+
+  const updateQuantity = (productId: string, newQuantity: number) => {
+    if (newQuantity <= 0) {
+      setCart(prev => prev.filter(item => item.product.id !== productId));
+      return;
+    }
+    
+    setCart(prev =>
+      prev.map(item =>
+        item.product.id === productId
+          ? { ...item, quantity: newQuantity }
+          : item
+      )
+    );
+  };
+
+  const getTotalItems = () => {
+    return cart.reduce((total, item) => total + item.quantity, 0);
+  };
+
+  const getTotalAmount = () => {
+    return cart.reduce((total, item) => {
+      const price = priceType === 'reseller' && item.product.reseller_price 
+        ? item.product.reseller_price 
+        : item.product.price;
+      return total + (price * item.quantity);
+    }, 0);
+  };
+
+  const getCartItem = (productId: string) => {
+    return cart.find(item => item.product.id === productId);
+  };
+
+  const handleSubmitOrder = async () => {
+    if (cart.length === 0) return;
+    if (!orderForm.customerName.trim()) {
+      toast({
+        title: 'Error',
+        description: 'Nama pemesan harus diisi',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      setSubmittingOrder(true);
+
+      // Create order
+      const orderData = {
+        customer_name: orderForm.customerName,
+        customer_phone: orderForm.customerPhone,
+        catalog_token: reseller.token,
+        total_amount: getTotalAmount(),
+        delivery_method: orderForm.deliveryMethod,
+        expedisi: orderForm.deliveryMethod === 'delivery' ? orderForm.expedisi : null,
+        notes: orderForm.notes || null
+      };
+
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert(orderData)
+        .select()
+        .single();
+
+      if (orderError) throw orderError;
+
+      // Create order items
+      const orderItems = cart.map(item => ({
+        order_id: order.id,
+        product_id: item.product.id,
+        product_name: item.product.name,
+        product_price: priceType === 'reseller' && item.product.reseller_price 
+          ? item.product.reseller_price 
+          : item.product.price,
+        quantity: item.quantity,
+        subtotal: (priceType === 'reseller' && item.product.reseller_price 
+          ? item.product.reseller_price 
+          : item.product.price) * item.quantity
+      }));
+
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(orderItems);
+
+      if (itemsError) throw itemsError;
+
+      toast({
+        title: 'Sukses',
+        description: 'Pesanan berhasil dibuat',
+      });
+
+      // Reset form and cart
+      setCart([]);
+      setOrderForm({
+        customerName: '',
+        customerPhone: reseller.phone,
+        shippingAddress: reseller.address,
+        deliveryMethod: 'pickup',
+        expedisi: '',
+        notes: ''
+      });
+      setShowOrderForm(false);
+
+    } catch (error) {
+      console.error('Error creating order:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal membuat pesanan',
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmittingOrder(false);
+    }
   };
 
   if (loading) {
@@ -159,53 +315,251 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
           </CardContent>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {filteredProducts.map((product) => (
-            <Card key={product.id} className="overflow-hidden">
-              {product.image_url && (
-                <div className="aspect-video bg-gray-100">
-                  <img
-                    src={product.image_url}
-                    alt={product.name}
-                    className="w-full h-full object-cover"
+        <div className="space-y-4">
+          {filteredProducts.map((product) => {
+            const cartItem = getCartItem(product.id);
+            const displayPrice = getDisplayPrice(product);
+            const originalPrice = product.price;
+            
+            return (
+              <Card key={product.id} className="overflow-hidden">
+                <CardContent className="p-4">
+                  <div className="flex gap-4">
+                    {/* Product Image */}
+                    <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
+                      {product.image_url ? (
+                        <img
+                          src={product.image_url}
+                          alt={product.name}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-400">
+                          <Package className="h-8 w-8" />
+                        </div>
+                      )}
+                    </div>
+                    
+                    {/* Product Info */}
+                    <div className="flex-1">
+                      <div className="flex justify-between items-start mb-2">
+                        <div>
+                          <h3 className="font-semibold text-lg text-gray-900">{product.name}</h3>
+                          {product.product_categories && (
+                            <p className="text-sm text-gray-500">{product.product_categories.name}</p>
+                          )}
+                        </div>
+                        <div className="text-right">
+                          <p className="text-sm text-gray-500">Stok: {product.stock_quantity || 0}</p>
+                          {product.product_categories && (
+                            <Badge variant="secondary" className="text-xs">
+                              {product.product_categories.name}
+                            </Badge>
+                          )}
+                        </div>
+                      </div>
+                      
+                      {/* Price */}
+                      <div className="mb-3">
+                        <div className="text-xl font-bold text-gray-900">
+                          {formatPrice(displayPrice)}
+                        </div>
+                        {priceType === 'reseller' && product.reseller_price && product.reseller_price < originalPrice && (
+                          <div className="text-sm text-gray-500 line-through">
+                            {formatPrice(originalPrice)}
+                          </div>
+                        )}
+                        <div className="text-sm text-gray-500">per {product.unit}</div>
+                      </div>
+                      
+                      {/* Quantity Controls and Add to Cart */}
+                      <div className="flex items-center gap-3">
+                        {cartItem ? (
+                          <div className="flex items-center gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateQuantity(product.id, cartItem.quantity - 1)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Minus className="h-4 w-4" />
+                            </Button>
+                            <span className="w-8 text-center font-medium">{cartItem.quantity}</span>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => addToCart(product)}
+                            className="bg-green-600 hover:bg-green-700 text-white"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Tambah
+                          </Button>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })}
+        </div>
+      )}
+
+      {/* Floating Cart Summary */}
+      {cart.length > 0 && (
+        <div className="fixed bottom-4 left-4 right-4 bg-white border border-gray-200 rounded-lg shadow-lg p-4 z-50">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <ShoppingCart className="h-5 w-5 text-green-600" />
+              <span className="font-medium">
+                {getTotalItems()} item - {formatPrice(getTotalAmount())}
+              </span>
+            </div>
+            <Button
+              onClick={() => setShowOrderForm(true)}
+              className="bg-green-600 hover:bg-green-700 text-white"
+            >
+              Order Sekarang
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* Order Form Dialog */}
+      <Dialog open={showOrderForm} onOpenChange={setShowOrderForm}>
+        <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Form Pemesanan</DialogTitle>
+          </DialogHeader>
+          
+          <div className="space-y-4">
+            {/* Order Summary */}
+            <div className="bg-gray-50 p-3 rounded-lg">
+              <h4 className="font-medium mb-2">Ringkasan Pesanan</h4>
+              <div className="space-y-1 text-sm">
+                {cart.map((item) => (
+                  <div key={item.product.id} className="flex justify-between">
+                    <span>{item.product.name} x{item.quantity}</span>
+                    <span>{formatPrice((priceType === 'reseller' && item.product.reseller_price ? item.product.reseller_price : item.product.price) * item.quantity)}</span>
+                  </div>
+                ))}
+                <div className="border-t pt-1 font-medium flex justify-between">
+                  <span>Total:</span>
+                  <span>{formatPrice(getTotalAmount())}</span>
+                </div>
+              </div>
+            </div>
+
+            {/* Customer Info */}
+            <div className="space-y-3">
+              <div>
+                <Label htmlFor="customerName">Nama Pemesan *</Label>
+                <Input
+                  id="customerName"
+                  value={orderForm.customerName}
+                  onChange={(e) => setOrderForm(prev => ({ ...prev, customerName: e.target.value }))}
+                  placeholder="Masukkan nama pemesan"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="customerPhone">No. Telepon</Label>
+                <Input
+                  id="customerPhone"
+                  value={orderForm.customerPhone}
+                  readOnly
+                  className="bg-gray-100"
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="shippingAddress">Alamat Pengiriman</Label>
+                <Textarea
+                  id="shippingAddress"
+                  value={orderForm.shippingAddress}
+                  onChange={(e) => setOrderForm(prev => ({ ...prev, shippingAddress: e.target.value }))}
+                  placeholder="Alamat lengkap"
+                  rows={3}
+                />
+              </div>
+
+              <div>
+                <Label htmlFor="deliveryMethod">Jenis Pengiriman</Label>
+                <Select 
+                  value={orderForm.deliveryMethod} 
+                  onValueChange={(value: 'pickup' | 'delivery') => setOrderForm(prev => ({ ...prev, deliveryMethod: value }))}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="pickup">Diambil</SelectItem>
+                    <SelectItem value="delivery">Dikirim</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+
+              {orderForm.deliveryMethod === 'delivery' && (
+                <div>
+                  <Label htmlFor="expedisi">Expedisi</Label>
+                  <Input
+                    id="expedisi"
+                    value={orderForm.expedisi}
+                    onChange={(e) => setOrderForm(prev => ({ ...prev, expedisi: e.target.value }))}
+                    placeholder="JNE, TIKI, J&T, dll"
                   />
                 </div>
               )}
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <CardTitle className="text-lg">{product.name}</CardTitle>
-                  {product.featured && (
-                    <Badge variant="secondary">Featured</Badge>
-                  )}
-                </div>
-                <div className="text-xl font-bold text-green-600">
-                  {formatPrice(getDisplayPrice(product))}
-                  {priceType === 'reseller' && product.reseller_price && (
-                    <div className="text-sm text-gray-500 line-through">
-                      {formatPrice(product.price)}
-                    </div>
-                  )}
-                </div>
-              </CardHeader>
-              <CardContent>
-                {product.description && (
-                  <p className="text-gray-600 text-sm mb-4 line-clamp-2">
-                    {product.description}
-                  </p>
+
+              <div>
+                <Label htmlFor="notes">Catatan (Opsional)</Label>
+                <Textarea
+                  id="notes"
+                  value={orderForm.notes}
+                  onChange={(e) => setOrderForm(prev => ({ ...prev, notes: e.target.value }))}
+                  placeholder="Catatan tambahan untuk pesanan"
+                  rows={2}
+                />
+              </div>
+            </div>
+
+            {/* Action Buttons */}
+            <div className="flex gap-2 pt-4">
+              <Button 
+                variant="outline" 
+                onClick={() => setShowOrderForm(false)}
+                disabled={submittingOrder}
+                className="flex-1"
+              >
+                Batal
+              </Button>
+              <Button
+                onClick={handleSubmitOrder}
+                disabled={submittingOrder || !orderForm.customerName.trim()}
+                className="flex-1 bg-green-600 hover:bg-green-700"
+              >
+                {submittingOrder ? (
+                  <>
+                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                    Memproses...
+                  </>
+                ) : (
+                  'Buat Pesanan'
                 )}
-                <div className="flex gap-2">
-                  <Button variant="outline" className="flex-1">
-                    Lihat Detail
-                  </Button>
-                  <Button className="flex-1 bg-green-600 hover:bg-green-700">
-                    Order Produk
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      )}
+              </Button>
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
