@@ -17,7 +17,7 @@ const resellerSchema = z.object({
   phone: z.string().min(1, 'Nomor HP/WA harus diisi'),
   address: z.string().min(1, 'Alamat harus diisi'),
   birth_date: z.string().optional(),
-  email: z.string().email('Email tidak valid').optional().or(z.literal('')),
+  email: z.string().optional(),
   id_number: z.string().optional(),
   notes: z.string().optional(),
   branch_id: z.string().optional(),
@@ -50,9 +50,25 @@ const ResellerForm: React.FC<ResellerFormProps> = ({ reseller, onSubmit, onCance
     },
   });
 
+  const handleSubmit = (data: ResellerFormData) => {
+    console.log('Submitting reseller data:', data);
+    
+    // Clean up empty strings
+    const cleanedData = {
+      ...data,
+      birth_date: data.birth_date?.trim() || undefined,
+      email: data.email?.trim() || undefined,
+      id_number: data.id_number?.trim() || undefined,
+      notes: data.notes?.trim() || undefined,
+      branch_id: data.branch_id?.trim() || undefined,
+    };
+    
+    onSubmit(cleanedData);
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <FormField
             control={form.control}
@@ -130,7 +146,7 @@ const ResellerForm: React.FC<ResellerFormProps> = ({ reseller, onSubmit, onCance
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Cabang</FormLabel>
-                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                <Select onValueChange={field.onChange} value={field.value || ''}>
                   <FormControl>
                     <SelectTrigger>
                       <SelectValue placeholder="Pilih cabang" />

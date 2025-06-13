@@ -16,7 +16,7 @@ interface Survey {
   suggestions?: string;
   is_completed: boolean;
   completed_at?: string;
-  survey_token: string;
+  survey_token?: string;
   created_at: string;
   customers?: {
     name: string;
@@ -121,7 +121,7 @@ export const useSurveys = () => {
     };
   };
 
-  const addSurvey = async (surveyData: Omit<Survey, 'id' | 'created_at' | 'survey_token' | 'customers'>) => {
+  const addSurvey = async (surveyData: Omit<Survey, 'id' | 'created_at' | 'customers'>) => {
     console.log('Adding survey:', surveyData);
     
     const { data, error } = await supabase
@@ -142,6 +142,8 @@ export const useSurveys = () => {
   const createSurveyLink = async (customerId: string) => {
     console.log('Creating survey link for customer:', customerId);
     
+    const surveyToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    
     const surveyData = {
       customer_id: customerId,
       deal_date: new Date().toISOString().split('T')[0],
@@ -150,7 +152,8 @@ export const useSurveys = () => {
       service_technician: 0,
       usage_clarity: 0,
       price_approval: false,
-      is_completed: false
+      is_completed: false,
+      survey_token: surveyToken
     };
 
     const { data, error } = await supabase
@@ -184,7 +187,7 @@ export const useCreateSurvey = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (surveyData: Omit<Survey, 'id' | 'created_at' | 'survey_token' | 'customers'>) => {
+    mutationFn: async (surveyData: Omit<Survey, 'id' | 'created_at' | 'customers'>) => {
       console.log('Creating survey:', surveyData);
 
       const { data, error } = await supabase

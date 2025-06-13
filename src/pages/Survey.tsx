@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Plus, Search, Filter, BarChart, Users, CheckCircle, AlertCircle, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -70,8 +69,14 @@ const Survey = () => {
     }
   };
 
+  const generateSurveyToken = () => {
+    return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+  };
+
   const handleCreateSurveyLink = async (customer: Customer) => {
     try {
+      const surveyToken = generateSurveyToken();
+      
       const surveyData = {
         customer_id: customer.id,
         deal_date: customer.deal_date || new Date().toISOString().split('T')[0],
@@ -80,17 +85,30 @@ const Survey = () => {
         service_technician: 0,
         usage_clarity: 0,
         price_approval: false,
-        is_completed: false
+        is_completed: false,
+        survey_token: surveyToken
       };
       
       await createSurveyMutation.mutateAsync(surveyData);
-      const surveyUrl = `${window.location.origin}/public-survey/sample-token`;
-      navigator.clipboard.writeText(surveyUrl);
-      toast({
-        title: "Link Survei Dibuat",
-        description: "Link survei telah disalin ke clipboard dan siap dibagikan ke pelanggan",
-      });
+      const surveyUrl = `${window.location.origin}/public-survey/${surveyToken}`;
+      
+      // Copy to clipboard with error handling
+      try {
+        await navigator.clipboard.writeText(surveyUrl);
+        toast({
+          title: "Link Survei Dibuat",
+          description: "Link survei telah disalin ke clipboard dan siap dibagikan ke pelanggan",
+        });
+      } catch (clipboardError) {
+        // Fallback if clipboard API fails
+        console.log('Clipboard API failed, showing URL in toast');
+        toast({
+          title: "Link Survei Dibuat",
+          description: `Link survei: ${surveyUrl}`,
+        });
+      }
     } catch (error) {
+      console.error('Error creating survey link:', error);
       toast({
         title: "Error",
         description: "Terjadi kesalahan saat membuat link survei.",
@@ -101,6 +119,8 @@ const Survey = () => {
 
   const handleWhatsAppSurvey = async (customer: Customer) => {
     try {
+      const surveyToken = generateSurveyToken();
+      
       const surveyData = {
         customer_id: customer.id,
         deal_date: customer.deal_date || new Date().toISOString().split('T')[0],
@@ -109,22 +129,23 @@ const Survey = () => {
         service_technician: 0,
         usage_clarity: 0,
         price_approval: false,
-        is_completed: false
+        is_completed: false,
+        survey_token: surveyToken
       };
       
       await createSurveyMutation.mutateAsync(surveyData);
-      const surveyUrl = `${window.location.origin}/public-survey/sample-token`;
+      const surveyUrl = `${window.location.origin}/public-survey/${surveyToken}`;
       const branch = branches.find(b => b.id === customer.branch_id);
       const branchName = branch?.name || 'Tim Kami';
       
       const message = `Assalamualaikum Bapak/Ibu ${customer.name} 
 Saya dari Tim ${branchName} mengucapkan selamat karena Bapak/Ibu mendapatkan proteksi garansi barang ganti baru selama 1 tahun.
-Mohon untuk lengkapi data diri untuk klaim garansi ganti baru jika ada kerusakan barang, dan mohon bantu kami untuk mengisi survei kepuasan layanan kami.
+Mohon untuk lengkapi data diri untuk mendapatkan garansi ganti baru jika ada kerusakan barang, dan mohon bantu kami untuk mengisi survei kepuasan layanan kami.
 Jawaban Bapak/Ibu sangat berharga untuk meningkatkan kualitas pelayanan kami ke depannya.
 
 Berikut link data diri dan survei ${surveyUrl}
 
-Atas ketersediaan bapak/ibu mengisidata dan survei kami ucapkan terima kasih atas kerjasamanya.`;
+Atas ketersediaan bapak/ibu mengisi data dan survei kami ucapkan terima kasih atas kerjasamanya.`;
 
       const cleanPhone = customer.phone.replace(/\D/g, '');
       const whatsappPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
@@ -137,6 +158,7 @@ Atas ketersediaan bapak/ibu mengisidata dan survei kami ucapkan terima kasih ata
         description: "Pesan WhatsApp dengan link survei telah disiapkan untuk dikirim ke pelanggan",
       });
     } catch (error) {
+      console.error('Error creating WhatsApp link:', error);
       toast({
         title: "Error",
         description: "Terjadi kesalahan saat membuat link WhatsApp.",

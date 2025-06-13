@@ -38,9 +38,23 @@ export const useCreateReseller = () => {
   return useMutation({
     mutationFn: async (resellerData: CreateResellerData) => {
       console.log('Creating reseller:', resellerData);
+      
+      // Clean the data before sending
+      const cleanData = {
+        name: resellerData.name,
+        phone: resellerData.phone,
+        address: resellerData.address,
+        birth_date: resellerData.birth_date || null,
+        email: resellerData.email || null,
+        id_number: resellerData.id_number || null,
+        notes: resellerData.notes || null,
+        branch_id: resellerData.branch_id || null,
+        is_active: resellerData.is_active ?? true,
+      };
+      
       const { data, error } = await supabase
         .from('resellers')
-        .insert(resellerData)
+        .insert(cleanData)
         .select()
         .single();
 
@@ -63,7 +77,7 @@ export const useCreateReseller = () => {
       console.error('Error in useCreateReseller:', error);
       toast({
         title: 'Error',
-        description: 'Gagal menambahkan reseller',
+        description: `Gagal menambahkan reseller: ${error instanceof Error ? error.message : 'Silakan coba lagi.'}`,
         variant: 'destructive',
       });
     },
@@ -77,9 +91,23 @@ export const useUpdateReseller = () => {
   return useMutation({
     mutationFn: async ({ id, ...updates }: UpdateResellerData) => {
       console.log('Updating reseller:', id, updates);
+      
+      // Clean the data before sending
+      const cleanData = {
+        name: updates.name,
+        phone: updates.phone,
+        address: updates.address,
+        birth_date: updates.birth_date || null,
+        email: updates.email || null,
+        id_number: updates.id_number || null,
+        notes: updates.notes || null,
+        branch_id: updates.branch_id || null,
+        is_active: updates.is_active,
+      };
+      
       const { data, error } = await supabase
         .from('resellers')
-        .update(updates)
+        .update(cleanData)
         .eq('id', id)
         .select()
         .single();
