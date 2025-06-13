@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -68,7 +67,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
         const updateData = {
           id: product.id,
           ...data,
-          category_id: data.category_id || null,
+          category_id: data.category_id === 'no-category' ? null : data.category_id || null,
           description: data.description || null,
           reseller_price: data.reseller_price || null,
         };
@@ -82,7 +81,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
           price: data.price, // Required field
           unit: data.unit, // Required field
           description: data.description || null,
-          category_id: data.category_id || null,
+          category_id: data.category_id === 'no-category' ? null : data.category_id || null,
           reseller_price: data.reseller_price || null,
           points_value: data.points_value || 0,
           commission_value: data.commission_value || 0,
@@ -132,7 +131,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                 <FormLabel>Kategori</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  value={field.value || ''}
+                  value={field.value || 'no-category'}
                   disabled={categoriesLoading}
                 >
                   <FormControl>
@@ -141,7 +140,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Tanpa Kategori</SelectItem>
+                    <SelectItem value="no-category">Tanpa Kategori</SelectItem>
                     {categories?.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
