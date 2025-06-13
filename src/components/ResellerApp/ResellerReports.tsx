@@ -6,7 +6,7 @@ import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, DollarSign, Award, Package } from 'lucide-react';
+import { TrendingUp, DollarSign, Award, Package, Gift } from 'lucide-react';
 
 interface ResellerReportsProps {
   reseller: ResellerSession;
@@ -33,24 +33,53 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
     });
   };
 
-  // Calculate additional metrics using correct commission rate
-  const completedOrders = (orders || []).filter(order => order.status === 'selesai');
-  const totalPoints = reseller.total_points || 0;
+  // Only count completed orders for all calculations
+  const completedOrders = (orders || []).filter(order => 
+    order.status === 'selesai' || order.status === 'completed'
+  );
+
+  // Calculate total commission from completed orders using product commission values
+  const totalCommissionEarned = completedOrders.reduce((total, order) => {
+    return total + (order.order_items || []).reduce((orderTotal, item) => {
+      const productCommission = item.products?.commission_value || 0;
+      return orderTotal + (productCommission * item.quantity);
+    }, 0);
+  }, 0);
+
+  // Calculate total points from completed orders using product points values
+  const totalPointsEarned = completedOrders.reduce((total, order) => {
+    return total + (order.order_items || []).reduce((orderTotal, item) => {
+      const productPoints = item.products?.points_value || 0;
+      return orderTotal + (productPoints * item.quantity);
+    }, 0);
+  }, 0);
+
+  // Mock data for exchanged amounts (in real app, this would come from database)
+  const exchangedCommission = 0; // Amount of commission exchanged for rewards
+  const exchangedPoints = 0; // Amount of points exchanged for rewards
+
+  // Calculate remaining balances
+  const remainingCommission = totalCommissionEarned - exchangedCommission;
+  const remainingPoints = totalPointsEarned - exchangedPoints;
+
+  // Average order value calculation (only completed orders)
   const averageOrderValue = completedOrders.length > 0 
     ? completedOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) / completedOrders.length
     : 0;
 
-  // Calculate commission using reseller's commission rate
-  const totalCommissionEarned = completedOrders.reduce((total, order) => {
-    return total + ((order.total_amount || 0) * (reseller.commission_rate / 100));
-  }, 0);
+  // Get orders from the last year for completed orders
+  const oneYearAgo = new Date();
+  oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
+  const completedOrdersLastYear = completedOrders.filter(order => 
+    new Date(order.created_at) >= oneYearAgo
+  );
 
   // Filter orders by period
   const getFilteredOrders = () => {
-    if (selectedPeriod === 'all') return orders || [];
+    if (selectedPeriod === 'all') return completedOrders;
     
     const now = new Date();
-    return (orders || []).filter(order => {
+    return completedOrders.filter(order => {
       const orderDate = new Date(order.created_at);
       
       switch (selectedPeriod) {
@@ -70,9 +99,18 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
   };
 
   const filteredOrders = getFilteredOrders();
-  const filteredCompletedOrders = filteredOrders.filter(order => order.status === 'selesai');
-  const filteredCommission = filteredCompletedOrders.reduce((total, order) => {
-    return total + ((order.total_amount || 0) * (reseller.commission_rate / 100));
+  const filteredCommission = filteredOrders.reduce((total, order) => {
+    return total + (order.order_items || []).reduce((orderTotal, item) => {
+      const productCommission = item.products?.commission_value || 0;
+      return orderTotal + (productCommission * item.quantity);
+    }, 0);
+  }, 0);
+
+  const filteredPoints = filteredOrders.reduce((total, order) => {
+    return total + (order.order_items || []).reduce((orderTotal, item) => {
+      const productPoints = item.products?.points_value || 0;
+      return orderTotal + (productPoints * item.quantity);
+    }, 0);
   }, 0);
 
   return (
@@ -85,7 +123,7 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
               <DollarSign className="h-4 w-4 mr-2 text-green-500" />
-              Total Komisi
+              Sisa Komisi
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -93,9 +131,12 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
               <Skeleton className="h-8 w-20" />
             ) : (
               <div className="text-xl font-bold text-green-600">
-                {formatCurrency(totalCommissionEarned)}
+                {formatCurrency(remainingCommission)}
               </div>
             )}
+            <p className="text-xs text-gray-500 mt-1">
+              Tersisa setelah ditukar hadiah
+            </p>
           </CardContent>
         </Card>
 
@@ -103,7 +144,7 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
               <Package className="h-4 w-4 mr-2 text-blue-500" />
-              Order Selesai
+              Order Selesai (1 Tahun)
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -111,7 +152,7 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
               <Skeleton className="h-8 w-16" />
             ) : (
               <div className="text-2xl font-bold text-blue-600">
-                {completedOrders.length}
+                {completedOrdersLastYear.length}
               </div>
             )}
           </CardContent>
@@ -121,7 +162,7 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
               <Award className="h-4 w-4 mr-2 text-purple-500" />
-              Total Poin
+              Sisa Poin
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -129,9 +170,12 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
               <Skeleton className="h-8 w-16" />
             ) : (
               <div className="text-2xl font-bold text-purple-600">
-                {totalPoints}
+                {remainingPoints}
               </div>
             )}
+            <p className="text-xs text-gray-500 mt-1">
+              Tersisa setelah ditukar hadiah
+            </p>
           </CardContent>
         </Card>
 
@@ -150,14 +194,39 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
                 {formatCurrency(averageOrderValue)}
               </div>
             )}
+            <p className="text-xs text-gray-500 mt-1">
+              Total nilai ÷ Jumlah order selesai
+            </p>
           </CardContent>
         </Card>
       </div>
 
+      {/* Exchange Information */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            <Gift className="h-5 w-5 mr-2 text-pink-500" />
+            Informasi Penukaran
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-600">Komisi Ditukar:</p>
+              <p className="text-lg font-bold text-red-600">{formatCurrency(exchangedCommission)}</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-600">Poin Ditukar:</p>
+              <p className="text-lg font-bold text-red-600">{exchangedPoints} poin</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Commission Breakdown */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Breakdown Komisi</CardTitle>
+          <CardTitle className="text-lg">Breakdown Komisi & Poin</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -183,12 +252,12 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Order Periode Ini:</span>
-                <span className="font-semibold">{filteredOrders.length}</span>
+                <span className="text-gray-600">Poin Periode Ini:</span>
+                <span className="font-semibold text-blue-600">{filteredPoints} poin</span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-gray-600">Total Poin:</span>
-                <span className="font-semibold text-blue-600">{totalPoints} poin</span>
+                <span className="text-gray-600">Order Selesai Periode Ini:</span>
+                <span className="font-semibold">{filteredOrders.length}</span>
               </div>
             </div>
           </div>
@@ -198,7 +267,7 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
       {/* Recent Commission Orders */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Order Terbaru</CardTitle>
+          <CardTitle className="text-lg">Order Terbaru (Selesai)</CardTitle>
         </CardHeader>
         <CardContent>
           {ordersLoading ? (
@@ -216,7 +285,15 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
           ) : (
             <div className="space-y-3">
               {filteredOrders.slice(0, 5).map((order) => {
-                const commission = (order.total_amount || 0) * (reseller.commission_rate / 100);
+                const commission = (order.order_items || []).reduce((total, item) => {
+                  const productCommission = item.products?.commission_value || 0;
+                  return total + (productCommission * item.quantity);
+                }, 0);
+                const points = (order.order_items || []).reduce((total, item) => {
+                  const productPoints = item.products?.points_value || 0;
+                  return total + (productPoints * item.quantity);
+                }, 0);
+                
                 return (
                   <div key={order.id} className="flex justify-between items-center">
                     <div>
@@ -230,6 +307,9 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
                     <div className="text-right">
                       <p className="font-semibold text-green-600 text-sm">
                         {formatCurrency(commission)}
+                      </p>
+                      <p className="text-xs text-blue-600">
+                        {points} poin
                       </p>
                       <p className="text-xs text-gray-500">
                         {formatCurrency(order.total_amount || 0)}
@@ -246,7 +326,7 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
       {filteredOrders.length === 0 && (
         <div className="text-center py-8 text-gray-500">
           <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-          <p>Belum ada data komisi untuk periode ini</p>
+          <p>Belum ada order selesai untuk periode ini</p>
         </div>
       )}
     </div>
