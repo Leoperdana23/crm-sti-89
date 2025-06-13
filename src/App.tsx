@@ -23,13 +23,9 @@ import Users from './pages/Users';
 import Sales from './pages/Sales';
 import Branches from './pages/Branches';
 import ResellerApp from './pages/ResellerApp';
-import PublicCatalog from './pages/PublicCatalog';
 import PublicSurvey from './pages/PublicSurvey';
-import ProductCategories from './pages/ProductCategories';
-import Suppliers from './pages/Suppliers';
 import NotFound from './pages/NotFound';
 import ProtectedRoute from './components/ProtectedRoute';
-import ProductCatalogCRM from './pages/ProductCatalogCRM';
 
 const queryClient = new QueryClient();
 
@@ -44,13 +40,9 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/sales-auth" element={<SalesAuth />} />
               <Route path="/reseller-app" element={<ResellerApp />} />
-              <Route path="/produk" element={<PublicCatalog />} />
               <Route path="/survei/:token" element={<PublicSurvey />} />
               
               <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
-              <Route path="/product-catalog-crm" element={<ProtectedRoute><Layout><ProductCatalogCRM /></Layout></ProtectedRoute>} />
-              <Route path="/product-categories" element={<ProtectedRoute><Layout><ProductCategories /></Layout></ProtectedRoute>} />
-              <Route path="/suppliers" element={<ProtectedRoute><Layout><Suppliers /></Layout></ProtectedRoute>} />
               <Route path="/orders" element={<ProtectedRoute><Layout><Orders /></Layout></ProtectedRoute>} />
               <Route path="/customers" element={<ProtectedRoute><Layout><Customers /></Layout></ProtectedRoute>} />
               <Route path="/resellers" element={<ProtectedRoute><Layout><Resellers /></Layout></ProtectedRoute>} />

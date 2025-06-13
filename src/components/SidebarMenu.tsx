@@ -18,8 +18,7 @@ import {
   ChevronRight,
   UserCog,
   Store,
-  MessageSquare,
-  Package
+  MessageSquare
 } from 'lucide-react';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import MenuItem from './MenuItem';
@@ -44,12 +43,6 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
       icon: ShoppingCart,
       label: 'Daftar Pesanan',
       permission: 'orders'
-    },
-    {
-      to: '/product-catalog-crm',
-      icon: Package,
-      label: 'Produk',
-      permission: 'products'
     },
     {
       to: '/customers',
