@@ -1,29 +1,30 @@
 
 import React from 'react';
-import { Package } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import { Product } from '@/types/product';
+import ProductCard from './ProductCard';
+import ProductList from './ProductList';
+import EmptyState from './EmptyState';
 import {
   Pagination,
   PaginationContent,
+  PaginationEllipsis,
   PaginationItem,
   PaginationLink,
   PaginationNext,
   PaginationPrevious,
 } from '@/components/ui/pagination';
-import { Product } from '@/types/product';
-import ProductListItem from './ProductListItem';
 
 interface ProductGridProps {
   products: Product[];
   currentPage: number;
   totalPages: number;
   onPageChange: (page: number) => void;
-  getProductQuantity: (productId: string) => number;
-  onAddToCart: (product: Product) => void;
-  onRemoveFromCart: (productId: string) => void;
+  getProductQuantity?: (productId: string) => number;
+  onAddToCart?: (product: Product) => void;
+  onRemoveFromCart?: (productId: string) => void;
   onResetSearch: () => void;
   hasFilters: boolean;
+  viewMode?: 'grid' | 'list';
 }
 
 const ProductGrid = ({
@@ -31,120 +32,104 @@ const ProductGrid = ({
   currentPage,
   totalPages,
   onPageChange,
-  getProductQuantity,
-  onAddToCart,
-  onRemoveFromCart,
+  getProductQuantity = () => 0,
+  onAddToCart = () => {},
+  onRemoveFromCart = () => {},
   onResetSearch,
-  hasFilters
+  hasFilters,
+  viewMode = 'grid'
 }: ProductGridProps) => {
-  const handleQuantityChange = (productId: string, quantity: number) => {
-    const product = products.find(p => p.id === productId);
-    if (!product) return;
-
-    const currentQty = getProductQuantity(productId);
-    if (quantity > currentQty) {
-      // Add to cart
-      for (let i = currentQty; i < quantity; i++) {
-        onAddToCart(product);
-      }
-    } else if (quantity < currentQty) {
-      // Remove from cart
-      for (let i = currentQty; i > quantity; i--) {
-        onRemoveFromCart(productId);
-      }
-    }
-  };
-
   if (products.length === 0) {
     return (
-      <Card className="shadow-sm border-0">
-        <CardContent className="text-center py-8">
-          <Package className="h-12 w-12 text-gray-300 mx-auto mb-3" />
-          <h3 className="text-lg font-medium text-gray-700 mb-2">
-            {hasFilters ? 'Produk tidak ditemukan' : 'Belum ada produk'}
-          </h3>
-          <p className="text-gray-500 mb-3 text-sm">
-            {hasFilters
-              ? 'Coba ubah kata kunci atau filter pencarian Anda'
-              : 'Produk akan segera ditambahkan'}
-          </p>
-          {hasFilters && (
-            <Button 
-              onClick={onResetSearch}
-              variant="outline"
-              className="border-green-200 text-green-600 hover:bg-green-50 text-sm"
-            >
-              Reset Pencarian
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+      <EmptyState
+        onResetSearch={onResetSearch}
+        hasFilters={hasFilters}
+      />
     );
   }
 
-  return (
-    <>
-      <div className="space-y-2">
-        {products.map((product) => (
-          <ProductListItem 
-            key={product.id} 
-            product={product} 
-            quantity={getProductQuantity(product.id)}
-            onQuantityChange={handleQuantityChange}
-          />
-        ))}
-      </div>
+  const getPaginationItems = () => {
+    const items = [];
+    const maxVisiblePages = 5;
+    
+    if (totalPages <= maxVisiblePages) {
+      for (let i = 1; i <= totalPages; i++) {
+        items.push(i);
+      }
+    } else {
+      if (currentPage <= 3) {
+        items.push(1, 2, 3, 4, '...', totalPages);
+      } else if (currentPage >= totalPages - 2) {
+        items.push(1, '...', totalPages - 3, totalPages - 2, totalPages - 1, totalPages);
+      } else {
+        items.push(1, '...', currentPage - 1, currentPage, currentPage + 1, '...', totalPages);
+      }
+    }
+    
+    return items;
+  };
 
-      {/* Pagination */}
+  return (
+    <div className="space-y-4 sm:space-y-6">
+      {viewMode === 'grid' ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-3 sm:gap-4 lg:gap-6">
+          {products.map((product) => (
+            <ProductCard
+              key={product.id}
+              product={product}
+              quantity={getProductQuantity(product.id)}
+              onAddToCart={onAddToCart}
+              onRemoveFromCart={onRemoveFromCart}
+            />
+          ))}
+        </div>
+      ) : (
+        <ProductList
+          products={products}
+          getProductQuantity={getProductQuantity}
+          onAddToCart={onAddToCart}
+          onRemoveFromCart={onRemoveFromCart}
+        />
+      )}
+
       {totalPages > 1 && (
-        <div className="flex justify-center mt-6">
+        <div className="flex justify-center py-4 sm:py-6">
           <Pagination>
-            <PaginationContent>
+            <PaginationContent className="flex flex-wrap gap-1 sm:gap-2">
               <PaginationItem>
-                <PaginationPrevious 
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage > 1) onPageChange(currentPage - 1);
-                  }}
-                  className={currentPage === 1 ? 'pointer-events-none opacity-50' : ''}
+                <PaginationPrevious
+                  onClick={() => currentPage > 1 && onPageChange(currentPage - 1)}
+                  className={`text-xs sm:text-sm ${currentPage <= 1 ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}
                 />
               </PaginationItem>
-              
-              {Array.from({ length: Math.min(3, totalPages) }, (_, i) => {
-                const page = i + 1;
-                return (
-                  <PaginationItem key={page}>
+
+              {getPaginationItems().map((item, index) => (
+                <PaginationItem key={index}>
+                  {item === '...' ? (
+                    <PaginationEllipsis className="text-xs sm:text-sm" />
+                  ) : (
                     <PaginationLink
-                      href="#"
-                      onClick={(e) => {
-                        e.preventDefault();
-                        onPageChange(page);
-                      }}
-                      isActive={currentPage === page}
-                      className="text-sm"
+                      onClick={() => onPageChange(item as number)}
+                      isActive={currentPage === item}
+                      className="text-xs sm:text-sm cursor-pointer min-w-[32px] sm:min-w-[40px]"
                     >
-                      {page}
+                      {item}
                     </PaginationLink>
-                  </PaginationItem>
-                );
-              })}
-              
+                  )}
+                </PaginationItem>
+              ))}
+
               <PaginationItem>
-                <PaginationNext 
-                  href="#"
-                  onClick={(e) => {
-                    e.preventDefault();
-                    if (currentPage < totalPages) onPageChange(currentPage + 1);
-                  }}
-                  className={currentPage === totalPages ? 'pointer-events-none opacity-50' : ''}
+                <PaginationNext
+                  onClick={() => currentPage < totalPages && onPageChange(currentPage + 1)}
+                  className={`text-xs sm:text-sm ${currentPage >= totalPages ? 'pointer-events-none opacity-50' : 'cursor-pointer'}`}
                 />
               </PaginationItem>
             </PaginationContent>
           </Pagination>
         </div>
       )}
-    </>
+    </div>
   );
 };
 

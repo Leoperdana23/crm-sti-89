@@ -1,13 +1,12 @@
 
 import React, { useState } from 'react';
-import { Plus, Link, Grid, List, Tags } from 'lucide-react';
+import { Plus, Grid, List, Tags } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import CategoryManagement from './CategoryManagement';
 
 interface ProductActionsProps {
   canManageProducts: boolean;
-  setTokenManagerOpen: (open: boolean) => void;
   setProductFormOpen: (open: boolean) => void;
   viewMode: 'grid' | 'list';
   setViewMode: (mode: 'grid' | 'list') => void;
@@ -15,7 +14,6 @@ interface ProductActionsProps {
 
 const ProductActions = ({
   canManageProducts,
-  setTokenManagerOpen,
   setProductFormOpen,
   viewMode,
   setViewMode
@@ -27,17 +25,6 @@ const ProductActions = ({
       <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 sm:gap-3">
         {canManageProducts && (
           <div className="flex flex-col sm:flex-row gap-2 flex-1 sm:flex-none">
-            <Button 
-              onClick={() => setTokenManagerOpen(true)} 
-              variant="outline" 
-              size="sm"
-              className="w-full sm:w-auto text-xs sm:text-sm"
-            >
-              <Link className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
-              <span className="hidden sm:inline">Link Publik</span>
-              <span className="sm:hidden">Link</span>
-            </Button>
-            
             <Button 
               onClick={() => setCategoryManagementOpen(true)} 
               variant="outline" 

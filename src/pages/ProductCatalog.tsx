@@ -1,159 +1,140 @@
+
 import React, { useState } from 'react';
-import { Loader2 } from 'lucide-react';
-import { useProducts, useProductCategories, useDeleteProduct } from '@/hooks/useProducts';
-import { useAuth } from '@/hooks/useAuth';
+import { useProducts } from '@/hooks/useProducts';
+import { useProductCategories } from '@/hooks/useProductCategories';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
-import { Product } from '@/types/product';
+import { Product, ProductCategory } from '@/types/product';
+import Layout from '@/components/Layout';
 import ProductForm from '@/components/ProductForm';
-import CatalogTokenManager from '@/components/CatalogTokenManager';
-import ProductFilters from '@/components/catalog/ProductFilters';
+import ProductGrid from '@/components/catalog/ProductGrid';
+import SearchAndFilter from '@/components/catalog/SearchAndFilter';
 import ProductActions from '@/components/catalog/ProductActions';
-import ProductCard from '@/components/catalog/ProductCard';
-import ProductList from '@/components/catalog/ProductList';
-import EmptyState from '@/components/catalog/EmptyState';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Loader2 } from 'lucide-react';
+
+const PRODUCTS_PER_PAGE = 20;
 
 const ProductCatalog = () => {
-  const { data: products, isLoading } = useProducts();
-  const { data: categories } = useProductCategories();
-  const { user } = useAuth();
+  const { data: products = [], isLoading: productsLoading } = useProducts();
+  const { data: categories = [], isLoading: categoriesLoading } = useProductCategories();
   const { hasPermission } = useUserPermissions();
-  const deleteProductMutation = useDeleteProduct();
-
+  
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
+  const [sortBy, setSortBy] = useState('name');
+  const [currentPage, setCurrentPage] = useState(1);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
   const [productFormOpen, setProductFormOpen] = useState(false);
-  const [tokenManagerOpen, setTokenManagerOpen] = useState(false);
-  const [editingProduct, setEditingProduct] = useState<Product | undefined>();
 
-  const isReseller = () => {
-    const salesUser = localStorage.getItem('salesUser');
-    if (salesUser) return false;
-    
-    const appUser = localStorage.getItem('appUser');
-    if (appUser) {
-      try {
-        const parsedUser = JSON.parse(appUser);
-        return parsedUser.user_metadata?.role === 'reseller' || parsedUser.role === 'reseller';
-      } catch (error) {
-        return false;
+  const canManageProducts = hasPermission('product_management') || hasPermission('product_create');
+
+  const handleSearchChange = (value: string) => {
+    setSearchTerm(value);
+    setCurrentPage(1);
+  };
+
+  const handleCategoryChange = (value: string) => {
+    setCategoryFilter(value);
+    setCurrentPage(1);
+  };
+
+  const handleResetSearch = () => {
+    setSearchTerm('');
+    setCategoryFilter('all');
+    setCurrentPage(1);
+  };
+
+  const filteredAndSortedProducts = products
+    .filter(product => {
+      const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+                           product.description?.toLowerCase().includes(searchTerm.toLowerCase());
+      const matchesCategory = categoryFilter === 'all' || product.category_id === categoryFilter;
+      
+      return matchesSearch && matchesCategory;
+    })
+    .sort((a, b) => {
+      switch (sortBy) {
+        case 'price-low':
+          return a.price - b.price;
+        case 'price-high':
+          return b.price - a.price;
+        case 'name':
+        default:
+          return a.name.localeCompare(b.name);
       }
-    }
-    
-    return user?.user_metadata?.role === 'reseller';
-  };
+    });
 
-  const showResellerPrice = isReseller();
-  const canManageProducts = hasPermission('product_management', 'edit');
+  const totalPages = Math.ceil(filteredAndSortedProducts.length / PRODUCTS_PER_PAGE);
+  const paginatedProducts = filteredAndSortedProducts.slice(
+    (currentPage - 1) * PRODUCTS_PER_PAGE,
+    currentPage * PRODUCTS_PER_PAGE
+  );
 
-  const filteredProducts = products?.filter(product => {
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                         product.description?.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesCategory = categoryFilter === 'all' || product.category_id === categoryFilter;
-    
-    return matchesSearch && matchesCategory;
-  }) || [];
+  const hasFilters = Boolean(searchTerm || categoryFilter !== 'all');
 
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product);
-    setProductFormOpen(true);
-  };
-
-  const handleDeleteProduct = async (productId: string) => {
-    try {
-      await deleteProductMutation.mutateAsync(productId);
-    } catch (error) {
-      console.error('Error deleting product:', error);
-    }
-  };
-
-  const handleCloseProductForm = () => {
-    setProductFormOpen(false);
-    setEditingProduct(undefined);
-  };
-
-  if (isLoading) {
+  if (productsLoading || categoriesLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[200px] md:min-h-[400px]">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-5 w-5 md:h-6 md:w-6 animate-spin" />
-          <span className="text-sm md:text-base">Memuat katalog produk...</span>
+      <Layout>
+        <div className="flex items-center justify-center min-h-[400px]">
+          <div className="flex flex-col items-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin text-blue-600" />
+            <span className="text-lg">Memuat katalog produk...</span>
+          </div>
         </div>
-      </div>
+      </Layout>
     );
   }
 
   return (
-    <div className="space-y-4 md:space-y-6">
-      <div className="flex flex-col sm:flex-row sm:justify-between sm:items-center gap-4">
-        <div>
-          <h1 className="text-2xl md:text-3xl font-bold text-gray-900">Katalog Produk</h1>
-          <p className="text-gray-600 mt-1 text-sm md:text-base">
-            {showResellerPrice ? 'Daftar harga khusus reseller' : 'Daftar produk tersedia'}
-          </p>
+    <Layout>
+      <div className="space-y-4 sm:space-y-6">
+        <div className="flex flex-col space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <h1 className="text-xl sm:text-2xl lg:text-3xl font-bold text-gray-900">
+              Katalog Produk
+            </h1>
+            
+            <ProductActions
+              canManageProducts={canManageProducts}
+              setProductFormOpen={setProductFormOpen}
+              viewMode={viewMode}
+              setViewMode={setViewMode}
+            />
+          </div>
+
+          <div className="bg-white rounded-lg shadow-sm border p-3 sm:p-4 lg:p-6">
+            <SearchAndFilter
+              searchTerm={searchTerm}
+              onSearchChange={handleSearchChange}
+              categoryFilter={categoryFilter}
+              onCategoryChange={handleCategoryChange}
+              sortBy={sortBy}
+              onSortChange={setSortBy}
+              categories={categories}
+            />
+          </div>
         </div>
-        
-        <ProductActions
-          canManageProducts={canManageProducts}
-          setTokenManagerOpen={setTokenManagerOpen}
-          setProductFormOpen={setProductFormOpen}
+
+        <ProductGrid
+          products={paginatedProducts}
+          currentPage={currentPage}
+          totalPages={totalPages}
+          onPageChange={setCurrentPage}
+          onResetSearch={handleResetSearch}
+          hasFilters={hasFilters}
           viewMode={viewMode}
-          setViewMode={setViewMode}
         />
+
+        <Dialog open={productFormOpen} onOpenChange={setProductFormOpen}>
+          <DialogContent className="w-full max-w-4xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
+            <DialogHeader>
+              <DialogTitle className="text-lg sm:text-xl">Tambah Produk Baru</DialogTitle>
+            </DialogHeader>
+            <ProductForm onClose={() => setProductFormOpen(false)} />
+          </DialogContent>
+        </Dialog>
       </div>
-
-      <ProductFilters
-        searchTerm={searchTerm}
-        setSearchTerm={setSearchTerm}
-        categoryFilter={categoryFilter}
-        setCategoryFilter={setCategoryFilter}
-        categories={categories}
-        filteredProductsCount={filteredProducts.length}
-      />
-
-      {viewMode === 'grid' ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4 md:gap-6">
-          {filteredProducts.map((product) => (
-            <ProductCard 
-              key={product.id} 
-              product={product} 
-              showResellerPrice={showResellerPrice}
-              canManage={canManageProducts}
-              onEdit={() => handleEditProduct(product)}
-              onDelete={() => handleDeleteProduct(product.id)}
-            />
-          ))}
-        </div>
-      ) : (
-        <div className="space-y-4">
-          {filteredProducts.map((product) => (
-            <ProductList 
-              key={product.id} 
-              product={product} 
-              showResellerPrice={showResellerPrice}
-              canManage={canManageProducts}
-              onEdit={() => handleEditProduct(product)}
-              onDelete={() => handleDeleteProduct(product.id)}
-            />
-          ))}
-        </div>
-      )}
-
-      {filteredProducts.length === 0 && (
-        <EmptyState searchTerm={searchTerm} categoryFilter={categoryFilter} />
-      )}
-
-      <ProductForm 
-        isOpen={productFormOpen}
-        onClose={handleCloseProductForm}
-        product={editingProduct}
-      />
-
-      <CatalogTokenManager 
-        isOpen={tokenManagerOpen}
-        onClose={() => setTokenManagerOpen(false)}
-      />
-    </div>
+    </Layout>
   );
 };
 

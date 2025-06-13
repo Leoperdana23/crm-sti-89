@@ -1,29 +1,15 @@
+
 import React, { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
 import { Package, Loader2 } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { supabase } from '@/integrations/supabase/client';
 import { Product, ProductCategory } from '@/types/product';
-import { useResellerAuth } from '@/hooks/useResellerAuth';
-import CheckoutDialog from '@/components/CheckoutDialog';
-import CartButton from '@/components/catalog/CartButton';
-import OrderHistoryDialog from '@/components/OrderHistoryDialog';
-import CatalogHeader from '@/components/PublicCatalog/CatalogHeader';
 import CatalogContent from '@/components/PublicCatalog/CatalogContent';
+import CatalogHeader from '@/components/PublicCatalog/CatalogHeader';
 
 const PRODUCTS_PER_PAGE = 20;
 
-// Cart item type
-interface CartItem {
-  product: Product;
-  quantity: number;
-}
-
 const PublicCatalog = () => {
-  const { token } = useParams<{ token: string }>();
-  const navigate = useNavigate();
-  const { session, clearResellerSession } = useResellerAuth();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -32,52 +18,11 @@ const PublicCatalog = () => {
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [sortBy, setSortBy] = useState('name');
   const [currentPage, setCurrentPage] = useState(1);
-  const [cart, setCart] = useState<CartItem[]>([]);
-  const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
-  const [orderSuccess, setOrderSuccess] = useState(false);
 
   useEffect(() => {
     const fetchCatalogData = async () => {
-      if (!token) {
-        setError('Token tidak valid');
-        setIsLoading(false);
-        return;
-      }
-
-      // Check if reseller is logged in
-      if (!session) {
-        setError('Silakan login sebagai reseller untuk mengakses katalog');
-        setIsLoading(false);
-        return;
-      }
-
-      // Verify if the token matches the logged-in reseller's token
-      if (session.catalogToken !== token) {
-        setError('Token tidak sesuai dengan sesi reseller yang login');
-        setIsLoading(false);
-        return;
-      }
-
       try {
-        console.log('Verifying token:', token);
-        
-        // Verify token exists and is active (no expiry check since tokens are now unlimited)
-        const { data: tokenData, error: tokenError } = await supabase
-          .from('catalog_tokens')
-          .select('*')
-          .eq('token', token)
-          .eq('is_active', true)
-          .single();
-
-        if (tokenError || !tokenData) {
-          console.error('Token verification failed:', tokenError);
-          setError('Token tidak valid atau tidak aktif');
-          setIsLoading(false);
-          return;
-        }
-
-        console.log('Token verified successfully:', tokenData);
+        console.log('Fetching public catalog data...');
 
         // Fetch products
         const { data: productsData, error: productsError } = await supabase
@@ -93,6 +38,7 @@ const PublicCatalog = () => {
 
         if (productsError) {
           console.error('Error fetching products:', productsError);
+          // Try simple query without join
           const { data: simpleProductsData, error: simpleProductsError } = await supabase
             .from('products')
             .select('*')
@@ -109,6 +55,7 @@ const PublicCatalog = () => {
           setProducts(productsData || []);
         }
 
+        // Fetch categories
         const { data: categoriesData, error: categoriesError } = await supabase
           .from('product_categories')
           .select('*')
@@ -131,63 +78,7 @@ const PublicCatalog = () => {
     };
 
     fetchCatalogData();
-  }, [token, session]);
-
-  const handleLogout = () => {
-    clearResellerSession();
-    navigate('/reseller-login');
-  };
-
-  const handleLogin = () => {
-    navigate('/reseller-login');
-  };
-
-  const addToCart = (product: Product) => {
-    setCart(prevCart => {
-      const existingItem = prevCart.find(item => item.product.id === product.id);
-      if (existingItem) {
-        return prevCart.map(item =>
-          item.product.id === product.id
-            ? { ...item, quantity: item.quantity + 1 }
-            : item
-        );
-      } else {
-        return [...prevCart, { product, quantity: 1 }];
-      }
-    });
-  };
-
-  const removeFromCart = (productId: string) => {
-    setCart(prevCart => {
-      return prevCart.map(item =>
-        item.product.id === productId
-          ? { ...item, quantity: Math.max(0, item.quantity - 1) }
-          : item
-      ).filter(item => item.quantity > 0);
-    });
-  };
-
-  const getProductQuantity = (productId: string) => {
-    const item = cart.find(item => item.product.id === productId);
-    return item ? item.quantity : 0;
-  };
-
-  const getTotalItems = () => {
-    return cart.reduce((total, item) => total + item.quantity, 0);
-  };
-
-  const getTotalPrice = () => {
-    return cart.reduce((total, item) => {
-      const price = item.product.reseller_price || item.product.price;
-      return total + (price * item.quantity);
-    }, 0);
-  };
-
-  const handleOrderSuccess = () => {
-    setCart([]);
-    setOrderSuccess(true);
-    setTimeout(() => setOrderSuccess(false), 3000);
-  };
+  }, []);
 
   const handleSearchChange = (value: string) => {
     setSearchTerm(value);
@@ -250,13 +141,8 @@ const PublicCatalog = () => {
         <Card className="w-full max-w-md mx-auto">
           <CardContent className="text-center py-6 sm:py-8 px-4 sm:px-6">
             <Package className="h-10 w-10 sm:h-12 sm:w-12 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Akses Ditolak</h3>
+            <h3 className="text-base sm:text-lg font-medium text-gray-900 mb-2">Terjadi Kesalahan</h3>
             <p className="text-sm sm:text-base text-gray-600 mb-4 break-words">{error}</p>
-            {!session && (
-              <Button onClick={handleLogin} className="w-full bg-green-600 hover:bg-green-700">
-                Login Reseller
-              </Button>
-            )}
           </CardContent>
         </Card>
       </div>
@@ -265,15 +151,10 @@ const PublicCatalog = () => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <CatalogHeader
-        session={session}
-        onHistoryClick={() => setIsOrderHistoryOpen(true)}
-        onLogout={handleLogout}
-        onLogin={handleLogin}
-      />
+      <CatalogHeader />
 
       <CatalogContent
-        orderSuccess={orderSuccess}
+        orderSuccess={false}
         searchTerm={searchTerm}
         onSearchChange={handleSearchChange}
         categoryFilter={categoryFilter}
@@ -285,33 +166,11 @@ const PublicCatalog = () => {
         currentPage={currentPage}
         totalPages={totalPages}
         onPageChange={setCurrentPage}
-        getProductQuantity={getProductQuantity}
-        onAddToCart={addToCart}
-        onRemoveFromCart={removeFromCart}
+        getProductQuantity={() => 0}
+        onAddToCart={() => {}}
+        onRemoveFromCart={() => {}}
         onResetSearch={handleResetSearch}
         hasFilters={hasFilters}
-      />
-
-      <CartButton
-        cart={cart}
-        totalItems={getTotalItems()}
-        totalPrice={getTotalPrice()}
-        onClick={() => setIsCheckoutOpen(true)}
-      />
-
-      <CheckoutDialog
-        isOpen={isCheckoutOpen}
-        onClose={() => setIsCheckoutOpen(false)}
-        cart={cart}
-        catalogToken={token || ''}
-        resellerSession={session}
-        onOrderSuccess={handleOrderSuccess}
-      />
-
-      <OrderHistoryDialog
-        isOpen={isOrderHistoryOpen}
-        onClose={() => setIsOrderHistoryOpen(false)}
-        catalogToken={token}
       />
     </div>
   );
