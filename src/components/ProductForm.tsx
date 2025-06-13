@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -20,6 +19,7 @@ const formSchema = z.object({
   price: z.number().min(0, 'Harga harus lebih dari 0'),
   reseller_price: z.number().min(0, 'Harga reseller harus lebih dari 0').optional(),
   points_value: z.number().min(0, 'Nilai poin harus 0 atau lebih').optional(),
+  commission_value: z.number().min(0, 'Nilai komisi harus 0 atau lebih').optional(),
   unit: z.string().min(1, 'Satuan wajib diisi'),
   stock_quantity: z.number().min(0, 'Stok harus 0 atau lebih').optional(),
   min_stock_level: z.number().min(0, 'Minimal stok harus 0 atau lebih').optional(),
@@ -49,6 +49,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
       price: product?.price || 0,
       reseller_price: product?.reseller_price || undefined,
       points_value: product?.points_value || 0,
+      commission_value: product?.commission_value || 0,
       unit: product?.unit || 'unit',
       stock_quantity: product?.stock_quantity || 0,
       min_stock_level: product?.min_stock_level || 0,
@@ -71,6 +72,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
           category_id: data.category_id === 'no-category' ? undefined : data.category_id,
           reseller_price: data.reseller_price,
           points_value: data.points_value || 0,
+          commission_value: data.commission_value || 0,
           stock_quantity: data.stock_quantity,
           min_stock_level: data.min_stock_level,
           featured: data.featured,
@@ -174,6 +176,25 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
             render={({ field }) => (
               <FormItem>
                 <FormLabel>Nilai Poin</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    {...field}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="commission_value"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nilai Komisi (Rp)</FormLabel>
                 <FormControl>
                   <Input
                     type="number"

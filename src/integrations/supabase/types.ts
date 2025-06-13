@@ -960,6 +960,7 @@ export type Database = {
       products: {
         Row: {
           category_id: string | null
+          commission_value: number | null
           created_at: string
           description: string | null
           featured: boolean | null
@@ -979,6 +980,7 @@ export type Database = {
         }
         Insert: {
           category_id?: string | null
+          commission_value?: number | null
           created_at?: string
           description?: string | null
           featured?: boolean | null
@@ -998,6 +1000,7 @@ export type Database = {
         }
         Update: {
           category_id?: string | null
+          commission_value?: number | null
           created_at?: string
           description?: string | null
           featured?: boolean | null

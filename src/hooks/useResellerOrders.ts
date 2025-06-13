@@ -20,7 +20,8 @@ export const useResellerOrders = (resellerId: string | null) => {
             order_items (
               *,
               products (
-                points_value
+                points_value,
+                commission_value
               )
             )
           )
@@ -35,13 +36,23 @@ export const useResellerOrders = (resellerId: string | null) => {
 
       console.log('Reseller orders fetched successfully:', data);
       
-      // Transform data untuk mengembalikan format yang diharapkan
-      return (data || []).map(resellerOrder => ({
-        ...resellerOrder.orders,
-        commission_rate: resellerOrder.commission_rate,
-        commission_amount: resellerOrder.commission_amount,
-        reseller_order_status: resellerOrder.status
-      })) || [];
+      // Transform data untuk mengembalikan format yang diharapkan dengan kalkulasi komisi berdasarkan produk
+      return (data || []).map(resellerOrder => {
+        const order = resellerOrder.orders;
+        
+        // Calculate total commission from product commission values
+        const totalCommissionFromProducts = order.order_items?.reduce((total: number, item: any) => {
+          const productCommission = item.products?.commission_value || 0;
+          return total + (productCommission * item.quantity);
+        }, 0) || 0;
+
+        return {
+          ...order,
+          commission_rate: resellerOrder.commission_rate,
+          commission_amount: totalCommissionFromProducts, // Use calculated commission from products
+          reseller_order_status: resellerOrder.status
+        };
+      }) || [];
     },
     enabled: !!resellerId,
     refetchInterval: 5000, // Refresh every 5 seconds

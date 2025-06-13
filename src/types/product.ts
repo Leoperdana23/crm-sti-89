@@ -16,6 +16,7 @@ export interface Product {
   price: number;
   reseller_price: number | null;
   points_value: number | null;
+  commission_value: number | null;
   unit: string;
   is_active: boolean;
   image_url: string | null;
@@ -38,6 +39,7 @@ export interface CreateProductData {
   price: number;
   reseller_price?: number;
   points_value?: number;
+  commission_value?: number;
   unit: string;
   image_url?: string;
   stock_quantity?: number;

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { useResellerOrders } from '@/hooks/useResellerOrders';
@@ -117,9 +116,12 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
     return mapping[status.toLowerCase()] || status;
   };
 
-  const calculateCommission = (totalAmount: number, commissionRate?: number) => {
-    const rate = commissionRate || reseller.commission_rate;
-    return (totalAmount * (rate / 100));
+  const calculateCommission = (orderItems: any[]) => {
+    // Calculate commission based on individual product commission values
+    return orderItems.reduce((total, item) => {
+      const productCommission = item.products?.commission_value || 0;
+      return total + (productCommission * item.quantity);
+    }, 0);
   };
 
   const calculateTotalPoints = (orderItems: any[]) => {
@@ -141,7 +143,7 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
   };
 
   const renderOrderCard = (order: any) => {
-    const commission = calculateCommission(order.total_amount || 0, order.commission_rate);
+    const commission = calculateCommission(order.order_items || []);
     const totalPoints = calculateTotalPoints(order.order_items || []);
 
     return (
@@ -175,7 +177,7 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
               <span className="font-medium">{formatCurrency(order.total_amount || 0)}</span>
             </div>
             <div className="flex justify-between text-sm">
-              <span className="text-gray-600">Komisi ({order.commission_rate || reseller.commission_rate}%):</span>
+              <span className="text-gray-600">Komisi:</span>
               <span className="font-medium text-green-600">{formatCurrency(commission)}</span>
             </div>
             {totalPoints > 0 && (
@@ -194,9 +196,16 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
                     <span>{item.quantity}x {item.product_name}</span>
                     <div className="text-right">
                       <div>{formatCurrency(item.subtotal)}</div>
-                      {item.points_earned > 0 && (
-                        <div className="text-blue-600">{item.points_earned} poin</div>
-                      )}
+                      <div className="flex gap-2">
+                        {item.points_earned > 0 && (
+                          <div className="text-blue-600">{item.points_earned} poin</div>
+                        )}
+                        {item.products?.commission_value > 0 && (
+                          <div className="text-green-600">
+                            +{formatCurrency(item.products.commission_value * item.quantity)}
+                          </div>
+                        )}
+                      </div>
                     </div>
                   </div>
                 ))}
