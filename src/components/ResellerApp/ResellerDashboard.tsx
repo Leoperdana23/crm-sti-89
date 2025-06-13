@@ -11,7 +11,7 @@ interface ResellerDashboardProps {
 }
 
 const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller }) => {
-  const { stats, loading } = useResellerStats(reseller.id);
+  const { data: stats, isLoading: loading } = useResellerStats(reseller.id);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {

@@ -34,7 +34,48 @@ export const useResellerApp = () => {
     localStorage.removeItem('reseller_session');
   };
 
-  return { session, login, logout };
+  const clearResellerSession = () => {
+    logout();
+  };
+
+  const authenticateReseller = async (phone: string, password: string) => {
+    console.log('Authenticating reseller with phone:', phone);
+    
+    const { data, error } = await supabase.rpc('authenticate_reseller_app', {
+      phone_input: phone,
+      password_input: password
+    });
+
+    if (error) {
+      console.error('Authentication error:', error);
+      throw new Error(error.message || 'Authentication failed');
+    }
+
+    if (!data.success) {
+      throw new Error(data.message || 'Authentication failed');
+    }
+
+    const sessionData: ResellerSession = {
+      id: data.reseller.id,
+      name: data.reseller.name,
+      phone: data.reseller.phone,
+      email: data.reseller.email,
+      address: data.reseller.address,
+      commission_rate: data.reseller.commission_rate,
+      total_points: data.reseller.total_points,
+      token: data.token,
+      expires_at: data.expires_at,
+    };
+
+    login(sessionData);
+
+    return {
+      success: true,
+      session: sessionData
+    };
+  };
+
+  return { session, login, logout, clearResellerSession, authenticateReseller };
 };
 
 export const useResellerStats = (resellerId: string | null) => {
@@ -54,7 +95,7 @@ export const useResellerStats = (resellerId: string | null) => {
       }
 
       console.log('Reseller stats fetched:', data);
-      return data as ResellerStats;
+      return data as unknown as ResellerStats;
     },
     enabled: !!resellerId,
   });

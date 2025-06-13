@@ -1,4 +1,3 @@
-
 import React, { useState, useMemo } from 'react';
 import { useProducts } from '@/hooks/useProducts';
 import { useProductCategories } from '@/hooks/useProductCategories';
@@ -140,8 +139,8 @@ const ProductCatalog = () => {
           <Dialog open={productFormOpen} onOpenChange={setProductFormOpen}>
             <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
               <ProductForm 
-                isOpen={productFormOpen} 
-                onClose={() => setProductFormOpen(false)} 
+                onSuccess={() => setProductFormOpen(false)}
+                onCancel={() => setProductFormOpen(false)}
               />
             </DialogContent>
           </Dialog>
