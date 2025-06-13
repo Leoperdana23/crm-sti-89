@@ -88,8 +88,8 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
           unit: data.unit, // This is guaranteed to be present due to form validation
           price: data.price, // This is guaranteed to be present due to form validation
           description: data.description,
-          category_id: data.category_id || undefined,
-          supplier_id: data.supplier_id || undefined,
+          category_id: data.category_id === 'none' ? undefined : data.category_id,
+          supplier_id: data.supplier_id === 'none' ? undefined : data.supplier_id,
           cost_price: data.cost_price,
           reseller_price: data.reseller_price,
           points_value: data.points_value,
@@ -156,7 +156,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                 <FormLabel>Kategori</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  value={field.value || ''}
+                  value={field.value || 'none'}
                   disabled={categoriesLoading}
                 >
                   <FormControl>
@@ -165,7 +165,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Tanpa Kategori</SelectItem>
+                    <SelectItem value="none">Tanpa Kategori</SelectItem>
                     {categories?.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
@@ -186,7 +186,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                 <FormLabel>Supplier</FormLabel>
                 <Select 
                   onValueChange={field.onChange} 
-                  value={field.value || ''}
+                  value={field.value || 'none'}
                   disabled={suppliersLoading}
                 >
                   <FormControl>
@@ -195,7 +195,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="">Tanpa Supplier</SelectItem>
+                    <SelectItem value="none">Tanpa Supplier</SelectItem>
                     {suppliers?.map((supplier) => (
                       <SelectItem key={supplier.id} value={supplier.id}>
                         {supplier.name}
