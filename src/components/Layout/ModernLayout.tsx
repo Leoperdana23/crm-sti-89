@@ -18,7 +18,7 @@ import ModernSidebar from './ModernSidebar';
 
 const ModernLayout = ({ children }: { children: React.ReactNode }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, logout } = useAuth();
+  const { user, signOut } = useAuth();
 
   return (
     <div className="min-h-screen bg-gray-50/50">
@@ -67,7 +67,7 @@ const ModernLayout = ({ children }: { children: React.ReactNode }) => {
                     <User className="h-4 w-4 text-white" />
                   </div>
                   <span className="hidden sm:block text-sm font-medium">
-                    {user?.full_name || 'User'}
+                    {user?.user_metadata?.full_name || user?.email || 'User'}
                   </span>
                 </Button>
               </DropdownMenuTrigger>
@@ -83,7 +83,7 @@ const ModernLayout = ({ children }: { children: React.ReactNode }) => {
                   Settings
                 </DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={logout}>
+                <DropdownMenuItem onClick={signOut}>
                   <LogOut className="mr-2 h-4 w-4" />
                   Logout
                 </DropdownMenuItem>

@@ -18,6 +18,11 @@ export interface Product {
   unit: string;
   is_active: boolean;
   image_url: string | null;
+  stock_quantity: number;
+  min_stock_level: number;
+  tags: string[] | null;
+  featured: boolean;
+  sort_order: number;
   created_at: string;
   updated_at: string;
   product_categories?: {
@@ -33,6 +38,11 @@ export interface CreateProductData {
   reseller_price?: number;
   unit: string;
   image_url?: string;
+  stock_quantity?: number;
+  min_stock_level?: number;
+  tags?: string[];
+  featured?: boolean;
+  sort_order?: number;
 }
 
 export interface UpdateProductData extends Partial<CreateProductData> {
