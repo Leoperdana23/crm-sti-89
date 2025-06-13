@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { useResellerOrders } from '@/hooks/useResellerOrders';
+import { useOrders } from '@/hooks/useOrders';
 import OrderHistoryLoading from './OrderHistory/OrderHistoryLoading';
 import OrderHistoryError from './OrderHistory/OrderHistoryError';
 import OrderHistoryContent from './OrderHistory/OrderHistoryContent';
@@ -13,7 +13,10 @@ interface OrderHistoryDialogProps {
 }
 
 const OrderHistoryDialog = ({ isOpen, onClose, catalogToken }: OrderHistoryDialogProps) => {
-  const { data: orders, isLoading, error } = useResellerOrders(catalogToken);
+  const { data: allOrders, isLoading, error } = useOrders();
+
+  // Filter orders by catalog token
+  const orders = allOrders?.filter(order => order.catalog_token === catalogToken) || [];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
