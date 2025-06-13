@@ -9,6 +9,7 @@ export interface Reseller {
   id_number?: string;
   notes?: string;
   branch_id?: string;
+  commission_rate?: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -23,6 +24,7 @@ export interface CreateResellerData {
   id_number?: string;
   notes?: string;
   branch_id?: string;
+  commission_rate?: number;
   is_active?: boolean;
 }
 

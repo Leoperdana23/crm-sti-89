@@ -116,6 +116,7 @@ export const useCreateOrder = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['reseller-orders'] });
       toast({
         title: 'Sukses',
         description: 'Pesanan berhasil dibuat',
