@@ -46,7 +46,7 @@ const Customers = () => {
 
   const handleSubmit = async (data: any) => {
     try {
-      console.log('Submitting data:', data);
+      console.log('Submitting customer data:', data);
       
       if (data.customer_type === 'reseller') {
         // Save as reseller
@@ -90,7 +90,7 @@ const Customers = () => {
       console.error('Error submitting form:', error);
       toast({
         title: "Error",
-        description: "Terjadi kesalahan. Silakan coba lagi.",
+        description: `Terjadi kesalahan: ${error instanceof Error ? error.message : 'Silakan coba lagi.'}`,
         variant: "destructive"
       });
     }
