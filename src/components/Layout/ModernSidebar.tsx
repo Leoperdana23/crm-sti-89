@@ -1,10 +1,10 @@
 
 import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { X, ChevronDown, ChevronRight, Settings, Users, Cog } from 'lucide-react';
+import { X, ChevronDown, ChevronRight, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
-import { menuItems, customerMenuItems, processMenuItems, settingsMenuItems } from '@/constants/menuItems';
+import { menuItems, settingsMenuItems } from '@/constants/menuItems';
 
 interface ModernSidebarProps {
   isOpen: boolean;
@@ -14,12 +14,8 @@ interface ModernSidebarProps {
 const ModernSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
   const location = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(false);
-  const [customerOpen, setCustomerOpen] = useState(false);
-  const [processOpen, setProcessOpen] = useState(false);
 
   const isSettingsActive = settingsMenuItems.some(item => location.pathname === item.path);
-  const isCustomerActive = customerMenuItems.some(item => location.pathname === item.path);
-  const isProcessActive = processMenuItems.some(item => location.pathname === item.path);
 
   return (
     <>
@@ -88,120 +84,6 @@ const ModernSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
                     );
                   })}
                   
-                  {/* Customer Menu with Submenu */}
-                  <li>
-                    <button
-                      onClick={() => setCustomerOpen(!customerOpen)}
-                      className={cn(
-                        "group flex w-full items-center gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors",
-                        isCustomerActive
-                          ? "bg-blue-50 text-blue-700"
-                          : "text-gray-700 hover:text-blue-700 hover:bg-gray-50"
-                      )}
-                    >
-                      <Users
-                        className={cn(
-                          "h-5 w-5 shrink-0",
-                          isCustomerActive ? "text-blue-700" : "text-gray-400 group-hover:text-blue-700"
-                        )}
-                      />
-                      <span className="flex-1 text-left">Pelanggan</span>
-                      {customerOpen ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </button>
-                    
-                    {/* Customer Submenu */}
-                    {customerOpen && (
-                      <ul className="mt-1 ml-6 space-y-1">
-                        {customerMenuItems.map((item) => {
-                          const isActive = location.pathname === item.path;
-                          return (
-                            <li key={item.path}>
-                              <Link
-                                to={item.path}
-                                className={cn(
-                                  "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-medium transition-colors",
-                                  isActive
-                                    ? "bg-blue-50 text-blue-700"
-                                    : "text-gray-600 hover:text-blue-700 hover:bg-gray-50"
-                                )}
-                                onClick={() => onClose()}
-                              >
-                                <item.icon
-                                  className={cn(
-                                    "h-4 w-4 shrink-0",
-                                    isActive ? "text-blue-700" : "text-gray-400 group-hover:text-blue-700"
-                                  )}
-                                />
-                                {item.label}
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </li>
-
-                  {/* Process Menu with Submenu */}
-                  <li>
-                    <button
-                      onClick={() => setProcessOpen(!processOpen)}
-                      className={cn(
-                        "group flex w-full items-center gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors",
-                        isProcessActive
-                          ? "bg-blue-50 text-blue-700"
-                          : "text-gray-700 hover:text-blue-700 hover:bg-gray-50"
-                      )}
-                    >
-                      <Cog
-                        className={cn(
-                          "h-5 w-5 shrink-0",
-                          isProcessActive ? "text-blue-700" : "text-gray-400 group-hover:text-blue-700"
-                        )}
-                      />
-                      <span className="flex-1 text-left">Proses Pelanggan</span>
-                      {processOpen ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </button>
-                    
-                    {/* Process Submenu */}
-                    {processOpen && (
-                      <ul className="mt-1 ml-6 space-y-1">
-                        {processMenuItems.map((item) => {
-                          const isActive = location.pathname === item.path;
-                          return (
-                            <li key={item.path}>
-                              <Link
-                                to={item.path}
-                                className={cn(
-                                  "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-medium transition-colors",
-                                  isActive
-                                    ? "bg-blue-50 text-blue-700"
-                                    : "text-gray-600 hover:text-blue-700 hover:bg-gray-50"
-                                )}
-                                onClick={() => onClose()}
-                              >
-                                <item.icon
-                                  className={cn(
-                                    "h-4 w-4 shrink-0",
-                                    isActive ? "text-blue-700" : "text-gray-400 group-hover:text-blue-700"
-                                  )}
-                                />
-                                {item.label}
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </li>
-
                   {/* Settings Menu with Submenu */}
                   <li>
                     <button
@@ -227,7 +109,7 @@ const ModernSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
                       )}
                     </button>
                     
-                    {/* Settings Submenu */}
+                    {/* Submenu */}
                     {settingsOpen && (
                       <ul className="mt-1 ml-6 space-y-1">
                         {settingsMenuItems.map((item) => {
