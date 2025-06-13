@@ -7,13 +7,19 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Survey } from '@/types/customer';
-import { CheckCircle, User } from 'lucide-react';
+import { CheckCircle, User, Star } from 'lucide-react';
+import { useToast } from '@/hooks/use-toast';
 
 interface PublicSurveyFormProps {
   survey: Survey;
   customer: any;
   onSubmit: (surveyData: Partial<Survey>) => Promise<void>;
-  onUpdateCustomer: (customerData: { name: string; birth_date?: string; id_number?: string }) => Promise<void>;
+  onUpdateCustomer: (customerData: { 
+    name: string; 
+    birth_date?: string; 
+    id_number?: string;
+    address?: string;
+  }) => Promise<void>;
   isCompleted?: boolean;
 }
 
@@ -31,6 +37,7 @@ interface CustomerData {
   name: string;
   birth_date: string;
   id_number: string;
+  address: string;
 }
 
 const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({ 
@@ -40,10 +47,13 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
   onUpdateCustomer,
   isCompleted = false 
 }) => {
+  const { toast } = useToast();
+  
   const [customerData, setCustomerData] = useState<CustomerData>({
     name: customer?.name || '',
     birth_date: customer?.birth_date || '',
-    id_number: customer?.id_number || ''
+    id_number: customer?.id_number || '',
+    address: customer?.address || ''
   });
 
   const [customerDataSaved, setCustomerDataSaved] = useState(false);
@@ -57,6 +67,7 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
     testimonial: survey.testimonial || '',
     suggestions: survey.suggestions || ''
   });
+
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [errors, setErrors] = useState<Record<string, string>>({});
 
@@ -65,6 +76,9 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
     
     if (!customerData.name.trim()) {
       newErrors.name = 'Nama lengkap wajib diisi';
+    }
+    if (!customerData.address.trim()) {
+      newErrors.address = 'Alamat wajib diisi';
     }
 
     setErrors(newErrors);
@@ -80,8 +94,17 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
       await onUpdateCustomer(customerData);
       setCustomerDataSaved(true);
       setErrors({});
+      toast({
+        title: "Berhasil",
+        description: "Data pelanggan berhasil disimpan",
+      });
     } catch (error) {
       console.error('Error saving customer data:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan data pelanggan",
+        variant: "destructive"
+      });
       setErrors({ general: 'Gagal menyimpan data pelanggan' });
     }
   };
@@ -133,9 +156,19 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
         usage_clarity: formData.usage_clarity!,
         price_approval: formData.price_approval!,
       };
+      
       await onSubmit(submitData);
+      toast({
+        title: "Terima Kasih!",
+        description: "Survei Anda telah berhasil dikirim",
+      });
     } catch (error) {
       console.error('Error submitting survey:', error);
+      toast({
+        title: "Error",
+        description: "Gagal mengirim survei. Silakan coba lagi.",
+        variant: "destructive"
+      });
     } finally {
       setIsSubmitting(false);
     }
@@ -150,24 +183,34 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
         <Label className={`text-sm font-medium ${hasError ? 'text-red-600' : ''}`}>
           {label} <span className="text-red-500">*</span>
         </Label>
-        <RadioGroup
-          value={fieldValue?.toString() || ''}
-          onValueChange={(value) => {
-            setFormData(prev => ({ ...prev, [field]: parseInt(value) }));
-            if (errors[field]) {
-              setErrors(prev => ({ ...prev, [field]: '' }));
-            }
-          }}
-          className="flex flex-wrap gap-2"
-          disabled={isCompleted}
-        >
+        <div className="flex flex-wrap gap-2">
           {Array.from({ length: 10 }, (_, i) => i + 1).map((num) => (
-            <div key={num} className="flex items-center space-x-1">
-              <RadioGroupItem value={num.toString()} id={`${field}-${num}`} />
-              <Label htmlFor={`${field}-${num}`} className="text-sm">{num}</Label>
-            </div>
+            <button
+              key={num}
+              type="button"
+              onClick={() => {
+                setFormData(prev => ({ ...prev, [field]: num }));
+                if (errors[field]) {
+                  setErrors(prev => ({ ...prev, [field]: '' }));
+                }
+              }}
+              disabled={isCompleted || !customerDataSaved}
+              className={`w-10 h-10 rounded-full border-2 transition-all ${
+                fieldValue === num
+                  ? 'bg-blue-500 text-white border-blue-500'
+                  : 'border-gray-300 hover:border-blue-300'
+              } ${isCompleted || !customerDataSaved ? 'opacity-50 cursor-not-allowed' : 'hover:bg-blue-50'}`}
+            >
+              {num}
+            </button>
           ))}
-        </RadioGroup>
+        </div>
+        {fieldValue && (
+          <div className="flex items-center text-sm text-gray-600">
+            <Star className="h-4 w-4 text-yellow-500 mr-1" />
+            Rating: {fieldValue}/10
+          </div>
+        )}
         {hasError && (
           <p className="text-red-600 text-sm mt-1">{hasError}</p>
         )}
@@ -190,7 +233,7 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
           <div className="flex justify-center mb-4">
             <CheckCircle className="h-16 w-16 text-green-500" />
           </div>
-          <CardTitle className="text-green-600">Terima Kasih!</CardTitle>
+          <CardTitle className="text-green-600 text-2xl">Terima Kasih!</CardTitle>
           <p className="text-gray-600">Survei Anda telah berhasil dikirim</p>
         </CardHeader>
         <CardContent className="text-center">
@@ -213,7 +256,7 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
             Data Pelanggan
           </CardTitle>
           <p className="text-sm text-gray-600">
-            Mohon periksa dan lengkapi data Anda terlebih dahulu
+            Mohon periksa dan lengkapi data Anda untuk mendapatkan garansi resmi
           </p>
         </CardHeader>
         <CardContent>
@@ -231,12 +274,35 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
                     setErrors(prev => ({ ...prev, name: '' }));
                   }
                 }}
-                placeholder="Masukkan nama lengkap"
+                placeholder="Masukkan nama lengkap sesuai KTP"
                 disabled={customerDataSaved}
                 className={errors.name ? 'border-red-500' : ''}
               />
               {errors.name && (
                 <p className="text-red-600 text-sm mt-1">{errors.name}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="address" className="text-sm font-medium">
+                Alamat Lengkap <span className="text-red-500">*</span>
+              </Label>
+              <Textarea
+                id="address"
+                value={customerData.address}
+                onChange={(e) => {
+                  setCustomerData(prev => ({ ...prev, address: e.target.value }));
+                  if (errors.address) {
+                    setErrors(prev => ({ ...prev, address: '' }));
+                  }
+                }}
+                placeholder="Masukkan alamat lengkap untuk pengiriman garansi"
+                disabled={customerDataSaved}
+                className={errors.address ? 'border-red-500' : ''}
+                rows={3}
+              />
+              {errors.address && (
+                <p className="text-red-600 text-sm mt-1">{errors.address}</p>
               )}
             </div>
 
@@ -290,9 +356,6 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
           <p className="text-sm text-gray-500">
             Mohon berikan penilaian Anda terhadap layanan kami. Skala 1 (sangat buruk) hingga 10 (sangat baik).
           </p>
-          <p className="text-sm text-red-600">
-            * Wajib diisi
-          </p>
         </CardHeader>
         <CardContent>
           {!customerDataSaved && (
@@ -304,65 +367,63 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
           )}
           
           <form onSubmit={handleSubmit} className="space-y-6">
-            <fieldset disabled={!customerDataSaved}>
-              {renderRatingScale('service_technician', 'Pelayanan Teknisi (1-10)')}
-              {renderRatingScale('service_sales', 'Pelayanan Sales/CS (1-10)')}
-              {renderRatingScale('product_quality', 'Kualitas Produk (1-10)')}
-              {renderRatingScale('usage_clarity', 'Kejelasan Penggunaan (1-10)')}
+            {renderRatingScale('service_technician', 'Pelayanan Teknisi (1-10)')}
+            {renderRatingScale('service_sales', 'Pelayanan Sales/CS (1-10)')}
+            {renderRatingScale('product_quality', 'Kualitas Produk (1-10)')}
+            {renderRatingScale('usage_clarity', 'Kejelasan Penggunaan (1-10)')}
 
-              <div className="space-y-3">
-                <Label className={`text-sm font-medium ${errors.price_approval ? 'text-red-600' : ''}`}>
-                  Harga Sesuai? <span className="text-red-500">*</span>
-                </Label>
-                <RadioGroup
-                  value={formData.price_approval !== null ? formData.price_approval.toString() : ''}
-                  onValueChange={(value) => {
-                    setFormData(prev => ({ ...prev, price_approval: value === 'true' }));
-                    if (errors.price_approval) {
-                      setErrors(prev => ({ ...prev, price_approval: '' }));
-                    }
-                  }}
-                  className="flex gap-4"
-                  disabled={isCompleted}
-                >
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="true" id="price-yes" />
-                    <Label htmlFor="price-yes">Ya, Sesuai</Label>
-                  </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="false" id="price-no" />
-                    <Label htmlFor="price-no">Tidak Sesuai</Label>
-                  </div>
-                </RadioGroup>
-                {errors.price_approval && (
-                  <p className="text-red-600 text-sm mt-1">{errors.price_approval}</p>
-                )}
-              </div>
+            <div className="space-y-3">
+              <Label className={`text-sm font-medium ${errors.price_approval ? 'text-red-600' : ''}`}>
+                Harga Sesuai? <span className="text-red-500">*</span>
+              </Label>
+              <RadioGroup
+                value={formData.price_approval !== null ? formData.price_approval.toString() : ''}
+                onValueChange={(value) => {
+                  setFormData(prev => ({ ...prev, price_approval: value === 'true' }));
+                  if (errors.price_approval) {
+                    setErrors(prev => ({ ...prev, price_approval: '' }));
+                  }
+                }}
+                className="flex gap-4"
+                disabled={isCompleted || !customerDataSaved}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="true" id="price-yes" />
+                  <Label htmlFor="price-yes">Ya, Sesuai</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="false" id="price-no" />
+                  <Label htmlFor="price-no">Tidak Sesuai</Label>
+                </div>
+              </RadioGroup>
+              {errors.price_approval && (
+                <p className="text-red-600 text-sm mt-1">{errors.price_approval}</p>
+              )}
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="testimonial">Testimoni</Label>
-                <Textarea
-                  id="testimonial"
-                  value={formData.testimonial}
-                  onChange={(e) => setFormData(prev => ({ ...prev, testimonial: e.target.value }))}
-                  placeholder="Bagikan pengalaman Anda dengan produk/layanan kami..."
-                  rows={4}
-                  disabled={isCompleted}
-                />
-              </div>
+            <div className="space-y-2">
+              <Label htmlFor="testimonial">Testimoni</Label>
+              <Textarea
+                id="testimonial"
+                value={formData.testimonial}
+                onChange={(e) => setFormData(prev => ({ ...prev, testimonial: e.target.value }))}
+                placeholder="Bagikan pengalaman Anda dengan produk/layanan kami..."
+                rows={4}
+                disabled={isCompleted || !customerDataSaved}
+              />
+            </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="suggestions">Saran dan Kritik</Label>
-                <Textarea
-                  id="suggestions"
-                  value={formData.suggestions}
-                  onChange={(e) => setFormData(prev => ({ ...prev, suggestions: e.target.value }))}
-                  placeholder="Berikan saran atau kritik untuk perbaikan layanan kami..."
-                  rows={4}
-                  disabled={isCompleted}
-                />
-              </div>
-            </fieldset>
+            <div className="space-y-2">
+              <Label htmlFor="suggestions">Saran dan Kritik</Label>
+              <Textarea
+                id="suggestions"
+                value={formData.suggestions}
+                onChange={(e) => setFormData(prev => ({ ...prev, suggestions: e.target.value }))}
+                placeholder="Berikan saran atau kritik untuk perbaikan layanan kami..."
+                rows={4}
+                disabled={isCompleted || !customerDataSaved}
+              />
+            </div>
 
             {errors.general && (
               <p className="text-red-600 text-sm text-center">{errors.general}</p>
@@ -375,15 +436,6 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
             >
               {isSubmitting ? 'Mengirim...' : 'Kirim Survei'}
             </Button>
-            
-            {(!isFormValid() || !customerDataSaved) && (
-              <p className="text-red-600 text-sm text-center mt-2">
-                {!customerDataSaved 
-                  ? 'Harap simpan data pelanggan dan isi semua rating wajib sebelum mengirim survei'
-                  : 'Harap isi semua rating yang wajib diisi sebelum mengirim survei'
-                }
-              </p>
-            )}
           </form>
         </CardContent>
       </Card>

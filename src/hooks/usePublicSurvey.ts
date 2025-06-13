@@ -14,6 +14,12 @@ export const usePublicSurvey = (token: string) => {
       try {
         setLoading(true);
         setError(null);
+        console.log('Fetching survey with token:', token);
+
+        if (!token) {
+          setError('Token survei tidak valid');
+          return;
+        }
 
         const { data: surveyData, error: surveyError } = await supabase
           .from('surveys')
@@ -24,7 +30,8 @@ export const usePublicSurvey = (token: string) => {
               name,
               phone,
               birth_date,
-              id_number
+              id_number,
+              address
             )
           `)
           .eq('survey_token', token)
@@ -36,26 +43,31 @@ export const usePublicSurvey = (token: string) => {
           return;
         }
 
-        if (surveyData) {
-          const transformedSurvey: Survey = {
-            id: surveyData.id,
-            customer_id: surveyData.customer_id,
-            deal_date: surveyData.deal_date,
-            service_technician: surveyData.service_technician,
-            service_sales: surveyData.service_sales,
-            product_quality: surveyData.product_quality,
-            usage_clarity: surveyData.usage_clarity,
-            price_approval: surveyData.price_approval,
-            testimonial: surveyData.testimonial || '',
-            suggestions: surveyData.suggestions || '',
-            is_completed: surveyData.is_completed,
-            completed_at: surveyData.completed_at,
-            survey_token: surveyData.survey_token
-          };
-
-          setSurvey(transformedSurvey);
-          setCustomer(surveyData.customers);
+        if (!surveyData) {
+          setError('Survei tidak ditemukan');
+          return;
         }
+
+        console.log('Survey data fetched:', surveyData);
+
+        const transformedSurvey: Survey = {
+          id: surveyData.id,
+          customer_id: surveyData.customer_id,
+          deal_date: surveyData.deal_date,
+          service_technician: surveyData.service_technician || 0,
+          service_sales: surveyData.service_sales || 0,
+          product_quality: surveyData.product_quality || 0,
+          usage_clarity: surveyData.usage_clarity || 0,
+          price_approval: surveyData.price_approval || false,
+          testimonial: surveyData.testimonial || '',
+          suggestions: surveyData.suggestions || '',
+          is_completed: surveyData.is_completed || false,
+          completed_at: surveyData.completed_at,
+          survey_token: surveyData.survey_token
+        };
+
+        setSurvey(transformedSurvey);
+        setCustomer(surveyData.customers);
       } catch (error) {
         console.error('Error in fetchSurvey:', error);
         setError('Terjadi kesalahan saat memuat survei');
@@ -66,19 +78,32 @@ export const usePublicSurvey = (token: string) => {
 
     if (token) {
       fetchSurvey();
+    } else {
+      setLoading(false);
+      setError('Token survei tidak ditemukan');
     }
   }, [token]);
 
-  const updateCustomer = async (customerData: { name: string; birth_date?: string; id_number?: string }) => {
+  const updateCustomer = async (customerData: { 
+    name: string; 
+    birth_date?: string; 
+    id_number?: string;
+    address?: string;
+  }) => {
     try {
-      if (!survey) return;
+      if (!survey) {
+        throw new Error('Survey data tidak tersedia');
+      }
+
+      console.log('Updating customer data:', customerData);
 
       const { error } = await supabase
         .from('customers')
         .update({
           name: customerData.name,
           birth_date: customerData.birth_date || null,
-          id_number: customerData.id_number || null
+          id_number: customerData.id_number || null,
+          address: customerData.address || null
         })
         .eq('id', survey.customer_id);
 
@@ -92,6 +117,8 @@ export const usePublicSurvey = (token: string) => {
         ...prev,
         ...customerData
       }));
+
+      console.log('Customer data updated successfully');
     } catch (error) {
       console.error('Error in updateCustomer:', error);
       throw error;
@@ -100,6 +127,12 @@ export const usePublicSurvey = (token: string) => {
 
   const updateSurvey = async (updatedData: Partial<Survey>) => {
     try {
+      if (!survey) {
+        throw new Error('Survey data tidak tersedia');
+      }
+
+      console.log('Updating survey data:', updatedData);
+
       const { error } = await supabase
         .from('surveys')
         .update({
@@ -120,14 +153,20 @@ export const usePublicSurvey = (token: string) => {
         throw error;
       }
 
-      if (survey) {
-        setSurvey({
-          ...survey,
-          ...updatedData,
-          is_completed: true,
-          completed_at: new Date().toISOString()
-        });
-      }
+      // Update customer survey status
+      await supabase
+        .from('customers')
+        .update({ survey_status: 'sudah_disurvei' })
+        .eq('id', survey.customer_id);
+
+      setSurvey({
+        ...survey,
+        ...updatedData,
+        is_completed: true,
+        completed_at: new Date().toISOString()
+      });
+
+      console.log('Survey updated successfully');
     } catch (error) {
       console.error('Error in updateSurvey:', error);
       throw error;

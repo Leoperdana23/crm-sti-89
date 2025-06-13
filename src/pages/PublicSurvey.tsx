@@ -4,7 +4,7 @@ import { useParams } from 'react-router-dom';
 import { usePublicSurvey } from '@/hooks/usePublicSurvey';
 import PublicSurveyForm from '@/components/PublicSurveyForm';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 
 const PublicSurvey = () => {
   const { token } = useParams<{ token: string }>();
@@ -22,10 +22,14 @@ const PublicSurvey = () => {
   if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
-        <div className="flex items-center space-x-3">
-          <div className="h-6 w-6 md:h-8 md:w-8 animate-spin rounded-full border-b-2 border-blue-600"></div>
-          <span className="text-sm md:text-base lg:text-lg">Memuat survei...</span>
-        </div>
+        <Card className="max-w-md mx-auto shadow-lg">
+          <CardContent className="flex items-center justify-center p-8">
+            <div className="flex items-center space-x-3">
+              <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+              <span className="text-lg">Memuat survei...</span>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     );
   }
@@ -39,8 +43,11 @@ const PublicSurvey = () => {
             <CardTitle className="text-lg md:text-xl text-red-600">Survei Tidak Ditemukan</CardTitle>
           </CardHeader>
           <CardContent className="text-center p-4 md:p-6">
-            <p className="text-sm md:text-base text-gray-600">
+            <p className="text-sm md:text-base text-gray-600 mb-4">
               {error || 'Link survei tidak valid atau sudah tidak aktif.'}
+            </p>
+            <p className="text-xs text-gray-500">
+              Silakan hubungi customer service kami jika Anda memerlukan bantuan.
             </p>
           </CardContent>
         </Card>
@@ -53,10 +60,11 @@ const PublicSurvey = () => {
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
-            Data Garansi Resmi
+            Data Garansi Resmi & Survei Kepuasan
           </h1>
-          <p className="text-sm md:text-base lg:text-lg text-gray-600 max-w-2xl mx-auto">
-            Mohon lengkapi data diri anda untuk mendapatkan garansi barang 1 tahun ganti baru. Pastikan data diri anda sesuai kartu identitas.
+          <p className="text-sm md:text-base lg:text-lg text-gray-600 max-w-3xl mx-auto">
+            Mohon lengkapi data diri Anda untuk mendapatkan garansi barang 1 tahun ganti baru, 
+            dan berikan penilaian terhadap layanan kami untuk membantu meningkatkan kualitas pelayanan.
           </p>
         </div>
         
