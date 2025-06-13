@@ -62,7 +62,21 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
       if (product) {
         await updateProductMutation.mutateAsync({ id: product.id, ...data });
       } else {
-        await createProductMutation.mutateAsync(data);
+        // Ensure required fields are present for create
+        const createData = {
+          name: data.name,
+          price: data.price,
+          unit: data.unit,
+          description: data.description,
+          category_id: data.category_id,
+          reseller_price: data.reseller_price,
+          points_value: data.points_value,
+          stock_quantity: data.stock_quantity,
+          min_stock_level: data.min_stock_level,
+          featured: data.featured,
+          sort_order: data.sort_order,
+        };
+        await createProductMutation.mutateAsync(createData);
       }
       onSuccess?.();
     } catch (error) {

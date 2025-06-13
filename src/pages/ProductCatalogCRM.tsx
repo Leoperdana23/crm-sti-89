@@ -194,9 +194,9 @@ const ProductCatalogCRM = () => {
         <Dialog open={productFormOpen} onOpenChange={handleCloseProductForm}>
           <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
             <ProductForm 
-              isOpen={productFormOpen} 
-              onClose={handleCloseProductForm}
               product={editingProduct}
+              onSuccess={handleCloseProductForm}
+              onCancel={handleCloseProductForm}
             />
           </DialogContent>
         </Dialog>

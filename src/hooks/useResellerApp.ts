@@ -51,20 +51,23 @@ export const useResellerApp = () => {
       throw new Error(error.message || 'Authentication failed');
     }
 
-    if (!data.success) {
-      throw new Error(data.message || 'Authentication failed');
+    // Type assertion for the response data
+    const responseData = data as any;
+
+    if (!responseData.success) {
+      throw new Error(responseData.message || 'Authentication failed');
     }
 
     const sessionData: ResellerSession = {
-      id: data.reseller.id,
-      name: data.reseller.name,
-      phone: data.reseller.phone,
-      email: data.reseller.email,
-      address: data.reseller.address,
-      commission_rate: data.reseller.commission_rate,
-      total_points: data.reseller.total_points,
-      token: data.token,
-      expires_at: data.expires_at,
+      id: responseData.reseller.id,
+      name: responseData.reseller.name,
+      phone: responseData.reseller.phone,
+      email: responseData.reseller.email,
+      address: responseData.reseller.address,
+      commission_rate: responseData.reseller.commission_rate,
+      total_points: responseData.reseller.total_points,
+      token: responseData.token,
+      expires_at: responseData.expires_at,
     };
 
     login(sessionData);
