@@ -125,14 +125,10 @@ const ProductCatalog = () => {
           viewMode={viewMode}
         />
 
-        <Dialog open={productFormOpen} onOpenChange={setProductFormOpen}>
-          <DialogContent className="w-full max-w-4xl max-h-[90vh] overflow-y-auto mx-4 sm:mx-auto">
-            <DialogHeader>
-              <DialogTitle className="text-lg sm:text-xl">Tambah Produk Baru</DialogTitle>
-            </DialogHeader>
-            <ProductForm onClose={() => setProductFormOpen(false)} />
-          </DialogContent>
-        </Dialog>
+        <ProductForm 
+          isOpen={productFormOpen} 
+          onClose={() => setProductFormOpen(false)} 
+        />
       </div>
     </Layout>
   );

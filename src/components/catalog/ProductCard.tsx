@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Package, Edit, Trash2 } from 'lucide-react';
+import { Package, Edit, Trash2, Plus, Minus } from 'lucide-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,18 +9,24 @@ import { Product } from '@/types/product';
 
 interface ProductCardProps {
   product: Product;
-  showResellerPrice: boolean;
-  canManage: boolean;
-  onEdit: () => void;
-  onDelete: () => void;
+  quantity?: number;
+  onAddToCart?: (product: Product) => void;
+  onRemoveFromCart?: (productId: string) => void;
+  showResellerPrice?: boolean;
+  canManage?: boolean;
+  onEdit?: () => void;
+  onDelete?: () => void;
 }
 
 const ProductCard = ({ 
   product, 
-  showResellerPrice, 
-  canManage, 
-  onEdit, 
-  onDelete 
+  quantity = 0,
+  onAddToCart,
+  onRemoveFromCart,
+  showResellerPrice = false, 
+  canManage = false, 
+  onEdit = () => {}, 
+  onDelete = () => {} 
 }: ProductCardProps) => {
   const formatPrice = (price: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -77,6 +83,40 @@ const ProductCard = ({
             </div>
           </div>
 
+          {/* Cart Controls */}
+          {onAddToCart && onRemoveFromCart && (
+            <div className="flex items-center justify-between pt-2">
+              {quantity > 0 ? (
+                <div className="flex items-center space-x-2">
+                  <Button 
+                    size="sm" 
+                    variant="outline"
+                    onClick={() => onRemoveFromCart(product.id)}
+                  >
+                    <Minus className="h-3 w-3" />
+                  </Button>
+                  <span className="font-medium">{quantity}</span>
+                  <Button 
+                    size="sm" 
+                    onClick={() => onAddToCart(product)}
+                  >
+                    <Plus className="h-3 w-3" />
+                  </Button>
+                </div>
+              ) : (
+                <Button 
+                  size="sm" 
+                  onClick={() => onAddToCart(product)}
+                  className="w-full"
+                >
+                  <Plus className="h-3 w-3 mr-1" />
+                  Tambah
+                </Button>
+              )}
+            </div>
+          )}
+
+          {/* Management Controls */}
           {canManage && (
             <div className="flex items-center space-x-2 pt-2">
               <Button size="sm" variant="outline" onClick={onEdit}>
