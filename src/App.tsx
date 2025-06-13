@@ -52,6 +52,7 @@ function App() {
               <Route path="/catalog/:token" element={<ModernPublicCatalog />} />
               <Route path="/produk" element={<ResellerCatalog />} />
               <Route path="/survey/:token" element={<PublicSurvey />} />
+              <Route path="/public-survey/:token" element={<PublicSurvey />} />
               
               {/* Protected routes with modern layout */}
               <Route path="/dashboard" element={
