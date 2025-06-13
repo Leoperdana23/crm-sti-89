@@ -1,11 +1,10 @@
 
-import React, { useState } from 'react';
+import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Loader2, Edit } from 'lucide-react';
 import { useUpdateOrderStatus } from '@/hooks/useOrders';
-import { Order } from '@/types/order';
+import { Order, ORDER_STATUS_MAPPING } from '@/types/order';
 
 interface OrderStatusDialogProps {
   isOpen: boolean;
@@ -14,99 +13,71 @@ interface OrderStatusDialogProps {
 }
 
 const OrderStatusDialog = ({ isOpen, onClose, order }: OrderStatusDialogProps) => {
-  const [newStatus, setNewStatus] = useState(order.status);
   const updateStatusMutation = useUpdateOrderStatus();
+  const [selectedStatus, setSelectedStatus] = React.useState(order.status);
 
-  const statusOptions = [
-    { value: 'pending', label: 'Menunggu' },
-    { value: 'confirmed', label: 'Dikonfirmasi' },
-    { value: 'processing', label: 'Diproses' },
-    { value: 'ready', label: 'Siap' },
-    { value: 'completed', label: 'Selesai' },
-    { value: 'cancelled', label: 'Dibatalkan' },
-  ];
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    
-    if (newStatus === order.status) {
-      onClose();
-      return;
-    }
-
+  const handleUpdateStatus = async () => {
     try {
       await updateStatusMutation.mutateAsync({
         orderId: order.id,
-        status: newStatus
+        status: selectedStatus,
       });
       onClose();
     } catch (error) {
-      console.error('Failed to update order status:', error);
+      console.error('Error updating order status:', error);
     }
   };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="w-full max-w-md mx-auto">
+      <DialogContent>
         <DialogHeader>
-          <DialogTitle className="flex items-center gap-2">
-            <Edit className="h-5 w-5" />
-            Edit Status Pesanan
-          </DialogTitle>
+          <DialogTitle>Update Status Pesanan</DialogTitle>
         </DialogHeader>
         
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="space-y-4">
           <div className="space-y-2">
-            <p className="text-sm text-gray-600">
-              Pesanan ID: <span className="font-mono">#{order.id.slice(-8)}</span>
-            </p>
-            <p className="text-sm text-gray-600">
-              Pelanggan: <span className="font-medium">{order.customer_name}</span>
-            </p>
+            <label className="text-sm font-medium">Order ID:</label>
+            <p className="text-sm text-gray-600">#{order.id.slice(-8)}</p>
           </div>
-
-          <div>
-            <label className="text-sm font-medium">Status Pesanan</label>
-            <Select value={newStatus} onValueChange={setNewStatus}>
-              <SelectTrigger className="mt-1">
-                <SelectValue />
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Customer:</label>
+            <p className="text-sm text-gray-600">{order.customer_name}</p>
+          </div>
+          
+          <div className="space-y-2">
+            <label className="text-sm font-medium">Status Saat Ini:</label>
+            <p className="text-sm text-gray-600">{ORDER_STATUS_MAPPING[order.status as keyof typeof ORDER_STATUS_MAPPING] || order.status}</p>
+          </div>
+          
+          <div className="space-y-2">
+            <label htmlFor="status" className="text-sm font-medium">Status Baru:</label>
+            <Select value={selectedStatus} onValueChange={setSelectedStatus}>
+              <SelectTrigger>
+                <SelectValue placeholder="Pilih status baru" />
               </SelectTrigger>
               <SelectContent>
-                {statusOptions.map((option) => (
-                  <SelectItem key={option.value} value={option.value}>
-                    {option.label}
-                  </SelectItem>
-                ))}
+                <SelectItem value="pending">Menunggu</SelectItem>
+                <SelectItem value="processing">Proses</SelectItem>
+                <SelectItem value="completed">Selesai</SelectItem>
+                <SelectItem value="cancelled">Batal</SelectItem>
               </SelectContent>
             </Select>
           </div>
-
-          <div className="flex gap-2 pt-2">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={onClose}
-              className="flex-1"
-              disabled={updateStatusMutation.isPending}
-            >
+          
+          <div className="flex justify-end space-x-2">
+            <Button variant="outline" onClick={onClose}>
               Batal
             </Button>
-            <Button
-              type="submit"
-              className="flex-1"
-              disabled={updateStatusMutation.isPending || newStatus === order.status}
+            <Button 
+              onClick={handleUpdateStatus}
+              disabled={updateStatusMutation.isPending || selectedStatus === order.status}
             >
-              {updateStatusMutation.isPending ? (
-                <>
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                  Memperbarui...
-                </>
-              ) : (
-                'Update Status'
-              )}
+              {updateStatusMutation.isPending ? 'Mengupdate...' : 'Update Status'}
             </Button>
           </div>
-        </form>
+        </div>
       </DialogContent>
     </Dialog>
   );

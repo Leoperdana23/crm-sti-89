@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, User, Phone, Package, MapPin, Truck } from 'lucide-react';
-import { Order, OrderItem } from '@/types/order';
+import { Order, OrderItem, ORDER_STATUS_MAPPING } from '@/types/order';
 
 interface OrderCardProps {
   order: Order & { order_items: OrderItem[] };
@@ -30,12 +30,10 @@ const OrderCard = ({ order }: OrderCardProps) => {
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { label: 'Menunggu', variant: 'secondary' as const },
-      confirmed: { label: 'Dikonfirmasi', variant: 'default' as const },
-      processing: { label: 'Diproses', variant: 'default' as const },
-      ready: { label: 'Siap', variant: 'default' as const },
-      completed: { label: 'Selesai', variant: 'default' as const },
-      cancelled: { label: 'Dibatalkan', variant: 'destructive' as const },
+      pending: { label: ORDER_STATUS_MAPPING.pending, variant: 'secondary' as const },
+      processing: { label: ORDER_STATUS_MAPPING.processing, variant: 'default' as const },
+      completed: { label: ORDER_STATUS_MAPPING.completed, variant: 'default' as const },
+      cancelled: { label: ORDER_STATUS_MAPPING.cancelled, variant: 'destructive' as const },
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;

@@ -35,9 +35,7 @@ const OrderCard = ({ order, onEditStatus, onWhatsAppFollowUp, onDelete }: OrderC
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       pending: { label: ORDER_STATUS_MAPPING.pending, variant: 'secondary' as const },
-      confirmed: { label: ORDER_STATUS_MAPPING.confirmed, variant: 'default' as const },
       processing: { label: ORDER_STATUS_MAPPING.processing, variant: 'default' as const },
-      ready: { label: ORDER_STATUS_MAPPING.ready, variant: 'default' as const },
       completed: { label: ORDER_STATUS_MAPPING.completed, variant: 'default' as const },
       cancelled: { label: ORDER_STATUS_MAPPING.cancelled, variant: 'destructive' as const },
     };
@@ -58,8 +56,8 @@ const OrderCard = ({ order, onEditStatus, onWhatsAppFollowUp, onDelete }: OrderC
     return method === 'delivery' ? 'Dikirim' : 'Diambil';
   };
 
-  // Show WhatsApp button when status is ready
-  const showWhatsAppButton = order.status === 'ready';
+  // Show WhatsApp button when status is completed
+  const showWhatsAppButton = order.status === 'completed';
 
   return (
     <Card>

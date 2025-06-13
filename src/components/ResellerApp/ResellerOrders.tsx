@@ -36,12 +36,8 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
     switch (status.toLowerCase()) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
-      case 'confirmed':
-        return 'bg-blue-100 text-blue-800';
       case 'processing':
         return 'bg-blue-100 text-blue-800';
-      case 'ready':
-        return 'bg-green-100 text-green-800';
       case 'completed':
         return 'bg-green-100 text-green-800';
       case 'cancelled':
@@ -55,10 +51,8 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
     switch (status.toLowerCase()) {
       case 'pending':
         return <Clock className="h-4 w-4" />;
-      case 'confirmed':
       case 'processing':
         return <Package className="h-4 w-4" />;
-      case 'ready':
       case 'completed':
         return <CheckCircle className="h-4 w-4" />;
       case 'cancelled':
@@ -154,8 +148,8 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
       <Tabs defaultValue="all" className="w-full">
         <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="all">Semua ({orders.length})</TabsTrigger>
+          <TabsTrigger value="pending">Menunggu ({filterOrdersByStatus('pending').length})</TabsTrigger>
           <TabsTrigger value="processing">Proses ({filterOrdersByStatus('processing').length})</TabsTrigger>
-          <TabsTrigger value="ready">Siap ({filterOrdersByStatus('ready').length})</TabsTrigger>
           <TabsTrigger value="completed">Selesai ({filterOrdersByStatus('completed').length})</TabsTrigger>
           <TabsTrigger value="cancelled">Batal ({filterOrdersByStatus('cancelled').length})</TabsTrigger>
         </TabsList>
@@ -164,12 +158,12 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
           {orders.map(renderOrderCard)}
         </TabsContent>
 
-        <TabsContent value="processing" className="space-y-4">
-          {filterOrdersByStatus('processing').map(renderOrderCard)}
+        <TabsContent value="pending" className="space-y-4">
+          {filterOrdersByStatus('pending').map(renderOrderCard)}
         </TabsContent>
 
-        <TabsContent value="ready" className="space-y-4">
-          {filterOrdersByStatus('ready').map(renderOrderCard)}
+        <TabsContent value="processing" className="space-y-4">
+          {filterOrdersByStatus('processing').map(renderOrderCard)}
         </TabsContent>
 
         <TabsContent value="completed" className="space-y-4">

@@ -54,12 +54,10 @@ export interface CreateOrderItemData {
   subtotal: number;
 }
 
-// Status mapping for reseller app integration
+// Updated status mapping with only 4 statuses
 export const ORDER_STATUS_MAPPING = {
   pending: 'Menunggu',
-  confirmed: 'Dikonfirmasi', 
-  processing: 'Proses',
-  ready: 'Siap',
+  processing: 'Proses', 
   completed: 'Selesai',
   cancelled: 'Batal'
 } as const;
