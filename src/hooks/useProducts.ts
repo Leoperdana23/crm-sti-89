@@ -40,40 +40,32 @@ export const useCreateProduct = () => {
 
   return useMutation({
     mutationFn: async (productData: CreateProductData) => {
-      console.log('Creating product:', productData);
+      console.log('Creating product with data:', productData);
       
-      // Validate category_id exists if provided
-      if (productData.category_id) {
-        const { data: categoryExists } = await supabase
-          .from('product_categories')
-          .select('id')
-          .eq('id', productData.category_id)
-          .eq('is_active', true)
-          .single();
-          
-        if (!categoryExists) {
-          throw new Error('Kategori yang dipilih tidak valid');
-        }
-      }
+      // Build the insert data object
+      const insertData = {
+        name: productData.name,
+        description: productData.description || null,
+        category_id: productData.category_id || null,
+        price: productData.price,
+        reseller_price: productData.reseller_price || null,
+        points_value: productData.points_value || 0,
+        commission_value: productData.commission_value || 0,
+        unit: productData.unit,
+        image_url: productData.image_url || null,
+        stock_quantity: productData.stock_quantity || 0,
+        min_stock_level: productData.min_stock_level || 0,
+        tags: productData.tags || null,
+        featured: productData.featured || false,
+        sort_order: productData.sort_order || 0,
+        is_active: true
+      };
+
+      console.log('Insert data:', insertData);
       
       const { data, error } = await supabase
         .from('products')
-        .insert([{
-          name: productData.name,
-          description: productData.description || null,
-          category_id: productData.category_id || null,
-          price: productData.price,
-          reseller_price: productData.reseller_price || null,
-          points_value: productData.points_value || 0,
-          commission_value: productData.commission_value || 0,
-          unit: productData.unit,
-          image_url: productData.image_url || null,
-          stock_quantity: productData.stock_quantity || 0,
-          min_stock_level: productData.min_stock_level || 0,
-          tags: productData.tags || null,
-          featured: productData.featured || false,
-          sort_order: productData.sort_order || 0,
-        }])
+        .insert([insertData])
         .select()
         .single();
 
@@ -122,32 +114,6 @@ export const useUpdateProduct = () => {
       console.log('Updating product with ID:', id);
       console.log('Update data:', updates);
       
-      // Validate category_id exists if provided
-      if (updates.category_id) {
-        const { data: categoryExists } = await supabase
-          .from('product_categories')
-          .select('id')
-          .eq('id', updates.category_id)
-          .eq('is_active', true)
-          .single();
-          
-        if (!categoryExists) {
-          throw new Error('Kategori yang dipilih tidak valid');
-        }
-      }
-      
-      // First verify the product exists
-      const { data: existingProduct, error: fetchError } = await supabase
-        .from('products')
-        .select('id')
-        .eq('id', id)
-        .single();
-
-      if (fetchError || !existingProduct) {
-        console.error('Product not found or error checking existence:', fetchError);
-        throw new Error('Produk tidak ditemukan');
-      }
-
       // Clean updates - remove undefined values but keep null values
       const cleanUpdates = Object.fromEntries(
         Object.entries(updates).filter(([_, value]) => value !== undefined)
@@ -159,16 +125,17 @@ export const useUpdateProduct = () => {
         .from('products')
         .update(cleanUpdates)
         .eq('id', id)
-        .select()
+        .select(`
+          *,
+          product_categories (
+            name
+          )
+        `)
         .single();
 
       if (error) {
         console.error('Error updating product:', error);
         throw error;
-      }
-
-      if (!data) {
-        throw new Error('Tidak ada data yang dikembalikan setelah update');
       }
 
       console.log('Product updated successfully:', data);

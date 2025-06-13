@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -45,9 +46,9 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
     defaultValues: {
       name: product?.name || '',
       description: product?.description || '',
-      category_id: product?.category_id || undefined,
+      category_id: product?.category_id || '',
       price: product?.price || 0,
-      reseller_price: product?.reseller_price || undefined,
+      reseller_price: product?.reseller_price || 0,
       points_value: product?.points_value || 0,
       commission_value: product?.commission_value || 0,
       unit: product?.unit || 'unit',
@@ -63,21 +64,13 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
       console.log('Form data submitted:', data);
       
       if (product?.id) {
-        // For updates
+        // For updates - only send changed fields
         const updateData = {
           id: product.id,
-          name: data.name,
-          description: data.description || null,
+          ...data,
           category_id: data.category_id || null,
-          price: data.price,
+          description: data.description || null,
           reseller_price: data.reseller_price || null,
-          points_value: data.points_value || 0,
-          commission_value: data.commission_value || 0,
-          unit: data.unit,
-          stock_quantity: data.stock_quantity || 0,
-          min_stock_level: data.min_stock_level || 0,
-          featured: data.featured || false,
-          sort_order: data.sort_order || 0,
         };
         
         console.log('Sending update data:', updateData);
@@ -85,23 +78,18 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
       } else {
         // For creates
         const createData = {
-          name: data.name,
-          price: data.price,
-          unit: data.unit,
-          description: data.description || null,
+          ...data,
           category_id: data.category_id || null,
+          description: data.description || null,
           reseller_price: data.reseller_price || null,
-          points_value: data.points_value || 0,
-          commission_value: data.commission_value || 0,
-          stock_quantity: data.stock_quantity || 0,
-          min_stock_level: data.min_stock_level || 0,
-          featured: data.featured || false,
-          sort_order: data.sort_order || 0,
         };
         
         console.log('Sending create data:', createData);
         await createProductMutation.mutateAsync(createData);
       }
+      
+      // Reset form and call success callback
+      form.reset();
       onSuccess?.();
     } catch (error) {
       console.error('Error saving product:', error);
@@ -135,8 +123,8 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
               <FormItem>
                 <FormLabel>Kategori</FormLabel>
                 <Select 
-                  onValueChange={(value) => field.onChange(value === 'no-category' ? undefined : value)} 
-                  value={field.value || 'no-category'}
+                  onValueChange={field.onChange} 
+                  value={field.value || ''}
                   disabled={categoriesLoading}
                 >
                   <FormControl>
@@ -145,7 +133,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
-                    <SelectItem value="no-category">Tanpa Kategori</SelectItem>
+                    <SelectItem value="">Tanpa Kategori</SelectItem>
                     {categories?.map((category) => (
                       <SelectItem key={category.id} value={category.id}>
                         {category.name}
@@ -168,11 +156,8 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                   <Input
                     type="number"
                     placeholder="0"
-                    value={field.value || ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      field.onChange(value === '' ? 0 : Number(value));
-                    }}
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
                   />
                 </FormControl>
                 <FormMessage />
@@ -190,11 +175,8 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                   <Input
                     type="number"
                     placeholder="0"
-                    value={field.value || ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      field.onChange(value === '' ? undefined : Number(value));
-                    }}
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -212,11 +194,8 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                   <Input
                     type="number"
                     placeholder="0"
-                    value={field.value || ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      field.onChange(value === '' ? 0 : Number(value));
-                    }}
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -234,11 +213,8 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                   <Input
                     type="number"
                     placeholder="0"
-                    value={field.value || ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      field.onChange(value === '' ? 0 : Number(value));
-                    }}
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -270,11 +246,8 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                   <Input
                     type="number"
                     placeholder="0"
-                    value={field.value || ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      field.onChange(value === '' ? 0 : Number(value));
-                    }}
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -292,11 +265,8 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                   <Input
                     type="number"
                     placeholder="0"
-                    value={field.value || ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      field.onChange(value === '' ? 0 : Number(value));
-                    }}
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
                 <FormMessage />
@@ -314,11 +284,8 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
                   <Input
                     type="number"
                     placeholder="0"
-                    value={field.value || ''}
-                    onChange={(e) => {
-                      const value = e.target.value;
-                      field.onChange(value === '' ? 0 : Number(value));
-                    }}
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value) || 0)}
                   />
                 </FormControl>
                 <FormMessage />
