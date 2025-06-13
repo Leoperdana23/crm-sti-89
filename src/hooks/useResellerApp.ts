@@ -87,7 +87,15 @@ export const useResellerStats = (resellerId: string | null) => {
         });
 
         if (error) throw error;
-        setStats(data as ResellerStats);
+        
+        // Properly convert the response to ResellerStats
+        const statsData = data as any;
+        setStats({
+          total_orders: statsData.total_orders || 0,
+          total_commission: statsData.total_commission || 0,
+          current_month_orders: statsData.current_month_orders || 0,
+          current_month_commission: statsData.current_month_commission || 0
+        });
       } catch (error) {
         console.error('Error fetching reseller stats:', error);
       } finally {
