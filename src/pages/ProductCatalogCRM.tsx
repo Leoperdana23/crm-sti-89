@@ -7,8 +7,10 @@ import ProductCatalogHeader from '@/components/catalog/ProductCatalogHeader';
 import ProductCatalogStats from '@/components/catalog/ProductCatalogStats';
 import ProductCatalogFilters from '@/components/catalog/ProductCatalogFilters';
 import ProductCatalogGridCRM from '@/components/catalog/ProductCatalogGridCRM';
+import CategoryManagement from '@/components/catalog/CategoryManagement';
 import ProductForm from '@/components/ProductForm';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2 } from 'lucide-react';
 import { Product } from '@/types/product';
 
@@ -111,12 +113,7 @@ const ProductCatalogCRM = () => {
       <div className="space-y-8 p-4 md:p-6">
         {/* Header dengan toggle harga */}
         <div className="flex justify-between items-center">
-          <ProductCatalogHeader
-            canManageProducts={canManageProducts}
-            onAddProduct={() => setProductFormOpen(true)}
-            viewMode={viewMode}
-            onViewModeChange={setViewMode}
-          />
+          <h1 className="text-3xl font-bold text-gray-900">Manajemen Produk</h1>
           
           {/* Price View Toggle */}
           <div className="flex items-center space-x-2">
@@ -132,44 +129,66 @@ const ProductCatalogCRM = () => {
           </div>
         </div>
 
-        {/* Stats */}
-        <ProductCatalogStats 
-          products={products}
-          categories={categories}
-        />
+        {/* Tabs for Products and Categories */}
+        <Tabs defaultValue="products" className="w-full">
+          <TabsList className="grid w-full grid-cols-2">
+            <TabsTrigger value="products">Produk</TabsTrigger>
+            <TabsTrigger value="categories">Kategori</TabsTrigger>
+          </TabsList>
 
-        {/* Filters */}
-        <ProductCatalogFilters
-          searchTerm={searchTerm}
-          onSearchChange={handleSearchChange}
-          categoryFilter={categoryFilter}
-          onCategoryChange={handleCategoryChange}
-          sortBy={sortBy}
-          onSortChange={handleSortChange}
-          categories={categories}
-          onResetFilters={handleResetFilters}
-          filteredCount={filteredAndSortedProducts.length}
-          totalCount={products.length}
-        />
+          <TabsContent value="products" className="space-y-6">
+            {/* Header dengan aksi produk */}
+            <ProductCatalogHeader
+              canManageProducts={canManageProducts}
+              onAddProduct={() => setProductFormOpen(true)}
+              viewMode={viewMode}
+              onViewModeChange={setViewMode}
+            />
 
-        {/* Product Grid dengan support harga reseller */}
-        <ProductCatalogGridCRM
-          products={paginatedProducts.map(product => ({
-            ...product,
-            displayPrice: priceView === 'reseller' && product.reseller_price 
-              ? product.reseller_price 
-              : product.price,
-            showResellerPrice: priceView === 'reseller'
-          }))}
-          currentPage={currentPage}
-          totalPages={totalPages}
-          onPageChange={setCurrentPage}
-          viewMode={viewMode}
-          canManageProducts={canManageProducts}
-          hasFilters={Boolean(searchTerm) || categoryFilter !== 'all'}
-          onResetFilters={handleResetFilters}
-          onEditProduct={handleEditProduct}
-        />
+            {/* Stats */}
+            <ProductCatalogStats 
+              products={products}
+              categories={categories}
+            />
+
+            {/* Filters */}
+            <ProductCatalogFilters
+              searchTerm={searchTerm}
+              onSearchChange={handleSearchChange}
+              categoryFilter={categoryFilter}
+              onCategoryChange={handleCategoryChange}
+              sortBy={sortBy}
+              onSortChange={handleSortChange}
+              categories={categories}
+              onResetFilters={handleResetFilters}
+              filteredCount={filteredAndSortedProducts.length}
+              totalCount={products.length}
+            />
+
+            {/* Product Grid dengan support harga reseller */}
+            <ProductCatalogGridCRM
+              products={paginatedProducts.map(product => ({
+                ...product,
+                displayPrice: priceView === 'reseller' && product.reseller_price 
+                  ? product.reseller_price 
+                  : product.price,
+                showResellerPrice: priceView === 'reseller'
+              }))}
+              currentPage={currentPage}
+              totalPages={totalPages}
+              onPageChange={setCurrentPage}
+              viewMode={viewMode}
+              canManageProducts={canManageProducts}
+              hasFilters={Boolean(searchTerm) || categoryFilter !== 'all'}
+              onResetFilters={handleResetFilters}
+              onEditProduct={handleEditProduct}
+            />
+          </TabsContent>
+
+          <TabsContent value="categories" className="space-y-6">
+            <CategoryManagement />
+          </TabsContent>
+        </Tabs>
 
         {/* Product Form Dialog */}
         <Dialog open={productFormOpen} onOpenChange={handleCloseProductForm}>
