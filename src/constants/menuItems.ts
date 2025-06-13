@@ -14,7 +14,8 @@ import {
   Building2,
   UserCog,
   ClipboardList,
-  Briefcase
+  Briefcase,
+  Phone
 } from 'lucide-react';
 
 export const menuItems = [
@@ -27,31 +28,6 @@ export const menuItems = [
     label: 'Daftar Pesanan',
     path: '/orders',
     icon: ShoppingCart
-  },
-  {
-    label: 'Pelanggan',
-    path: '/customers',
-    icon: Users
-  },
-  {
-    label: 'Reseller',
-    path: '/resellers',
-    icon: Store
-  },
-  {
-    label: 'Follow Up',
-    path: '/follow-up',
-    icon: UserCheck
-  },
-  {
-    label: 'Proses Pekerjaan',
-    path: '/work-process',
-    icon: Briefcase
-  },
-  {
-    label: 'Survei',
-    path: '/survey',
-    icon: MessageSquare
   },
   {
     label: 'Histori Deal',
@@ -67,6 +43,37 @@ export const menuItems = [
     label: 'Laporan',
     path: '/reports',
     icon: BarChart3
+  }
+];
+
+export const customerMenuItems = [
+  {
+    label: 'Pelanggan',
+    path: '/customers',
+    icon: Users
+  },
+  {
+    label: 'Reseller',
+    path: '/resellers',
+    icon: Store
+  }
+];
+
+export const processMenuItems = [
+  {
+    label: 'Follow Up',
+    path: '/follow-up',
+    icon: Phone
+  },
+  {
+    label: 'Proses Pekerjaan',
+    path: '/work-process',
+    icon: Briefcase
+  },
+  {
+    label: 'Survei',
+    path: '/survey',
+    icon: MessageSquare
   }
 ];
 
