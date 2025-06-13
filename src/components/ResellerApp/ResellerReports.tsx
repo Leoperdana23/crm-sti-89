@@ -1,7 +1,8 @@
 
 import React from 'react';
 import { ResellerSession } from '@/types/resellerApp';
-import { useResellerStats, useResellerOrders } from '@/hooks/useResellerApp';
+import { useResellerStats } from '@/hooks/useResellerApp';
+import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { TrendingUp, DollarSign, Users, Package } from 'lucide-react';
@@ -11,8 +12,8 @@ interface ResellerReportsProps {
 }
 
 const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
-  const { stats, loading: statsLoading } = useResellerStats(reseller.id);
-  const { orders, loading: ordersLoading } = useResellerOrders(reseller.id);
+  const { data: stats, isLoading: statsLoading } = useResellerStats(reseller.id);
+  const { data: orders, isLoading: ordersLoading } = useResellerOrders(reseller.id);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -30,12 +31,30 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
     });
   };
 
-  // Calculate additional metrics
-  const completedOrders = orders.filter(order => order.order?.status === 'completed');
-  const totalCustomers = new Set(orders.map(order => order.order?.customer_name)).size;
+  // Calculate additional metrics using correct commission rate
+  const completedOrders = (orders || []).filter(order => order.status === 'selesai');
+  const totalCustomers = new Set((orders || []).map(order => order.customer_name)).size;
   const averageOrderValue = completedOrders.length > 0 
-    ? completedOrders.reduce((sum, order) => sum + (order.order?.total_amount || 0), 0) / completedOrders.length
+    ? completedOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) / completedOrders.length
     : 0;
+
+  // Calculate commission using reseller's commission rate
+  const totalCommissionEarned = completedOrders.reduce((total, order) => {
+    return total + ((order.total_amount || 0) * (reseller.commission_rate / 100));
+  }, 0);
+
+  const currentMonthOrders = (orders || []).filter(order => {
+    const orderDate = new Date(order.created_at);
+    const currentDate = new Date();
+    return orderDate.getMonth() === currentDate.getMonth() && 
+           orderDate.getFullYear() === currentDate.getFullYear();
+  });
+
+  const currentMonthCommission = currentMonthOrders
+    .filter(order => order.status === 'selesai')
+    .reduce((total, order) => {
+      return total + ((order.total_amount || 0) * (reseller.commission_rate / 100));
+    }, 0);
 
   return (
     <div className="p-4 space-y-6">
@@ -55,7 +74,7 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
               <Skeleton className="h-8 w-20" />
             ) : (
               <div className="text-xl font-bold text-green-600">
-                {formatCurrency(stats?.total_commission || 0)}
+                {formatCurrency(totalCommissionEarned)}
               </div>
             )}
           </CardContent>
@@ -130,12 +149,16 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Komisi Bulan Ini:</span>
               <span className="font-semibold text-green-600">
-                {formatCurrency(stats?.current_month_commission || 0)}
+                {formatCurrency(currentMonthCommission)}
               </span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-gray-600">Order Bulan Ini:</span>
-              <span className="font-semibold">{stats?.current_month_orders || 0}</span>
+              <span className="font-semibold">{currentMonthOrders.length}</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-600">Total Poin:</span>
+              <span className="font-semibold text-blue-600">{reseller.total_points || 0} poin</span>
             </div>
           </div>
         </CardContent>
@@ -161,32 +184,35 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
             </div>
           ) : (
             <div className="space-y-3">
-              {orders.slice(0, 5).map((order) => (
-                <div key={order.id} className="flex justify-between items-center">
-                  <div>
-                    <p className="font-medium text-sm">
-                      {order.order?.customer_name}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {formatDate(order.created_at)}
-                    </p>
+              {(orders || []).slice(0, 5).map((order) => {
+                const commission = (order.total_amount || 0) * (reseller.commission_rate / 100);
+                return (
+                  <div key={order.id} className="flex justify-between items-center">
+                    <div>
+                      <p className="font-medium text-sm">
+                        {order.customer_name}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatDate(order.created_at)}
+                      </p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-semibold text-green-600 text-sm">
+                        {formatCurrency(commission)}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {formatCurrency(order.total_amount || 0)}
+                      </p>
+                    </div>
                   </div>
-                  <div className="text-right">
-                    <p className="font-semibold text-green-600 text-sm">
-                      {formatCurrency(order.commission_amount)}
-                    </p>
-                    <p className="text-xs text-gray-500">
-                      {formatCurrency(order.order?.total_amount || 0)}
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           )}
         </CardContent>
       </Card>
 
-      {orders.length === 0 && (
+      {(orders || []).length === 0 && (
         <div className="text-center py-8 text-gray-500">
           <TrendingUp className="h-12 w-12 mx-auto mb-4 text-gray-300" />
           <p>Belum ada data komisi</p>

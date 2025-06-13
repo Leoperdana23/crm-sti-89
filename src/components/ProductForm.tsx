@@ -1,336 +1,297 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { useProductCategories, useCreateProduct, useUpdateProduct, useDeleteProduct } from '@/hooks/useProducts';
-import { Product, CreateProductData } from '@/types/product';
-import { Trash2, Loader2 } from 'lucide-react';
+import { Switch } from '@/components/ui/switch';
+import { useProducts, useCreateProduct, useUpdateProduct } from '@/hooks/useProducts';
+import { useProductCategories } from '@/hooks/useProductCategories';
+import { Product } from '@/types/product';
+
+const formSchema = z.object({
+  name: z.string().min(1, 'Nama produk wajib diisi'),
+  description: z.string().optional(),
+  category_id: z.string().optional(),
+  price: z.number().min(0, 'Harga harus lebih dari 0'),
+  reseller_price: z.number().min(0, 'Harga reseller harus lebih dari 0').optional(),
+  points_value: z.number().min(0, 'Nilai poin harus 0 atau lebih').optional(),
+  unit: z.string().min(1, 'Satuan wajib diisi'),
+  stock_quantity: z.number().min(0, 'Stok harus 0 atau lebih').optional(),
+  min_stock_level: z.number().min(0, 'Minimal stok harus 0 atau lebih').optional(),
+  featured: z.boolean().optional(),
+  sort_order: z.number().min(0, 'Urutan harus 0 atau lebih').optional(),
+});
+
+type FormData = z.infer<typeof formSchema>;
 
 interface ProductFormProps {
-  isOpen: boolean;
-  onClose: () => void;
   product?: Product;
+  onSuccess?: () => void;
+  onCancel?: () => void;
 }
 
-const ProductForm = ({ isOpen, onClose, product }: ProductFormProps) => {
+const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
   const { data: categories } = useProductCategories();
   const createProductMutation = useCreateProduct();
   const updateProductMutation = useUpdateProduct();
-  const deleteProductMutation = useDeleteProduct();
 
-  const form = useForm<CreateProductData>({
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
     defaultValues: {
       name: product?.name || '',
       description: product?.description || '',
-      category_id: product?.category_id || 'no-category',
+      category_id: product?.category_id || undefined,
       price: product?.price || 0,
-      reseller_price: product?.reseller_price || 0,
+      reseller_price: product?.reseller_price || undefined,
+      points_value: product?.points_value || 0,
       unit: product?.unit || 'unit',
-      image_url: product?.image_url || '',
       stock_quantity: product?.stock_quantity || 0,
       min_stock_level: product?.min_stock_level || 0,
+      featured: product?.featured || false,
+      sort_order: product?.sort_order || 0,
     },
   });
 
-  React.useEffect(() => {
-    if (product) {
-      form.reset({
-        name: product.name,
-        description: product.description || '',
-        category_id: product.category_id || 'no-category',
-        price: product.price,
-        reseller_price: product.reseller_price || 0,
-        unit: product.unit,
-        image_url: product.image_url || '',
-        stock_quantity: product.stock_quantity || 0,
-        min_stock_level: product.min_stock_level || 0,
-      });
-    } else {
-      form.reset({
-        name: '',
-        description: '',
-        category_id: 'no-category',
-        price: 0,
-        reseller_price: 0,
-        unit: 'unit',
-        image_url: '',
-        stock_quantity: 0,
-        min_stock_level: 0,
-      });
-    }
-  }, [product, form]);
-
-  const onSubmit = async (data: CreateProductData) => {
+  const onSubmit = async (data: FormData) => {
     try {
-      console.log('Form data before submission:', data);
-      
-      // Convert special values back to proper database format
-      const processedData = {
-        ...data,
-        // Convert 'no-category' back to null for database
-        category_id: data.category_id === 'no-category' ? null : data.category_id,
-        // Convert values to proper numbers
-        price: Number(data.price) || 0,
-        reseller_price: data.reseller_price ? Number(data.reseller_price) : 0,
-        stock_quantity: Number(data.stock_quantity) || 0,
-        min_stock_level: Number(data.min_stock_level) || 0,
-      };
-      
-      console.log('Processed form data:', processedData);
-
       if (product) {
-        await updateProductMutation.mutateAsync({
-          id: product.id,
-          ...processedData,
-        });
+        await updateProductMutation.mutateAsync({ id: product.id, ...data });
       } else {
-        await createProductMutation.mutateAsync(processedData);
+        await createProductMutation.mutateAsync(data);
       }
-      onClose();
+      onSuccess?.();
     } catch (error) {
       console.error('Error saving product:', error);
     }
   };
 
-  const handleDelete = async () => {
-    if (!product) return;
-    
-    try {
-      await deleteProductMutation.mutateAsync(product.id);
-      onClose();
-    } catch (error) {
-      console.error('Error deleting product:', error);
-    }
-  };
-
-  const isLoading = createProductMutation.isPending || updateProductMutation.isPending || deleteProductMutation.isPending;
+  const isLoading = createProductMutation.isPending || updateProductMutation.isPending;
 
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>{product ? 'Edit Produk' : 'Tambah Produk Baru'}</span>
-            {product && (
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button variant="destructive" size="sm">
-                    <Trash2 className="h-4 w-4" />
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>Hapus Produk</AlertDialogTitle>
-                    <AlertDialogDescription>
-                      Apakah Anda yakin ingin menghapus produk "{product.name}"? 
-                      Tindakan ini tidak dapat dibatalkan.
-                    </AlertDialogDescription>
-                  </AlertDialogHeader>
-                  <AlertDialogFooter>
-                    <AlertDialogCancel>Batal</AlertDialogCancel>
-                    <AlertDialogAction 
-                      onClick={handleDelete}
-                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                    >
-                      Hapus
-                    </AlertDialogAction>
-                  </AlertDialogFooter>
-                </AlertDialogContent>
-              </AlertDialog>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <FormField
+            control={form.control}
+            name="name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nama Produk</FormLabel>
+                <FormControl>
+                  <Input placeholder="Masukkan nama produk" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
             )}
-          </DialogTitle>
-          <DialogDescription>
-            {product ? 'Perbarui informasi produk' : 'Isi form di bawah untuk menambahkan produk baru ke katalog'}
-          </DialogDescription>
-        </DialogHeader>
+          />
 
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="name"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Nama Produk *</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Masukkan nama produk" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="category_id"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Kategori</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih kategori" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="">Tanpa Kategori</SelectItem>
+                    {categories?.map((category) => (
+                      <SelectItem key={category.id} value={category.id}>
+                        {category.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="description"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>Deskripsi</FormLabel>
-                    <FormControl>
-                      <Textarea placeholder="Masukkan deskripsi produk" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="price"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Harga Normal</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    {...field}
+                    onChange={(e) => field.onChange(Number(e.target.value))}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="category_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Kategori</FormLabel>
-                    <Select onValueChange={field.onChange} value={field.value || "no-category"}>
-                      <FormControl>
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pilih kategori" />
-                        </SelectTrigger>
-                      </FormControl>
-                      <SelectContent>
-                        <SelectItem value="no-category">Tanpa Kategori</SelectItem>
-                        {categories?.map((category) => (
-                          <SelectItem key={category.id} value={category.id}>
-                            {category.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="reseller_price"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Harga Reseller</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    {...field}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : undefined)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="unit"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Satuan</FormLabel>
-                    <FormControl>
-                      <Input placeholder="unit, kg, meter, dll" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="points_value"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Nilai Poin</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    {...field}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Harga Normal *</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="0" 
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="unit"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Satuan</FormLabel>
+                <FormControl>
+                  <Input placeholder="unit, kg, liter, dll" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="reseller_price"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Harga Reseller</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="0" 
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="stock_quantity"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Stok</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    {...field}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="stock_quantity"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Stok Tersedia</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="0" 
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="min_stock_level"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Minimal Stok</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    {...field}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
 
-              <FormField
-                control={form.control}
-                name="min_stock_level"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Minimum Stok</FormLabel>
-                    <FormControl>
-                      <Input 
-                        type="number" 
-                        placeholder="0" 
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
-                      />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+          <FormField
+            control={form.control}
+            name="sort_order"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Urutan</FormLabel>
+                <FormControl>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    {...field}
+                    onChange={(e) => field.onChange(e.target.value ? Number(e.target.value) : 0)}
+                  />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+        </div>
 
-              <FormField
-                control={form.control}
-                name="image_url"
-                render={({ field }) => (
-                  <FormItem className="md:col-span-2">
-                    <FormLabel>URL Gambar</FormLabel>
-                    <FormControl>
-                      <Input placeholder="https://example.com/image.jpg" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-            </div>
+        <FormField
+          control={form.control}
+          name="description"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Deskripsi</FormLabel>
+              <FormControl>
+                <Textarea placeholder="Masukkan deskripsi produk" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-            <div className="flex justify-end space-x-2 pt-4">
-              <Button type="button" variant="outline" onClick={onClose} disabled={isLoading}>
-                Batal
-              </Button>
-              <Button type="submit" disabled={isLoading}>
-                {isLoading ? (
-                  <>
-                    <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                    {product ? 'Mengupdate...' : 'Menyimpan...'}
-                  </>
-                ) : (
-                  product ? 'Update' : 'Simpan'
-                )}
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </DialogContent>
-    </Dialog>
+        <FormField
+          control={form.control}
+          name="featured"
+          render={({ field }) => (
+            <FormItem className="flex flex-row items-center justify-between rounded-lg border p-4">
+              <div className="space-y-0.5">
+                <FormLabel className="text-base">Produk Unggulan</FormLabel>
+                <div className="text-sm text-muted-foreground">
+                  Tampilkan produk ini sebagai unggulan
+                </div>
+              </div>
+              <FormControl>
+                <Switch
+                  checked={field.value}
+                  onCheckedChange={field.onChange}
+                />
+              </FormControl>
+            </FormItem>
+          )}
+        />
+
+        <div className="flex justify-end gap-4">
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Batal
+            </Button>
+          )}
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Menyimpan...' : product ? 'Update' : 'Simpan'}
+          </Button>
+        </div>
+      </form>
+    </Form>
   );
 };
 

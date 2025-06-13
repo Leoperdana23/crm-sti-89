@@ -677,6 +677,7 @@ export type Database = {
           created_at: string
           id: string
           order_id: string
+          points_earned: number | null
           product_id: string
           product_name: string
           product_price: number
@@ -687,6 +688,7 @@ export type Database = {
           created_at?: string
           id?: string
           order_id: string
+          points_earned?: number | null
           product_id: string
           product_name: string
           product_price: number
@@ -697,6 +699,7 @@ export type Database = {
           created_at?: string
           id?: string
           order_id?: string
+          points_earned?: number | null
           product_id?: string
           product_name?: string
           product_price?: number
@@ -965,6 +968,7 @@ export type Database = {
           is_active: boolean
           min_stock_level: number | null
           name: string
+          points_value: number | null
           price: number
           reseller_price: number | null
           sort_order: number | null
@@ -983,6 +987,7 @@ export type Database = {
           is_active?: boolean
           min_stock_level?: number | null
           name: string
+          points_value?: number | null
           price: number
           reseller_price?: number | null
           sort_order?: number | null
@@ -1001,6 +1006,7 @@ export type Database = {
           is_active?: boolean
           min_stock_level?: number | null
           name?: string
+          points_value?: number | null
           price?: number
           reseller_price?: number | null
           sort_order?: number | null

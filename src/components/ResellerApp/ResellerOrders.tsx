@@ -6,8 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Package, Clock, CheckCircle, XCircle, Eye } from 'lucide-react';
-import { ORDER_STATUS_MAPPING } from '@/types/order';
+import { Package, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ResellerOrdersProps {
@@ -31,7 +30,6 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
         },
         (payload) => {
           console.log('Order updated:', payload);
-          // Refresh data when any order is updated
           refetch();
         }
       )
@@ -98,58 +96,88 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
     return mapping[status.toLowerCase()] || status;
   };
 
+  const calculateCommission = (totalAmount: number) => {
+    return (totalAmount * (reseller.commission_rate / 100));
+  };
+
+  const calculateTotalPoints = (orderItems: any[]) => {
+    return orderItems.reduce((total, item) => {
+      return total + (item.points_earned || 0);
+    }, 0);
+  };
+
   const filterOrdersByStatus = (status: string) => {
     if (status === 'all') return orders || [];
     return (orders || []).filter(order => order.status?.toLowerCase() === status.toLowerCase());
   };
 
-  const renderOrderCard = (order: any) => (
-    <Card key={order.id}>
-      <CardHeader className="pb-3">
-        <div className="flex justify-between items-start">
-          <div>
-            <CardTitle className="text-sm">
-              Order #{order.id?.slice(-8)}
-            </CardTitle>
-            <p className="text-xs text-gray-500">
-              {formatDate(order.created_at)}
-            </p>
-          </div>
-          <Badge className={getStatusColor(order.status || 'pending')}>
-            <span className="flex items-center gap-1">
-              {getStatusIcon(order.status || 'pending')}
-              {getStatusLabel(order.status || 'pending')}
-            </span>
-          </Badge>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-0">
-        <div className="space-y-2">
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Customer:</span>
-            <span className="font-medium">{order.customer_name}</span>
-          </div>
-          <div className="flex justify-between text-sm">
-            <span className="text-gray-600">Total Order:</span>
-            <span className="font-medium">{formatCurrency(order.total_amount || 0)}</span>
-          </div>
-          
-          {/* Order Items */}
-          {order.order_items && order.order_items.length > 0 && (
-            <div className="mt-3 pt-3 border-t">
-              <p className="text-xs text-gray-600 mb-2">Produk:</p>
-              {order.order_items.map((item: any, index: number) => (
-                <div key={index} className="flex justify-between text-xs">
-                  <span>{item.quantity}x {item.product_name}</span>
-                  <span>{formatCurrency(item.subtotal)}</span>
-                </div>
-              ))}
+  const renderOrderCard = (order: any) => {
+    const commission = calculateCommission(order.total_amount || 0);
+    const totalPoints = calculateTotalPoints(order.order_items || []);
+
+    return (
+      <Card key={order.id}>
+        <CardHeader className="pb-3">
+          <div className="flex justify-between items-start">
+            <div>
+              <CardTitle className="text-sm">
+                Order #{order.id?.slice(-8)}
+              </CardTitle>
+              <p className="text-xs text-gray-500">
+                {formatDate(order.created_at)}
+              </p>
             </div>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
+            <Badge className={getStatusColor(order.status || 'pending')}>
+              <span className="flex items-center gap-1">
+                {getStatusIcon(order.status || 'pending')}
+                {getStatusLabel(order.status || 'pending')}
+              </span>
+            </Badge>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Customer:</span>
+              <span className="font-medium">{order.customer_name}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Total Order:</span>
+              <span className="font-medium">{formatCurrency(order.total_amount || 0)}</span>
+            </div>
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Komisi ({reseller.commission_rate}%):</span>
+              <span className="font-medium text-green-600">{formatCurrency(commission)}</span>
+            </div>
+            {totalPoints > 0 && (
+              <div className="flex justify-between text-sm">
+                <span className="text-gray-600">Poin:</span>
+                <span className="font-medium text-blue-600">{totalPoints} poin</span>
+              </div>
+            )}
+            
+            {/* Order Items */}
+            {order.order_items && order.order_items.length > 0 && (
+              <div className="mt-3 pt-3 border-t">
+                <p className="text-xs text-gray-600 mb-2">Produk:</p>
+                {order.order_items.map((item: any, index: number) => (
+                  <div key={index} className="flex justify-between text-xs mb-1">
+                    <span>{item.quantity}x {item.product_name}</span>
+                    <div className="text-right">
+                      <div>{formatCurrency(item.subtotal)}</div>
+                      {item.points_earned > 0 && (
+                        <div className="text-blue-600">{item.points_earned} poin</div>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
 
   if (loading) {
     return (

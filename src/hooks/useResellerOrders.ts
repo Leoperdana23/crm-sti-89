@@ -10,19 +10,33 @@ export const useResellerOrders = (resellerId: string | null) => {
       
       console.log('Fetching reseller orders for reseller ID:', resellerId);
       
+      // First get the catalog token for this reseller
+      const { data: catalogTokenData, error: tokenError } = await supabase
+        .from('catalog_tokens')
+        .select('token')
+        .eq('reseller_id', resellerId)
+        .single();
+
+      if (tokenError || !catalogTokenData) {
+        console.error('Error fetching catalog token:', tokenError);
+        return [];
+      }
+
+      console.log('Found catalog token:', catalogTokenData.token);
+
+      // Then get orders using that token
       const { data, error } = await supabase
         .from('orders')
         .select(`
           *,
-          order_items (*)
+          order_items (
+            *,
+            products (
+              points_value
+            )
+          )
         `)
-        .eq('catalog_token', (
-          await supabase
-            .from('catalog_tokens')
-            .select('token')
-            .eq('reseller_id', resellerId)
-            .single()
-        ).data?.token || '')
+        .eq('catalog_token', catalogTokenData.token)
         .order('created_at', { ascending: false });
 
       if (error) {
