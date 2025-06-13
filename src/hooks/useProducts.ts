@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { Product, CreateProductData, UpdateProductData } from '@/types/product';
@@ -121,6 +122,24 @@ export const useUpdateProduct = () => {
       
       console.log('Clean updates to apply:', cleanUpdates);
       
+      // First check if the product exists
+      const { data: existingProduct, error: checkError } = await supabase
+        .from('products')
+        .select('id')
+        .eq('id', id)
+        .maybeSingle();
+
+      if (checkError) {
+        console.error('Error checking product existence:', checkError);
+        throw checkError;
+      }
+
+      if (!existingProduct) {
+        console.error('Product not found with ID:', id);
+        throw new Error('Produk tidak ditemukan');
+      }
+
+      // Now perform the update
       const { data, error } = await supabase
         .from('products')
         .update(cleanUpdates)
@@ -131,11 +150,16 @@ export const useUpdateProduct = () => {
             name
           )
         `)
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error updating product:', error);
         throw error;
+      }
+
+      if (!data) {
+        console.error('No product returned after update');
+        throw new Error('Gagal memperbarui produk - tidak ada data yang dikembalikan');
       }
 
       console.log('Product updated successfully:', data);
