@@ -1,157 +1,85 @@
 
 import React from 'react';
-import { Package, Edit, Trash2, Plus, Minus } from 'lucide-react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Product } from '@/types/product';
+import ProductCard from './ProductCard';
 
 interface ProductListProps {
   products: Product[];
+  canManage?: boolean;
   getProductQuantity?: (productId: string) => number;
   onAddToCart?: (product: Product) => void;
   onRemoveFromCart?: (productId: string) => void;
   showResellerPrice?: boolean;
-  canManage?: boolean;
-  onEdit?: (product: Product) => void;
-  onDelete?: (product: Product) => void;
 }
 
-const ProductList = ({ 
+const ProductList = ({
   products,
+  canManage = false,
   getProductQuantity = () => 0,
-  onAddToCart,
-  onRemoveFromCart,
-  showResellerPrice = false, 
-  canManage = false, 
-  onEdit = () => {}, 
-  onDelete = () => {} 
+  onAddToCart = () => {},
+  onRemoveFromCart = () => {},
+  showResellerPrice = false
 }: ProductListProps) => {
-  const formatPrice = (price: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(price);
-  };
-
   return (
     <div className="space-y-4">
-      {products.map((product) => {
-        const quantity = getProductQuantity(product.id);
-        const displayPrice = showResellerPrice && product.reseller_price 
-          ? product.reseller_price 
-          : product.price;
-
-        return (
-          <Card key={product.id}>
-            <CardContent className="p-4">
-              <div className="flex items-center space-x-4">
-                <div className="w-16 h-16 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
-                  {product.image_url ? (
-                    <img 
-                      src={product.image_url} 
-                      alt={product.name}
-                      className="w-full h-full object-cover rounded-lg"
-                    />
-                  ) : (
-                    <Package className="h-8 w-8 text-gray-400" />
+      {products.map((product) => (
+        <div key={product.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
+          <div className="flex gap-4">
+            <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
+              {product.image_url ? (
+                <img 
+                  src={product.image_url} 
+                  alt={product.name}
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                <div className="w-full h-full flex items-center justify-center text-gray-400 text-xs">
+                  No Image
+                </div>
+              )}
+            </div>
+            
+            <div className="flex-1 min-w-0">
+              <h3 className="font-semibold text-lg mb-1">{product.name}</h3>
+              {product.description && (
+                <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
+                  {product.description}
+                </p>
+              )}
+              
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-xl font-bold text-primary">
+                    {new Intl.NumberFormat('id-ID', {
+                      style: 'currency',
+                      currency: 'IDR',
+                      minimumFractionDigits: 0,
+                    }).format(showResellerPrice && product.reseller_price ? product.reseller_price : product.price)}
+                  </p>
+                  {showResellerPrice && product.reseller_price && (
+                    <p className="text-sm text-muted-foreground line-through">
+                      {new Intl.NumberFormat('id-ID', {
+                        style: 'currency',
+                        currency: 'IDR',
+                        minimumFractionDigits: 0,
+                      }).format(product.price)}
+                    </p>
                   )}
+                  <p className="text-xs text-muted-foreground">per {product.unit}</p>
                 </div>
                 
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1 pr-4">
-                      <h3 className="font-semibold text-sm md:text-base">{product.name}</h3>
-                      {product.description && (
-                        <p className="text-xs md:text-sm text-gray-600 mt-1">{product.description}</p>
-                      )}
-                      {product.product_categories && (
-                        <Badge variant="secondary" className="mt-2 text-xs">
-                          {product.product_categories.name}
-                        </Badge>
-                      )}
-                    </div>
-                    
-                    <div className="text-right">
-                      <p className="text-lg md:text-xl font-bold text-blue-600">
-                        {formatPrice(displayPrice)}
-                      </p>
-                      {showResellerPrice && product.reseller_price && (
-                        <p className="text-xs text-gray-500 line-through">
-                          {formatPrice(product.price)}
-                        </p>
-                      )}
-                      <p className="text-xs text-gray-500">per {product.unit}</p>
-                      
-                      {/* Cart Controls */}
-                      {onAddToCart && onRemoveFromCart && (
-                        <div className="mt-2">
-                          {quantity > 0 ? (
-                            <div className="flex items-center space-x-1">
-                              <Button 
-                                size="sm" 
-                                variant="outline"
-                                onClick={() => onRemoveFromCart(product.id)}
-                              >
-                                <Minus className="h-3 w-3" />
-                              </Button>
-                              <span className="font-medium px-2">{quantity}</span>
-                              <Button 
-                                size="sm" 
-                                onClick={() => onAddToCart(product)}
-                              >
-                                <Plus className="h-3 w-3" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <Button 
-                              size="sm" 
-                              onClick={() => onAddToCart(product)}
-                            >
-                              <Plus className="h-3 w-3 mr-1" />
-                              Tambah
-                            </Button>
-                          )}
-                        </div>
-                      )}
-                      
-                      {/* Management Controls */}
-                      {canManage && (
-                        <div className="flex items-center space-x-1 mt-2">
-                          <Button size="sm" variant="outline" onClick={() => onEdit(product)}>
-                            <Edit className="h-3 w-3" />
-                          </Button>
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <Button size="sm" variant="destructive">
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Hapus Produk</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  Apakah Anda yakin ingin menghapus produk "{product.name}"? Tindakan ini tidak dapat dibatalkan.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Batal</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => onDelete(product)}>Hapus</AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </div>
-                      )}
-                    </div>
+                {product.product_categories && (
+                  <div className="text-right">
+                    <span className="text-xs bg-secondary text-secondary-foreground px-2 py-1 rounded">
+                      {product.product_categories.name}
+                    </span>
                   </div>
-                </div>
+                )}
               </div>
-            </CardContent>
-          </Card>
-        );
-      })}
+            </div>
+          </div>
+        </div>
+      ))}
     </div>
   );
 };
