@@ -1,3 +1,4 @@
+
 import { useLocation } from "react-router-dom";
 import { useEffect } from "react";
 
@@ -15,9 +16,12 @@ const NotFound = () => {
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="text-center">
         <h1 className="text-4xl font-bold mb-4">404</h1>
-        <p className="text-xl text-gray-600 mb-4">Oops! Page not found</p>
+        <p className="text-xl text-gray-600 mb-4">Halaman tidak ditemukan</p>
+        <p className="text-gray-500 mb-4">
+          Link yang Anda akses mungkin tidak valid atau sudah tidak aktif.
+        </p>
         <a href="/" className="text-blue-500 hover:text-blue-700 underline">
-          Return to Home
+          Kembali ke Beranda
         </a>
       </div>
     </div>

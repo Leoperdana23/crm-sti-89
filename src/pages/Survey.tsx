@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Plus, Search, Filter, BarChart, Users, CheckCircle, AlertCircle, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -9,15 +10,15 @@ import { Badge } from '@/components/ui/badge';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import SurveyForm from '@/components/SurveyForm';
 import { useCustomers } from '@/hooks/useCustomers';
-import { useSurveys, useCreateSurvey } from '@/hooks/useSurveys';
+import { useSurveys } from '@/hooks/useSurveys';
 import { useBranches } from '@/hooks/useBranches';
 import { Customer } from '@/types/customer';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Survey = () => {
   const { customers, loading: customersLoading } = useCustomers();
   const { surveys, loading: surveysLoading, getAverageRatings } = useSurveys();
-  const createSurveyMutation = useCreateSurvey();
   const { branches } = useBranches();
   const { toast } = useToast();
   const [isSurveyFormOpen, setIsSurveyFormOpen] = useState(false);
@@ -53,7 +54,20 @@ const Survey = () => {
 
   const handleSurveySubmit = async (surveyData: any) => {
     try {
-      await createSurveyMutation.mutateAsync(surveyData);
+      console.log('Creating survey with data:', surveyData);
+      
+      const { data, error } = await supabase
+        .from('surveys')
+        .insert(surveyData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating survey:', error);
+        throw error;
+      }
+
+      console.log('Survey created successfully:', data);
       toast({
         title: "Berhasil",
         description: "Survei berhasil disimpan",
@@ -61,6 +75,7 @@ const Survey = () => {
       setIsSurveyFormOpen(false);
       setSelectedCustomer(null);
     } catch (error) {
+      console.error('Error in handleSurveySubmit:', error);
       toast({
         title: "Error",
         description: "Terjadi kesalahan saat menyimpan survei.",
@@ -70,12 +85,16 @@ const Survey = () => {
   };
 
   const generateSurveyToken = () => {
+    // Generate shorter, more reliable token
     return Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
   };
 
   const handleCreateSurveyLink = async (customer: Customer) => {
     try {
+      console.log('Creating survey link for customer:', customer.id);
+      
       const surveyToken = generateSurveyToken();
+      console.log('Generated token:', surveyToken);
       
       const surveyData = {
         customer_id: customer.id,
@@ -85,12 +104,29 @@ const Survey = () => {
         service_technician: 0,
         usage_clarity: 0,
         price_approval: false,
+        testimonial: '',
+        suggestions: '',
         is_completed: false,
         survey_token: surveyToken
       };
       
-      await createSurveyMutation.mutateAsync(surveyData);
+      console.log('Creating survey with data:', surveyData);
+      
+      const { data, error } = await supabase
+        .from('surveys')
+        .insert(surveyData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating survey:', error);
+        throw error;
+      }
+
+      console.log('Survey created successfully:', data);
+      
       const surveyUrl = `${window.location.origin}/public-survey/${surveyToken}`;
+      console.log('Generated survey URL:', surveyUrl);
       
       // Copy to clipboard with error handling
       try {
@@ -100,7 +136,6 @@ const Survey = () => {
           description: "Link survei telah disalin ke clipboard dan siap dibagikan ke pelanggan",
         });
       } catch (clipboardError) {
-        // Fallback if clipboard API fails
         console.log('Clipboard API failed, showing URL in toast');
         toast({
           title: "Link Survei Dibuat",
@@ -119,7 +154,10 @@ const Survey = () => {
 
   const handleWhatsAppSurvey = async (customer: Customer) => {
     try {
+      console.log('Creating WhatsApp survey for customer:', customer.id);
+      
       const surveyToken = generateSurveyToken();
+      console.log('Generated token for WhatsApp:', surveyToken);
       
       const surveyData = {
         customer_id: customer.id,
@@ -129,11 +167,27 @@ const Survey = () => {
         service_technician: 0,
         usage_clarity: 0,
         price_approval: false,
+        testimonial: '',
+        suggestions: '',
         is_completed: false,
         survey_token: surveyToken
       };
       
-      await createSurveyMutation.mutateAsync(surveyData);
+      console.log('Creating survey for WhatsApp with data:', surveyData);
+      
+      const { data, error } = await supabase
+        .from('surveys')
+        .insert(surveyData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating survey for WhatsApp:', error);
+        throw error;
+      }
+
+      console.log('Survey for WhatsApp created successfully:', data);
+      
       const surveyUrl = `${window.location.origin}/public-survey/${surveyToken}`;
       const branch = branches.find(b => b.id === customer.branch_id);
       const branchName = branch?.name || 'Tim Kami';
@@ -151,6 +205,7 @@ Atas ketersediaan bapak/ibu mengisi data dan survei kami ucapkan terima kasih at
       const whatsappPhone = cleanPhone.startsWith('0') ? '62' + cleanPhone.slice(1) : cleanPhone;
       const whatsappUrl = `https://wa.me/${whatsappPhone}?text=${encodeURIComponent(message)}`;
       
+      console.log('Opening WhatsApp URL:', whatsappUrl);
       window.open(whatsappUrl, '_blank');
       
       toast({
