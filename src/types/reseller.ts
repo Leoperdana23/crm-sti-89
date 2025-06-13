@@ -12,8 +12,13 @@ export interface Reseller {
   commission_rate?: number;
   total_points?: number;
   is_active: boolean;
+  password_hash?: string;
   created_at: string;
   updated_at: string;
+  branches?: {
+    name: string;
+    code: string;
+  };
 }
 
 export interface CreateResellerData {

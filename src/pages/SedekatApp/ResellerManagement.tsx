@@ -13,13 +13,6 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { 
   Plus, 
   Search, 
   Edit, 
@@ -75,25 +68,10 @@ const ResellerManagement = () => {
           <h1 className="text-2xl font-bold">Daftar Reseller</h1>
           <p className="text-gray-600">Kelola reseller SEDEKAT App</p>
         </div>
-        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-          <DialogTrigger asChild>
-            <Button onClick={handleAdd}>
-              <Plus className="h-4 w-4 mr-2" />
-              Tambah Reseller
-            </Button>
-          </DialogTrigger>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>
-                {editingReseller ? 'Edit Reseller' : 'Tambah Reseller Baru'}
-              </DialogTitle>
-            </DialogHeader>
-            <ResellerForm 
-              reseller={editingReseller} 
-              onSuccess={handleCloseDialog}
-            />
-          </DialogContent>
-        </Dialog>
+        <Button onClick={handleAdd}>
+          <Plus className="h-4 w-4 mr-2" />
+          Tambah Reseller
+        </Button>
       </div>
 
       {/* Stats Cards */}
@@ -209,6 +187,13 @@ const ResellerManagement = () => {
           </Table>
         </CardContent>
       </Card>
+
+      {/* Form Dialog */}
+      <ResellerForm
+        isOpen={isDialogOpen}
+        onClose={handleCloseDialog}
+        reseller={editingReseller}
+      />
     </div>
   );
 };
