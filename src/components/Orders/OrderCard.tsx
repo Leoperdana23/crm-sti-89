@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Calendar, User, Phone, MapPin, Truck, Edit, MessageCircle, Trash2 } from 'lucide-react';
-import { Order, OrderItem } from '@/types/order';
+import { Order, OrderItem, ORDER_STATUS_MAPPING } from '@/types/order';
 
 interface OrderCardProps {
   order: Order & { order_items: OrderItem[] };
@@ -34,12 +34,12 @@ const OrderCard = ({ order, onEditStatus, onWhatsAppFollowUp, onDelete }: OrderC
 
   const getStatusBadge = (status: string) => {
     const statusConfig = {
-      pending: { label: 'Menunggu', variant: 'secondary' as const },
-      confirmed: { label: 'Dikonfirmasi', variant: 'default' as const },
-      processing: { label: 'Diproses', variant: 'default' as const },
-      ready: { label: 'Siap', variant: 'default' as const },
-      completed: { label: 'Selesai', variant: 'default' as const },
-      cancelled: { label: 'Dibatalkan', variant: 'destructive' as const },
+      pending: { label: ORDER_STATUS_MAPPING.pending, variant: 'secondary' as const },
+      confirmed: { label: ORDER_STATUS_MAPPING.confirmed, variant: 'default' as const },
+      processing: { label: ORDER_STATUS_MAPPING.processing, variant: 'default' as const },
+      ready: { label: ORDER_STATUS_MAPPING.ready, variant: 'default' as const },
+      completed: { label: ORDER_STATUS_MAPPING.completed, variant: 'default' as const },
+      cancelled: { label: ORDER_STATUS_MAPPING.cancelled, variant: 'destructive' as const },
     };
 
     const config = statusConfig[status as keyof typeof statusConfig] || statusConfig.pending;
@@ -57,6 +57,9 @@ const OrderCard = ({ order, onEditStatus, onWhatsAppFollowUp, onDelete }: OrderC
   const getDeliveryLabel = (method: string) => {
     return method === 'delivery' ? 'Dikirim' : 'Diambil';
   };
+
+  // Show WhatsApp button when status is ready
+  const showWhatsAppButton = order.status === 'ready';
 
   return (
     <Card>
@@ -104,7 +107,7 @@ const OrderCard = ({ order, onEditStatus, onWhatsAppFollowUp, onDelete }: OrderC
                 <Trash2 className="h-3 w-3" />
                 Hapus
               </Button>
-              {(order.status === 'ready' || order.status === 'completed') && (
+              {showWhatsAppButton && (
                 <Button
                   size="sm"
                   variant="default"
@@ -131,7 +134,24 @@ const OrderCard = ({ order, onEditStatus, onWhatsAppFollowUp, onDelete }: OrderC
             <Phone className="h-4 w-4 text-gray-500" />
             <span>{order.customer_phone}</span>
           </div>
+          {order.reseller && (
+            <div className="flex items-center gap-2 flex-1">
+              <span className="text-xs text-gray-500">Reseller:</span>
+              <span className="text-sm font-medium">{order.reseller.name}</span>
+            </div>
+          )}
         </div>
+
+        {/* Shipping Address */}
+        {order.shipping_address && (
+          <div className="mb-4 p-3 bg-blue-50 rounded-lg">
+            <div className="flex items-center gap-2 mb-1">
+              <MapPin className="h-4 w-4 text-blue-600" />
+              <span className="text-sm font-medium text-blue-900">Alamat Pengiriman:</span>
+            </div>
+            <p className="text-sm text-blue-800">{order.shipping_address}</p>
+          </div>
+        )}
 
         {/* Order Items */}
         <div className="space-y-2">

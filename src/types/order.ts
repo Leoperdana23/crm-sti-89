@@ -1,3 +1,4 @@
+
 export interface Order {
   id: string;
   customer_name: string;
@@ -8,6 +9,7 @@ export interface Order {
   notes: string | null;
   delivery_method: string;
   expedisi: string | null;
+  shipping_address: string | null;
   created_at: string;
   updated_at: string;
   reseller?: {
@@ -40,6 +42,7 @@ export interface CreateOrderData {
   delivery_method: string;
   expedisi?: string;
   notes?: string;
+  shipping_address?: string;
 }
 
 export interface CreateOrderItemData {
@@ -50,3 +53,15 @@ export interface CreateOrderItemData {
   quantity: number;
   subtotal: number;
 }
+
+// Status mapping for reseller app integration
+export const ORDER_STATUS_MAPPING = {
+  pending: 'Menunggu',
+  confirmed: 'Dikonfirmasi', 
+  processing: 'Proses',
+  ready: 'Siap',
+  completed: 'Selesai',
+  cancelled: 'Batal'
+} as const;
+
+export type OrderStatus = keyof typeof ORDER_STATUS_MAPPING;

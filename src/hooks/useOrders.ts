@@ -152,10 +152,20 @@ export const useUpdateOrderStatus = () => {
         throw error;
       }
 
+      // Also update reseller_orders status if it exists
+      await supabase
+        .from('reseller_orders')
+        .update({ 
+          status,
+          updated_at: new Date().toISOString()
+        })
+        .eq('order_id', orderId);
+
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['reseller-orders'] });
       toast({
         title: 'Sukses',
         description: 'Status pesanan berhasil diperbarui',
@@ -191,6 +201,7 @@ export const useDeleteOrder = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['reseller-orders'] });
       toast({
         title: 'Sukses',
         description: 'Pesanan berhasil dihapus',

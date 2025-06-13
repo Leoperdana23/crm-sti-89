@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Package, Clock, CheckCircle, XCircle, Eye } from 'lucide-react';
+import { ORDER_STATUS_MAPPING } from '@/types/order';
 
 interface ResellerOrdersProps {
   reseller: ResellerSession;
@@ -35,10 +36,12 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
     switch (status.toLowerCase()) {
       case 'pending':
         return 'bg-yellow-100 text-yellow-800';
+      case 'confirmed':
+        return 'bg-blue-100 text-blue-800';
       case 'processing':
         return 'bg-blue-100 text-blue-800';
-      case 'shipped':
-        return 'bg-purple-100 text-purple-800';
+      case 'ready':
+        return 'bg-green-100 text-green-800';
       case 'completed':
         return 'bg-green-100 text-green-800';
       case 'cancelled':
@@ -52,8 +55,10 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
     switch (status.toLowerCase()) {
       case 'pending':
         return <Clock className="h-4 w-4" />;
+      case 'confirmed':
       case 'processing':
         return <Package className="h-4 w-4" />;
+      case 'ready':
       case 'completed':
         return <CheckCircle className="h-4 w-4" />;
       case 'cancelled':
@@ -63,10 +68,68 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
     }
   };
 
+  const getStatusLabel = (status: string) => {
+    return ORDER_STATUS_MAPPING[status as keyof typeof ORDER_STATUS_MAPPING] || status;
+  };
+
   const filterOrdersByStatus = (status: string) => {
     if (status === 'all') return orders;
     return orders.filter(order => order.order?.status.toLowerCase() === status.toLowerCase());
   };
+
+  const renderOrderCard = (order: any) => (
+    <Card key={order.id}>
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-sm">
+              Order #{order.order_id.slice(-8)}
+            </CardTitle>
+            <p className="text-xs text-gray-500">
+              {formatDate(order.created_at)}
+            </p>
+          </div>
+          <Badge className={getStatusColor(order.order?.status || 'pending')}>
+            <span className="flex items-center gap-1">
+              {getStatusIcon(order.order?.status || 'pending')}
+              {getStatusLabel(order.order?.status || 'pending')}
+            </span>
+          </Badge>
+        </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Customer:</span>
+            <span className="font-medium">{order.order?.customer_name}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Total Order:</span>
+            <span className="font-medium">{formatCurrency(order.order?.total_amount || 0)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Komisi ({order.commission_rate}%):</span>
+            <span className="font-semibold text-green-600">
+              {formatCurrency(order.commission_amount)}
+            </span>
+          </div>
+          
+          {/* Order Items */}
+          {order.order?.order_items && order.order.order_items.length > 0 && (
+            <div className="mt-3 pt-3 border-t">
+              <p className="text-xs text-gray-600 mb-2">Produk:</p>
+              {order.order.order_items.map((item: any, index: number) => (
+                <div key={index} className="flex justify-between text-xs">
+                  <span>{item.quantity}x {item.product_name}</span>
+                  <span>{formatCurrency(item.subtotal)}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
 
   if (loading) {
     return (
@@ -89,91 +152,32 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
       <h2 className="text-xl font-bold">Riwayat Order</h2>
 
       <Tabs defaultValue="all" className="w-full">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="all">Semua ({orders.length})</TabsTrigger>
-          <TabsTrigger value="pending">Pending ({filterOrdersByStatus('pending').length})</TabsTrigger>
           <TabsTrigger value="processing">Proses ({filterOrdersByStatus('processing').length})</TabsTrigger>
+          <TabsTrigger value="ready">Siap ({filterOrdersByStatus('ready').length})</TabsTrigger>
           <TabsTrigger value="completed">Selesai ({filterOrdersByStatus('completed').length})</TabsTrigger>
+          <TabsTrigger value="cancelled">Batal ({filterOrdersByStatus('cancelled').length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
-          {orders.map((order) => (
-            <Card key={order.id}>
-              <CardHeader className="pb-3">
-                <div className="flex justify-between items-start">
-                  <div>
-                    <CardTitle className="text-sm">
-                      Order #{order.order_id.slice(-8)}
-                    </CardTitle>
-                    <p className="text-xs text-gray-500">
-                      {formatDate(order.created_at)}
-                    </p>
-                  </div>
-                  <Badge className={getStatusColor(order.order?.status || 'pending')}>
-                    <span className="flex items-center gap-1">
-                      {getStatusIcon(order.order?.status || 'pending')}
-                      {order.order?.status || 'Pending'}
-                    </span>
-                  </Badge>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-0">
-                <div className="space-y-2">
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Customer:</span>
-                    <span className="font-medium">{order.order?.customer_name}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Total Order:</span>
-                    <span className="font-medium">{formatCurrency(order.order?.total_amount || 0)}</span>
-                  </div>
-                  <div className="flex justify-between text-sm">
-                    <span className="text-gray-600">Komisi ({order.commission_rate}%):</span>
-                    <span className="font-semibold text-green-600">
-                      {formatCurrency(order.commission_amount)}
-                    </span>
-                  </div>
-                  
-                  {/* Order Items */}
-                  {order.order?.order_items && order.order.order_items.length > 0 && (
-                    <div className="mt-3 pt-3 border-t">
-                      <p className="text-xs text-gray-600 mb-2">Produk:</p>
-                      {order.order.order_items.map((item, index) => (
-                        <div key={index} className="flex justify-between text-xs">
-                          <span>{item.quantity}x {item.product_name}</span>
-                          <span>{formatCurrency(item.subtotal)}</span>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </TabsContent>
-
-        <TabsContent value="pending" className="space-y-4">
-          {filterOrdersByStatus('pending').map((order) => (
-            <Card key={order.id}>
-              {/* Same card structure as above */}
-            </Card>
-          ))}
+          {orders.map(renderOrderCard)}
         </TabsContent>
 
         <TabsContent value="processing" className="space-y-4">
-          {filterOrdersByStatus('processing').map((order) => (
-            <Card key={order.id}>
-              {/* Same card structure as above */}
-            </Card>
-          ))}
+          {filterOrdersByStatus('processing').map(renderOrderCard)}
+        </TabsContent>
+
+        <TabsContent value="ready" className="space-y-4">
+          {filterOrdersByStatus('ready').map(renderOrderCard)}
         </TabsContent>
 
         <TabsContent value="completed" className="space-y-4">
-          {filterOrdersByStatus('completed').map((order) => (
-            <Card key={order.id}>
-              {/* Same card structure as above */}
-            </Card>
-          ))}
+          {filterOrdersByStatus('completed').map(renderOrderCard)}
+        </TabsContent>
+
+        <TabsContent value="cancelled" className="space-y-4">
+          {filterOrdersByStatus('cancelled').map(renderOrderCard)}
         </TabsContent>
       </Tabs>
 
