@@ -16,6 +16,7 @@ export interface AppSettings {
     bannerUrl: string;
     primaryColor: string;
     secondaryColor: string;
+    description?: string;
   };
   operating_hours: {
     start: string;
@@ -26,6 +27,8 @@ export interface AppSettings {
     enabled: boolean;
     message: string;
   };
+  allowRegistration?: boolean;
+  autoModeration?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -40,9 +43,9 @@ export const useAppSettings = () => {
         .from('app_settings')
         .select('*')
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error fetching app settings:', error);
         throw error;
       }
