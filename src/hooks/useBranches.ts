@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -35,7 +36,7 @@ export const useBranches = () => {
   });
 
   return {
-    branches: query.data,
+    branches: query.data || [], // Provide empty array as default
     loading: query.isLoading,
     error: query.error,
     ...query

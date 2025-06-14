@@ -20,7 +20,7 @@ const Resellers = () => {
   const [filterStatus, setFilterStatus] = useState('all');
 
   const { data: resellers = [], isLoading } = useResellers();
-  const { branches } = useBranches();
+  const { branches, loading: branchesLoading } = useBranches();
   const deleteMutation = useDeleteReseller();
 
   const filteredResellers = resellers.filter(reseller => {
@@ -55,7 +55,7 @@ const Resellers = () => {
     setEditingReseller(null);
   };
 
-  if (isLoading) {
+  if (isLoading || branchesLoading) {
     return (
       <div className="flex items-center justify-center min-h-[400px]">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -102,7 +102,7 @@ const Resellers = () => {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Semua Cabang</SelectItem>
-            {branches.map((branch) => (
+            {branches && branches.map((branch) => (
               <SelectItem key={branch.id} value={branch.id}>
                 {branch.name}
               </SelectItem>
