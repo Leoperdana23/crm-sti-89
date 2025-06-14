@@ -16,7 +16,7 @@ export interface Customer {
   branch_id?: string;
   sales_id?: string;
   interactions: Interaction[];
-  work_status?: 'not_started' | 'in_progress' | 'completed';
+  work_status?: 'not_started' | 'in_progress' | 'completed' | 'cancelled';
   work_start_date?: string;
   work_completed_date?: string;
   work_notes?: string;
