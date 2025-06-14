@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -35,9 +36,6 @@ const OrderManagement = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
   const [resellerFilter, setResellerFilter] = useState('');
-
-  // Enable order notifications
-  useOrderNotifications();
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
