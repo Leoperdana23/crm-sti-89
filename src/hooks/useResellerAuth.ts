@@ -9,6 +9,23 @@ interface ResellerSession {
   catalogToken: string;
 }
 
+interface AuthResponse {
+  success: boolean;
+  message?: string;
+  reseller?: {
+    id: string;
+    name: string;
+    phone: string;
+    email?: string;
+    address: string;
+    commission_rate: number;
+    total_points: number;
+  };
+  token?: string;
+  expires_at?: string;
+  login_history_id?: string;
+}
+
 export const useResellerAuth = () => {
   const [session, setSession] = useState<ResellerSession | null>(() => {
     const stored = localStorage.getItem('resellerSession');
@@ -55,29 +72,32 @@ export const useResellerAuth = () => {
         throw new Error(error.message || 'Authentication failed');
       }
 
-      if (!data.success) {
-        throw new Error(data.message || 'Authentication failed');
+      // Type cast the response to our interface
+      const authResult = data as AuthResponse;
+
+      if (!authResult.success) {
+        throw new Error(authResult.message || 'Authentication failed');
       }
 
       // Update the login history record with IP and user agent
-      if (data.login_history_id) {
+      if (authResult.login_history_id) {
         await supabase
           .from('reseller_login_history')
           .update({
             ip_address: clientIP,
             user_agent: userAgent
           })
-          .eq('id', data.login_history_id);
+          .eq('id', authResult.login_history_id);
       }
 
       console.log('Login history updated with IP and user agent');
 
       // Create session data
       const sessionData: ResellerSession = {
-        id: data.reseller.id,
-        name: data.reseller.name,
-        phone: data.reseller.phone,
-        catalogToken: data.token
+        id: authResult.reseller!.id,
+        name: authResult.reseller!.name,
+        phone: authResult.reseller!.phone,
+        catalogToken: authResult.token!
       };
 
       console.log('Session created:', sessionData);
