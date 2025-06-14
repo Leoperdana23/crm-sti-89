@@ -33,7 +33,7 @@ interface SidebarMenuProps {
 }
 
 const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
-  const { hasPermission, loading } = useUserPermissions();
+  const { hasPermission, loading, userRole } = useUserPermissions();
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [sedekatAppOpen, setSedekatAppOpen] = useState(false);
 
@@ -236,8 +236,13 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
           <div className="ml-6 space-y-1">
             {sedekatAppMenuItems.map((item) => {
               // Show item if user has permission to view it
-              const shouldShow = hasPermission(item.permission, 'view');
-              
+              let shouldShow = hasPermission(item.permission, 'view');
+
+              // PERUBAHAN: Jika menu "Komisi & Poin" dan user staff, paksa tampilkan
+              if (item.permission === 'commission' && userRole === 'staff') {
+                shouldShow = true;
+              }
+
               if (!shouldShow) {
                 return null;
               }
