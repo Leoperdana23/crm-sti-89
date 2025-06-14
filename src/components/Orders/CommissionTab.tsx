@@ -31,7 +31,7 @@ const CommissionTab = () => {
     }).format(amount);
   };
 
-  // Calculate commission data from orders using snapshot values
+  // Calculate commission data from orders using improved logic
   const calculateCommissionData = (): CommissionData[] => {
     if (!orders) return [];
 
@@ -43,10 +43,19 @@ const CommissionTab = () => {
       const resellerId = order.reseller.id;
       const resellerName = order.reseller.name;
 
-      // Calculate commission using snapshot values from order items
+      // Calculate commission using improved logic - try snapshot first, fallback to current values
       const orderCommission = order.order_items?.reduce((total, item) => {
-        const snapshotCommission = (item as any).product_commission_snapshot || 0;
-        return total + (snapshotCommission * item.quantity);
+        let commissionPerItem = 0;
+        
+        // Try snapshot value first
+        if ((item as any).product_commission_snapshot !== undefined) {
+          commissionPerItem = (item as any).product_commission_snapshot || 0;
+        } else {
+          // Fallback to current product commission value if available
+          commissionPerItem = (item as any).products?.commission_value || 0;
+        }
+        
+        return total + (commissionPerItem * item.quantity);
       }, 0) || 0;
 
       if (!commissionMap.has(resellerId)) {
@@ -84,6 +93,7 @@ const CommissionTab = () => {
       }
     });
 
+    console.log('Commission data calculated:', Array.from(commissionMap.values()));
     return Array.from(commissionMap.values());
   };
 
@@ -136,6 +146,9 @@ const CommissionTab = () => {
   const totalCommissionAll = filteredData.reduce((sum, data) => sum + data.totalCommission, 0);
   const totalPaidAll = filteredData.reduce((sum, data) => sum + data.paidCommission, 0);
   const totalUnpaidAll = filteredData.reduce((sum, data) => sum + data.unpaidCommission, 0);
+
+  console.log('Total orders available for commission calculation:', orders?.length);
+  console.log('Total commission calculated:', totalCommissionAll);
 
   return (
     <div className="space-y-6">

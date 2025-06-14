@@ -62,38 +62,73 @@ const Commission = () => {
     }).format(amount);
   };
 
-  // Calculate commission from completed orders using snapshot values
+  // Calculate commission from completed orders - improved calculation
   const calculateResellerCommission = (resellerId: string) => {
     if (!orders) return 0;
     
+    // Filter completed orders for this reseller
     const completedOrders = orders.filter(order => 
       order.reseller?.id === resellerId && 
       (order.status === 'completed' || order.status === 'selesai')
     );
 
+    console.log(`Orders for reseller ${resellerId}:`, completedOrders.length);
+
     return completedOrders.reduce((total, order) => {
       const orderCommission = order.order_items?.reduce((itemTotal, item) => {
-        const commissionSnapshot = (item as any).product_commission_snapshot || 0;
-        return itemTotal + (commissionSnapshot * item.quantity);
+        // Try snapshot first, fallback to current product values
+        let commissionPerItem = 0;
+        
+        if ((item as any).product_commission_snapshot !== undefined) {
+          commissionPerItem = (item as any).product_commission_snapshot || 0;
+        } else {
+          // Fallback to using commission from product if available
+          commissionPerItem = (item as any).products?.commission_value || 0;
+        }
+        
+        const itemCommission = commissionPerItem * item.quantity;
+        console.log(`Item commission: ${commissionPerItem} x ${item.quantity} = ${itemCommission}`);
+        return itemTotal + itemCommission;
       }, 0) || 0;
+      
+      console.log(`Order ${order.id} commission: ${orderCommission}`);
       return total + orderCommission;
     }, 0);
   };
 
-  // Calculate points from completed orders using snapshot values
+  // Calculate points from completed orders - improved calculation
   const calculateResellerPoints = (resellerId: string) => {
     if (!orders) return 0;
     
+    // Filter completed orders for this reseller
     const completedOrders = orders.filter(order => 
       order.reseller?.id === resellerId && 
       (order.status === 'completed' || order.status === 'selesai')
     );
 
+    console.log(`Orders for points calculation ${resellerId}:`, completedOrders.length);
+
     return completedOrders.reduce((total, order) => {
       const orderPoints = order.order_items?.reduce((itemTotal, item) => {
-        const pointsSnapshot = (item as any).product_points_snapshot || 0;
-        return itemTotal + (pointsSnapshot * item.quantity);
+        // Try snapshot first, fallback to current product values or points_earned
+        let pointsPerItem = 0;
+        
+        if ((item as any).product_points_snapshot !== undefined) {
+          pointsPerItem = (item as any).product_points_snapshot || 0;
+        } else if (item.points_earned !== undefined) {
+          // Use points_earned if available
+          return itemTotal + item.points_earned;
+        } else {
+          // Fallback to using points from product if available
+          pointsPerItem = (item as any).products?.points_value || 0;
+        }
+        
+        const itemPoints = pointsPerItem * item.quantity;
+        console.log(`Item points: ${pointsPerItem} x ${item.quantity} = ${itemPoints}`);
+        return itemTotal + itemPoints;
       }, 0) || 0;
+      
+      console.log(`Order ${order.id} points: ${orderPoints}`);
       return total + orderPoints;
     }, 0);
   };
@@ -184,6 +219,10 @@ const Commission = () => {
       </div>
     );
   }
+
+  console.log('Total orders available:', orders?.length);
+  console.log('Total resellers:', resellers?.length);
+  console.log('Total stats:', totalStats);
 
   return (
     <div className="p-6 space-y-6">
