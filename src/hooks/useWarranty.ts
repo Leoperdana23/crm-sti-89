@@ -1,13 +1,45 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { WarrantySupplier, WarrantyProduct, WarrantySale, WarrantyClaim } from '@/types/warranty';
 
-// Define input types for mutations (excluding auto-generated fields)
-type WarrantyProductInput = Omit<WarrantyProduct, 'id' | 'created_at' | 'updated_at' | 'warranty_end_date' | 'supplier'>;
-type WarrantySaleInput = Omit<WarrantySale, 'id' | 'created_at' | 'updated_at' | 'customer_warranty_end_date' | 'warranty_product' | 'customer' | 'reseller'>;
-type WarrantyClaimInput = Omit<WarrantyClaim, 'id' | 'created_at' | 'updated_at' | 'warranty_sale'>;
+// Define input types for mutations that work with database inserts
+type WarrantyProductInput = {
+  product_name: string;
+  serial_number: string;
+  supplier_id?: string;
+  received_date: string;
+  supplier_invoice_date?: string;
+  warranty_months: number;
+  warranty_start_date: string;
+  status: 'in_stock' | 'sold' | 'damaged' | 'returned';
+  notes?: string;
+};
+
+type WarrantySaleInput = {
+  warranty_product_id: string;
+  sale_date: string;
+  customer_id?: string;
+  reseller_id?: string;
+  customer_name: string;
+  customer_phone?: string;
+  customer_warranty_start_date: string;
+  sale_price?: number;
+  notes?: string;
+};
+
+type WarrantyClaimInput = {
+  warranty_sale_id: string;
+  claim_date: string;
+  problem_description: string;
+  status: 'processing' | 'completed' | 'rejected';
+  resolution_notes?: string;
+  technician_notes?: string;
+  replacement_serial_number?: string;
+  completed_date?: string;
+  created_by?: string;
+  processed_by?: string;
+};
 
 // Warranty Suppliers
 export const useWarrantySuppliers = () => {
