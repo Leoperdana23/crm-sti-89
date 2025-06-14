@@ -15,7 +15,7 @@ export interface Customer {
   customer_type: string;
   needs?: string;
   status: 'Prospek' | 'Follow-up' | 'Deal' | 'Tidak Jadi';
-  survey_status?: string;
+  survey_status?: 'sudah_disurvei' | 'belum_disurvei';
   branch_id?: string;
   sales_id?: string;
   deal_date?: string;
@@ -38,7 +38,7 @@ export interface Customer {
     id: string;
     name: string;
   };
-  interactions?: any[];
+  interactions: any[];
 }
 
 export const useCustomers = () => {
@@ -76,6 +76,7 @@ export const useCustomers = () => {
       const customersWithInteractions = data?.map(customer => ({
         ...customer,
         status: customer.status as 'Prospek' | 'Follow-up' | 'Deal' | 'Tidak Jadi',
+        survey_status: customer.survey_status as 'sudah_disurvei' | 'belum_disurvei' | undefined,
         assigned_employees: customer.assigned_employees ? 
           (typeof customer.assigned_employees === 'string' ? 
             customer.assigned_employees.split(',').map(e => e.trim()) : 
