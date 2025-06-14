@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -208,15 +207,37 @@ const Commission = () => {
   };
 
   const handleRedeemReward = async (reward: any) => {
-    if (!selectedReseller) return;
+    if (!selectedReseller) {
+      toast({
+        title: 'Error',
+        description: 'Reseller tidak ditemukan',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     const resellerInfo = resellerData.find(r => r.id === selectedReseller.id);
-    if (!resellerInfo) return;
+    if (!resellerInfo) {
+      toast({
+        title: 'Error',
+        description: 'Data reseller tidak ditemukan',
+        variant: 'destructive',
+      });
+      return;
+    }
 
     const { redeemedCommission, redeemedPoints } = getRedeemedAmounts(selectedReseller.id);
     
     const availableCommission = resellerInfo.totalCommission - redeemedCommission;
     const availablePoints = resellerInfo.totalPoints - redeemedPoints;
+
+    console.log('Reward redemption attempt:', {
+      reward,
+      availableCommission,
+      availablePoints,
+      rewardCost: reward.cost,
+      rewardType: reward.reward_type
+    });
 
     // Validate if reseller has enough balance
     if (reward.reward_type === 'commission' && availableCommission < reward.cost) {
@@ -248,8 +269,18 @@ const Commission = () => {
 
       setIsRedemptionDialogOpen(false);
       setSelectedReseller(null);
+      
+      toast({
+        title: 'Sukses',
+        description: 'Penukaran hadiah berhasil diproses',
+      });
     } catch (error) {
       console.error('Failed to create redemption:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal memproses penukaran hadiah',
+        variant: 'destructive',
+      });
     }
   };
 
@@ -482,47 +513,49 @@ const Commission = () => {
                             </div>
                             
                             <div className="max-h-96 overflow-y-auto space-y-3">
-                              {rewardCatalog?.length === 0 ? (
+                              {!rewardCatalog || rewardCatalog.length === 0 ? (
                                 <div className="text-center py-8">
                                   <AlertCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
                                   <p className="text-gray-500">Belum ada hadiah yang tersedia</p>
                                 </div>
                               ) : (
-                                rewardCatalog?.map((reward) => {
-                                  const canRedeem = reward.reward_type === 'points' 
-                                    ? availablePoints >= reward.cost
-                                    : availableCommission >= reward.cost;
-                                  
-                                  return (
-                                    <div key={reward.id} className="border rounded-lg p-4">
-                                      <div className="flex justify-between items-start">
-                                        <div className="flex-1">
-                                          <h4 className="font-medium">{reward.name}</h4>
-                                          <p className="text-sm text-gray-600 mt-1">{reward.description}</p>
-                                          <div className="flex items-center gap-2 mt-2">
-                                            <Badge variant={reward.reward_type === 'points' ? 'secondary' : 'default'}>
-                                              {reward.reward_type === 'points' ? 'Poin' : 'Komisi'}
-                                            </Badge>
-                                            <p className="text-sm font-medium text-blue-600">
-                                              {reward.reward_type === 'points' 
-                                                ? `${reward.cost} Poin` 
-                                                : formatCurrency(reward.cost)
-                                              }
-                                            </p>
+                                rewardCatalog
+                                  .filter(reward => reward.is_active)
+                                  .map((reward) => {
+                                    const canRedeem = reward.reward_type === 'points' 
+                                      ? availablePoints >= reward.cost
+                                      : availableCommission >= reward.cost;
+                                    
+                                    return (
+                                      <div key={reward.id} className="border rounded-lg p-4">
+                                        <div className="flex justify-between items-start">
+                                          <div className="flex-1">
+                                            <h4 className="font-medium">{reward.name}</h4>
+                                            <p className="text-sm text-gray-600 mt-1">{reward.description}</p>
+                                            <div className="flex items-center gap-2 mt-2">
+                                              <Badge variant={reward.reward_type === 'points' ? 'secondary' : 'default'}>
+                                                {reward.reward_type === 'points' ? 'Poin' : 'Komisi'}
+                                              </Badge>
+                                              <p className="text-sm font-medium text-blue-600">
+                                                {reward.reward_type === 'points' 
+                                                  ? `${reward.cost} Poin` 
+                                                  : formatCurrency(reward.cost)
+                                                }
+                                              </p>
+                                            </div>
                                           </div>
+                                          <Button
+                                            size="sm"
+                                            disabled={!canRedeem || createRedemption.isPending}
+                                            onClick={() => handleRedeemReward(reward)}
+                                            className="ml-4"
+                                          >
+                                            {createRedemption.isPending ? 'Memproses...' : canRedeem ? 'Tukar' : 'Tidak Cukup'}
+                                          </Button>
                                         </div>
-                                        <Button
-                                          size="sm"
-                                          disabled={!canRedeem || createRedemption.isPending}
-                                          onClick={() => handleRedeemReward(reward)}
-                                          className="ml-4"
-                                        >
-                                          {canRedeem ? 'Tukar' : 'Tidak Cukup'}
-                                        </Button>
                                       </div>
-                                    </div>
-                                  );
-                                })
+                                    );
+                                  })
                               )}
                             </div>
                           </div>
@@ -589,6 +622,7 @@ const Commission = () => {
                         <Button
                           size="sm"
                           variant="default"
+                          disabled={approveRedemption.isPending}
                           onClick={() => approveRedemption.mutate({
                             redemptionId: redemption.id,
                             status: 'approved'
@@ -599,6 +633,7 @@ const Commission = () => {
                         <Button
                           size="sm"
                           variant="destructive"
+                          disabled={approveRedemption.isPending}
                           onClick={() => approveRedemption.mutate({
                             redemptionId: redemption.id,
                             status: 'rejected'
