@@ -96,7 +96,7 @@ const Layout: React.FC<LayoutProps> = ({ children }) => {
         <Sidebar className="border-r border-gray-200 hidden lg:flex">
           <SidebarHeader className="border-b border-gray-200 p-4 lg:p-6">
             <h1 className="text-sm lg:text-xl xl:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent leading-tight">
-              CRM PT SLASH TEKNOLOGI INDONESIA
+              Sistem Manajemen PT STI
             </h1>
           </SidebarHeader>
           
