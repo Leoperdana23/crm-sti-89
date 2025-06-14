@@ -137,11 +137,20 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
       return sum + (ro.commission_amount || 0);
     }, 0);
 
+    const points = resellerOrdersData.reduce((sum, ro) => {
+      if (!ro.orders?.order_items) return sum;
+      const orderPoints = ro.orders.order_items.reduce((itemSum: number, item: any) => {
+        return itemSum + ((item.product_points_snapshot || 0) * item.quantity);
+      }, 0);
+      return sum + orderPoints;
+    }, 0);
+
     const orders = resellerOrdersData.length;
 
     return {
       ...reseller,
       commission,
+      points,
       orders
     };
   }).filter(r => r.commission > 0 || r.orders > 0) || [];
@@ -278,7 +287,7 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
                       </div>
                       <div className="text-right">
                         <p className="font-medium">{formatCurrency(reseller.commission)}</p>
-                        <p className="text-sm text-gray-500">{reseller.orders} order</p>
+                        <p className="text-sm text-gray-500">{reseller.points.toLocaleString()} poin</p>
                       </div>
                     </div>
                   ))}
@@ -355,7 +364,7 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
                       </div>
                       <div className="text-right">
                         <p className="font-medium">{formatCurrency(reseller.commission)}</p>
-                        <p className="text-sm text-gray-500">{reseller.orders} order</p>
+                        <p className="text-sm text-gray-500">{reseller.points.toLocaleString()} poin</p>
                       </div>
                     </div>
                   ))}
