@@ -8,12 +8,14 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Settings, Palette, Bell, Shield, Globe } from 'lucide-react';
-import { useAppSettings } from '@/hooks/useAppSettings';
-import { useContactSettings } from '@/hooks/useContactSettings';
+import { useAppSettings, useUpdateAppSettings } from '@/hooks/useAppSettings';
+import { useContactSettings, useUpdateContactSettings } from '@/hooks/useContactSettings';
 
 const AppSettings = () => {
-  const { data: appSettings, updateSettings } = useAppSettings();
-  const { data: contactSettings, updateContactSettings } = useContactSettings();
+  const { data: appSettings } = useAppSettings();
+  const { data: contactSettings } = useContactSettings();
+  const updateSettings = useUpdateAppSettings();
+  const updateContactSettings = useUpdateContactSettings();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAppSettingsUpdate = async (settings: any) => {

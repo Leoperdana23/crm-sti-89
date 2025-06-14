@@ -19,7 +19,9 @@ import {
   Line,
   PieChart,
   Pie,
-  Cell
+  Cell,
+  AreaChart,
+  Area
 } from 'recharts';
 import { 
   Users, 
@@ -37,13 +39,15 @@ import {
   FileText,
   Building,
   UserCheck,
-  Trophy
+  Trophy,
+  Activity,
+  CreditCard
 } from 'lucide-react';
 import { useResellers } from '@/hooks/useResellers';
 import { useOrders } from '@/hooks/useOrders';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useSurveys } from '@/hooks/useSurveys';
-import { useRewards } from '@/hooks/useRewards';
+import { useRewardRedemptions } from '@/hooks/useRewards';
 import { useBranches } from '@/hooks/useBranches';
 import { useSales } from '@/hooks/useSales';
 
@@ -57,7 +61,7 @@ const Reports = () => {
   const { data: orders } = useOrders();
   const { data: customers } = useCustomers();
   const { data: surveys } = useSurveys();
-  const { data: redemptions } = useRewards();
+  const { data: redemptions } = useRewardRedemptions();
   const { data: branches } = useBranches();
   const { data: sales } = useSales();
 
@@ -105,8 +109,7 @@ const Reports = () => {
   // Get reseller performance data
   const resellerPerformance = resellers?.map(reseller => {
     const resellerOrders = filteredOrders.filter(o => {
-      // Find catalog token for this reseller
-      return o.catalog_token && o.status === 'completed';
+      return o.catalog_token && (o.status === 'completed' || o.status === 'selesai');
     });
     
     const totalSales = resellerOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
@@ -130,7 +133,8 @@ const Reports = () => {
       totalSales,
       totalCommission,
       totalPoints,
-      isActive: reseller.is_active
+      isActive: reseller.is_active,
+      lastLogin: '2024-01-15' // Placeholder - akan diimplementasi nanti
     };
   }).sort((a, b) => b.totalSales - a.totalSales) || [];
 
@@ -194,10 +198,68 @@ const Reports = () => {
              dealDate.getFullYear() === date.getFullYear();
     }).length || 0;
 
+    const monthOrders = orders?.filter(o => {
+      const orderDate = new Date(o.created_at);
+      return orderDate.getMonth() === date.getMonth() && 
+             orderDate.getFullYear() === date.getFullYear();
+    }).length || 0;
+
+    const monthRevenue = orders?.filter(o => {
+      const orderDate = new New(o.created_at);
+      return orderDate.getMonth() === date.getMonth() && 
+             orderDate.getFullYear() === date.getFullYear() &&
+             (o.status === 'completed' || o.status === 'selesai');
+    }).reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+
     return {
       month: monthName,
       customers: monthCustomers,
-      deals: monthDeals
+      deals: monthDeals,
+      orders: monthOrders,
+      revenue: monthRevenue
+    };
+  });
+
+  // SEDEKAT Analytics Chart Data
+  const sedekatMonthlyTrend = Array.from({ length: 6 }, (_, i) => {
+    const date = new Date();
+    date.setMonth(date.getMonth() - (5 - i));
+    const monthName = date.toLocaleDateString('id-ID', { month: 'short' });
+    
+    const monthOrders = filteredOrders.filter(o => {
+      const orderDate = new Date(o.created_at);
+      return orderDate.getMonth() === date.getMonth() && 
+             orderDate.getFullYear() === date.getFullYear() &&
+             o.catalog_token;
+    }).length;
+
+    const monthCommission = filteredOrders.filter(o => {
+      const orderDate = new Date(o.created_at);
+      return orderDate.getMonth() === date.getMonth() && 
+             orderDate.getFullYear() === date.getFullYear() &&
+             o.catalog_token && (o.status === 'completed' || o.status === 'selesai');
+    }).reduce((total, order) => {
+      return total + (order.order_items || []).reduce((sum, item) => {
+        return sum + ((item.product_commission_snapshot || 0) * item.quantity);
+      }, 0);
+    }, 0);
+
+    const monthPoints = filteredOrders.filter(o => {
+      const orderDate = new Date(o.created_at);
+      return orderDate.getMonth() === date.getMonth() && 
+             orderDate.getFullYear() === date.getFullYear() &&
+             o.catalog_token && (o.status === 'completed' || o.status === 'selesai');
+    }).reduce((total, order) => {
+      return total + (order.order_items || []).reduce((sum, item) => {
+        return sum + ((item.product_points_snapshot || 0) * item.quantity);
+      }, 0);
+    }, 0);
+
+    return {
+      month: monthName,
+      orders: monthOrders,
+      commission: monthCommission,
+      points: monthPoints
     };
   });
 
@@ -287,6 +349,61 @@ const Reports = () => {
                     <p className="text-2xl font-bold">{totalPoints.toLocaleString()}</p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* SEDEKAT Analytics Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Tren Bulanan SEDEKAT App</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={sedekatMonthlyTrend}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip formatter={(value, name) => [
+                      name === 'commission' ? formatCurrency(Number(value)) : value, 
+                      name === 'commission' ? 'Komisi' : name === 'orders' ? 'Order' : 'Poin'
+                    ]} />
+                    <Legend />
+                    <Area type="monotone" dataKey="orders" stackId="1" stroke="#3b82f6" fill="#3b82f6" name="Order" />
+                    <Area type="monotone" dataKey="points" stackId="1" stroke="#8b5cf6" fill="#8b5cf6" name="Poin" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Distribusi Komisi Reseller</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <PieChart>
+                    <Pie
+                      data={resellerPerformance.slice(0, 5).map(r => ({
+                        name: r.name,
+                        value: r.totalCommission
+                      }))}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name} ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                    >
+                      {resellerPerformance.slice(0, 5).map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'][index % 5]} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => formatCurrency(Number(value))} />
+                  </PieChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
           </div>
@@ -405,6 +522,42 @@ const Reports = () => {
               </CardContent>
             </Card>
           </div>
+
+          {/* Reseller Activity */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5" />
+                Reseller Paling Aktif Login Aplikasi
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3 max-h-96 overflow-y-auto">
+                {resellerPerformance.slice(0, 10).map((reseller, index) => (
+                  <div key={reseller.id} className="flex items-center gap-3 p-3 bg-gray-50 rounded-lg">
+                    <div className="flex-shrink-0">
+                      <Badge variant={index < 3 ? 'default' : 'secondary'}>
+                        #{index + 1}
+                      </Badge>
+                    </div>
+                    <div className="flex-grow">
+                      <p className="font-medium">{reseller.name}</p>
+                      <p className="text-sm text-gray-500">{reseller.phone}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="text-sm text-green-600">Login terakhir</p>
+                      <p className="text-xs text-gray-500">{reseller.lastLogin}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="mt-4 p-3 bg-blue-50 rounded-lg">
+                <p className="text-sm text-blue-600">
+                  <strong>Catatan:</strong> Data login akan diimplementasi dalam update selanjutnya
+                </p>
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* General Reports */}
@@ -457,6 +610,52 @@ const Reports = () => {
                     <p className="text-2xl font-bold">{conversionRate.toFixed(1)}%</p>
                   </div>
                 </div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* General Analytics Charts */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Tren Bulanan Revenue & Order</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <AreaChart data={monthlyTrend}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip formatter={(value, name) => [
+                      name === 'revenue' ? formatCurrency(Number(value)) : value,
+                      name === 'revenue' ? 'Revenue' : 'Order'
+                    ]} />
+                    <Legend />
+                    <Area type="monotone" dataKey="orders" stackId="1" stroke="#3b82f6" fill="#3b82f6" name="Order" />
+                    <Area type="monotone" dataKey="revenue" stackId="1" stroke="#10b981" fill="#10b981" name="Revenue" />
+                  </AreaChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Tren Conversion Rate</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <ResponsiveContainer width="100%" height={300}>
+                  <LineChart data={monthlyTrend.map(item => ({
+                    ...item,
+                    conversion: item.customers > 0 ? ((item.deals / item.customers) * 100) : 0
+                  }))}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="month" />
+                    <YAxis />
+                    <Tooltip formatter={(value) => [`${Number(value).toFixed(1)}%`, 'Conversion Rate']} />
+                    <Legend />
+                    <Line type="monotone" dataKey="conversion" stroke="#8b5cf6" name="Conversion Rate %" />
+                  </LineChart>
+                </ResponsiveContainer>
               </CardContent>
             </Card>
           </div>
