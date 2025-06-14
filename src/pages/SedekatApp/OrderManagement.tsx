@@ -28,7 +28,6 @@ import {
   XCircle
 } from 'lucide-react';
 import { useOrders, useUpdateOrderStatus } from '@/hooks/useOrders';
-import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 
 const OrderManagement = () => {
   const { data: orders, isLoading } = useOrders();
