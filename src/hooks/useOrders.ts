@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -46,7 +45,7 @@ export const useOrders = () => {
   return useQuery({
     queryKey: ['orders'],
     queryFn: async () => {
-      console.log('=== FETCHING ORDERS WITH ENHANCED DEBUGGING ===');
+      console.log('=== FETCHING ORDERS WITH RESELLER DATA ===');
       
       const { data, error } = await supabase
         .from('orders')
@@ -76,9 +75,9 @@ export const useOrders = () => {
         throw error;
       }
 
-      console.log(`Raw orders fetched: ${data?.length}`);
+      console.log(`Fetched ${data?.length} orders from database`);
 
-      // Enhanced reseller mapping with better debugging
+      // Map orders with reseller info
       const ordersWithResellers = await Promise.all(
         (data || []).map(async (order) => {
           if (order.catalog_token) {
@@ -93,7 +92,8 @@ export const useOrders = () => {
                     id,
                     name,
                     phone,
-                    branch_id
+                    branch_id,
+                    total_points
                   )
                 `)
                 .eq('token', order.catalog_token)
@@ -105,7 +105,11 @@ export const useOrders = () => {
               }
 
               if (catalogData?.resellers) {
-                const orderWithReseller = {
+                console.log(`✓ Order ${order.id} linked to reseller: ${catalogData.resellers.name}`);
+                console.log(`  Status: ${order.status}`);
+                console.log(`  Reseller total_points: ${catalogData.resellers.total_points}`);
+                
+                return {
                   ...order,
                   reseller: {
                     id: catalogData.resellers.id,
@@ -114,31 +118,10 @@ export const useOrders = () => {
                     branch_id: catalogData.resellers.branch_id
                   }
                 };
-                
-                console.log(`✓ Order ${order.id} linked to reseller: ${catalogData.resellers.name} (${catalogData.resellers.id})`);
-                console.log(`  Status: ${order.status}`);
-                console.log(`  Items count: ${order.order_items?.length || 0}`);
-                
-                // Enhanced item debugging
-                order.order_items?.forEach((item: any, index: number) => {
-                  console.log(`  Item ${index + 1}: ${item.product_name}`);
-                  console.log(`    Qty: ${item.quantity}`);
-                  console.log(`    Commission snapshot: ${item.product_commission_snapshot}`);
-                  console.log(`    Points snapshot: ${item.product_points_snapshot}`);
-                  console.log(`    Current commission: ${item.products?.commission_value}`);
-                  console.log(`    Current points: ${item.products?.points_value}`);
-                  console.log(`    Points earned: ${item.points_earned}`);
-                });
-                
-                return orderWithReseller;
-              } else {
-                console.warn(`No reseller found for catalog token: ${order.catalog_token}`);
               }
             } catch (err) {
               console.error(`Error processing catalog token for order ${order.id}:`, err);
             }
-          } else {
-            console.log(`Order ${order.id} has no catalog_token - likely manual order`);
           }
           return order;
         })
@@ -146,36 +129,11 @@ export const useOrders = () => {
 
       const finalOrders = ordersWithResellers as Order[];
       
-      // Enhanced debugging summary
-      console.log('=== ORDERS PROCESSING SUMMARY ===');
-      console.log(`Total orders processed: ${finalOrders.length}`);
-      console.log(`Orders with reseller info: ${finalOrders.filter(o => o.reseller).length}`);
-      console.log(`Orders without reseller: ${finalOrders.filter(o => !o.reseller).length}`);
-      
-      const statusCounts = finalOrders.reduce((acc, order) => {
-        acc[order.status] = (acc[order.status] || 0) + 1;
-        return acc;
-      }, {} as Record<string, number>);
-      console.log('Order status distribution:', statusCounts);
-      
-      const completedOrdersWithReseller = finalOrders.filter(o => 
-        o.reseller && (o.status === 'completed' || o.status === 'selesai')
-      );
-      console.log(`Completed orders with reseller: ${completedOrdersWithReseller.length}`);
-      
-      // Debug each completed order's commission/points
-      completedOrdersWithReseller.forEach(order => {
-        console.log(`Completed order ${order.id} for reseller ${order.reseller?.name}:`);
-        const totalCommission = order.order_items?.reduce((sum, item) => {
-          const commission = item.product_commission_snapshot || item.products?.commission_value || 0;
-          return sum + (commission * item.quantity);
-        }, 0) || 0;
-        const totalPoints = order.order_items?.reduce((sum, item) => {
-          const points = item.product_points_snapshot || item.products?.points_value || 0;
-          return sum + (points * item.quantity);
-        }, 0) || 0;
-        console.log(`  Commission: ${totalCommission}, Points: ${totalPoints}`);
-      });
+      console.log('=== ORDER SUMMARY ===');
+      console.log(`Total orders: ${finalOrders.length}`);
+      console.log(`Orders with reseller: ${finalOrders.filter(o => o.reseller).length}`);
+      console.log(`Completed orders: ${finalOrders.filter(o => o.status === 'completed' || o.status === 'selesai').length}`);
+      console.log(`Completed orders with reseller: ${finalOrders.filter(o => o.reseller && (o.status === 'completed' || o.status === 'selesai')).length}`);
       
       return finalOrders;
     },
@@ -205,9 +163,9 @@ export const useUpdateOrderStatus = () => {
         throw error;
       }
 
-      // If status is completed/selesai, update reseller points and commission
+      // If status is completed/selesai, update reseller points
       if (status === 'selesai' || status === 'completed') {
-        console.log('Order completed, updating reseller points and commission...');
+        console.log('Order completed, updating reseller points...');
         
         // Get order details with reseller info
         const { data: orderData } = await supabase

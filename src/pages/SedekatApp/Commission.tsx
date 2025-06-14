@@ -62,126 +62,52 @@ const Commission = () => {
     }).format(amount);
   };
 
-  // Improved commission calculation with better debugging
+  // Simplified commission calculation - directly use reseller total_points from database
   const calculateResellerCommission = (resellerId: string) => {
-    if (!orders) {
-      console.log('No orders data available for commission calculation');
-      return 0;
-    }
+    if (!orders) return 0;
     
     console.log(`=== Calculating commission for reseller ${resellerId} ===`);
-    console.log(`Total orders available: ${orders.length}`);
     
-    // Get all orders for this reseller
-    const resellerOrders = orders.filter(order => {
-      const matchesReseller = order.reseller?.id === resellerId;
+    // Get completed orders for this reseller
+    const completedOrders = orders.filter(order => {
+      const hasReseller = order.reseller?.id === resellerId;
       const isCompleted = order.status === 'completed' || order.status === 'selesai';
       
-      if (matchesReseller) {
-        console.log(`Order ${order.id}: status="${order.status}", completed=${isCompleted}, reseller_id=${order.reseller?.id}`);
-        console.log(`Order items count: ${order.order_items?.length || 0}`);
+      if (hasReseller && isCompleted) {
+        console.log(`✓ Found completed order ${order.id} for reseller`);
       }
       
-      return matchesReseller && isCompleted;
+      return hasReseller && isCompleted;
     });
 
-    console.log(`Found ${resellerOrders.length} completed orders for reseller ${resellerId}`);
+    console.log(`Found ${completedOrders.length} completed orders`);
 
-    const totalCommission = resellerOrders.reduce((total, order) => {
-      console.log(`--- Processing order ${order.id} ---`);
-      
+    const totalCommission = completedOrders.reduce((total, order) => {
       const orderCommission = (order.order_items || []).reduce((itemTotal, item) => {
-        let commissionPerItem = 0;
-        
-        // Priority 1: Use snapshot value
-        if (item.product_commission_snapshot !== undefined && item.product_commission_snapshot !== null) {
-          commissionPerItem = item.product_commission_snapshot;
-          console.log(`Item ${item.product_name}: Using snapshot commission ${commissionPerItem}`);
-        } 
-        // Priority 2: Use current product commission from relation
-        else if (item.products?.commission_value !== undefined && item.products?.commission_value !== null) {
-          commissionPerItem = item.products.commission_value;
-          console.log(`Item ${item.product_name}: Using current commission ${commissionPerItem}`);
-        }
-        else {
-          console.log(`Item ${item.product_name}: No commission found, using 0`);
-          commissionPerItem = 0;
-        }
+        // Use snapshot value if available, otherwise use current product value
+        const commissionPerItem = item.product_commission_snapshot !== undefined 
+          ? item.product_commission_snapshot 
+          : (item.products?.commission_value || 0);
         
         const itemCommission = commissionPerItem * item.quantity;
-        console.log(`Item calculation: ${commissionPerItem} x ${item.quantity} = ${itemCommission}`);
-        
+        console.log(`Item ${item.product_name}: ${commissionPerItem} x ${item.quantity} = ${itemCommission}`);
         return itemTotal + itemCommission;
       }, 0);
       
-      console.log(`Order ${order.id} total commission: ${orderCommission}`);
+      console.log(`Order ${order.id} commission: ${orderCommission}`);
       return total + orderCommission;
     }, 0);
 
-    console.log(`=== Final commission for reseller ${resellerId}: ${totalCommission} ===`);
+    console.log(`Final commission for reseller ${resellerId}: ${totalCommission}`);
     return totalCommission;
   };
 
-  // Improved points calculation with better debugging  
+  // Simplified points calculation - use reseller's total_points directly
   const calculateResellerPoints = (resellerId: string) => {
-    if (!orders) {
-      console.log('No orders data available for points calculation');
-      return 0;
-    }
+    const reseller = resellers?.find(r => r.id === resellerId);
+    const totalPoints = reseller?.total_points || 0;
     
-    console.log(`=== Calculating points for reseller ${resellerId} ===`);
-    
-    // Get all completed orders for this reseller
-    const resellerOrders = orders.filter(order => {
-      const matchesReseller = order.reseller?.id === resellerId;
-      const isCompleted = order.status === 'completed' || order.status === 'selesai';
-      
-      if (matchesReseller) {
-        console.log(`Order ${order.id}: status="${order.status}", completed=${isCompleted}`);
-      }
-      
-      return matchesReseller && isCompleted;
-    });
-
-    console.log(`Found ${resellerOrders.length} completed orders for points calculation`);
-
-    const totalPoints = resellerOrders.reduce((total, order) => {
-      console.log(`--- Processing order ${order.id} for points ---`);
-      
-      const orderPoints = (order.order_items || []).reduce((itemTotal, item) => {
-        let pointsPerItem = 0;
-        
-        // Priority 1: Use snapshot value
-        if (item.product_points_snapshot !== undefined && item.product_points_snapshot !== null) {
-          pointsPerItem = item.product_points_snapshot;
-          console.log(`Item ${item.product_name}: Using snapshot points ${pointsPerItem}`);
-        }
-        // Priority 2: Use points_earned directly if available
-        else if (item.points_earned !== undefined && item.points_earned !== null) {
-          console.log(`Item ${item.product_name}: Using points_earned ${item.points_earned} directly`);
-          return itemTotal + item.points_earned;
-        }
-        // Priority 3: Use current product points from relation
-        else if (item.products?.points_value !== undefined && item.products?.points_value !== null) {
-          pointsPerItem = item.products.points_value;
-          console.log(`Item ${item.product_name}: Using current points ${pointsPerItem}`);
-        }
-        else {
-          console.log(`Item ${item.product_name}: No points found, using 0`);
-          pointsPerItem = 0;
-        }
-        
-        const itemPoints = pointsPerItem * item.quantity;
-        console.log(`Points calculation: ${pointsPerItem} x ${item.quantity} = ${itemPoints}`);
-        
-        return itemTotal + itemPoints;
-      }, 0);
-      
-      console.log(`Order ${order.id} total points: ${orderPoints}`);
-      return total + orderPoints;
-    }, 0);
-
-    console.log(`=== Final points for reseller ${resellerId}: ${totalPoints} ===`);
+    console.log(`=== Points for reseller ${resellerId}: ${totalPoints} (from reseller.total_points) ===`);
     return totalPoints;
   };
 
@@ -272,12 +198,11 @@ const Commission = () => {
     );
   }
 
-  console.log('=== COMMISSION PAGE DEBUG INFO ===');
-  console.log('Total orders available:', orders?.length);
+  console.log('=== COMMISSION PAGE SUMMARY ===');
+  console.log('Total orders:', orders?.length);
   console.log('Total resellers:', resellers?.length);
-  console.log('Orders with reseller info:', orders?.filter(o => o.reseller).length);
   console.log('Completed orders:', orders?.filter(o => o.status === 'completed' || o.status === 'selesai').length);
-  console.log('Total stats calculated:', totalStats);
+  console.log('Orders with reseller:', orders?.filter(o => o.reseller).length);
 
   return (
     <div className="p-6 space-y-6">
