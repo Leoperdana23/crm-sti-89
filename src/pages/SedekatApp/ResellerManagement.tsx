@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -57,7 +56,7 @@ const ResellerManagement = () => {
   
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
-  const [branchFilter, setBranchFilter] = useState('');
+  const [branchFilter, setBranchFilter] = useState('all');
   const [selectedReseller, setSelectedReseller] = useState<any>(null);
   const [isFormOpen, setIsFormOpen] = useState(false);
 
@@ -87,7 +86,7 @@ const ResellerManagement = () => {
       (statusFilter === 'active' && reseller.is_active) ||
       (statusFilter === 'inactive' && !reseller.is_active);
     
-    const matchesBranch = !branchFilter || reseller.branch_id === branchFilter;
+    const matchesBranch = branchFilter === 'all' || reseller.branch_id === branchFilter;
     
     return matchesSearch && matchesStatus && matchesBranch;
   });
@@ -218,7 +217,7 @@ const ResellerManagement = () => {
                 <SelectValue placeholder="Semua Cabang" />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="">Semua Cabang</SelectItem>
+                <SelectItem value="all">Semua Cabang</SelectItem>
                 {branches?.map((branch) => (
                   <SelectItem key={branch.id} value={branch.id}>
                     {branch.name}
