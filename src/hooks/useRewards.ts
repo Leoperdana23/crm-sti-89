@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -35,7 +36,6 @@ export const useRewardCatalog = () => {
       const { data, error } = await supabase
         .from('reward_catalog')
         .select('*')
-        .eq('is_active', true)
         .order('cost', { ascending: true });
 
       if (error) {
@@ -73,7 +73,7 @@ export const useRewardRedemptions = () => {
       console.log('Reward redemptions fetched:', data);
       return data;
     },
-    refetchInterval: 5000, // Refetch every 5 seconds for real-time updates
+    refetchInterval: 5000,
   });
 };
 
@@ -258,7 +258,10 @@ export const useCreateReward = () => {
 
       const { data, error } = await supabase
         .from('reward_catalog')
-        .insert(rewardData)
+        .insert({
+          ...rewardData,
+          is_active: rewardData.is_active ?? true
+        })
         .select()
         .single();
 
@@ -303,16 +306,35 @@ export const useUpdateReward = () => {
     }>) => {
       console.log('Updating reward:', id, updates);
 
+      // First check if the reward exists
+      const { data: existingReward, error: checkError } = await supabase
+        .from('reward_catalog')
+        .select('id')
+        .eq('id', id)
+        .single();
+
+      if (checkError || !existingReward) {
+        console.error('Reward not found:', id);
+        throw new Error('Hadiah tidak ditemukan');
+      }
+
       const { data, error } = await supabase
         .from('reward_catalog')
-        .update(updates)
+        .update({
+          ...updates,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
         .select()
-        .single();
+        .maybeSingle();
 
       if (error) {
         console.error('Error updating reward:', error);
         throw error;
+      }
+
+      if (!data) {
+        throw new Error('Gagal memperbarui hadiah - tidak ada data yang dikembalikan');
       }
 
       console.log('Reward updated successfully:', data);
@@ -329,7 +351,7 @@ export const useUpdateReward = () => {
       console.error('Error updating reward:', error);
       toast({
         title: 'Error',
-        description: 'Gagal memperbarui hadiah',
+        description: error.message || 'Gagal memperbarui hadiah',
         variant: 'destructive',
       });
     },
@@ -342,11 +364,26 @@ export const useDeleteReward = () => {
 
   return useMutation({
     mutationFn: async (id: string) => {
-      console.log('Deleting reward:', id);
+      console.log('Deleting reward (soft delete):', id);
+
+      // First check if the reward exists
+      const { data: existingReward, error: checkError } = await supabase
+        .from('reward_catalog')
+        .select('id')
+        .eq('id', id)
+        .single();
+
+      if (checkError || !existingReward) {
+        console.error('Reward not found:', id);
+        throw new Error('Hadiah tidak ditemukan');
+      }
 
       const { error } = await supabase
         .from('reward_catalog')
-        .update({ is_active: false })
+        .update({ 
+          is_active: false,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id);
 
       if (error) {
@@ -354,7 +391,7 @@ export const useDeleteReward = () => {
         throw error;
       }
 
-      console.log('Reward deleted successfully');
+      console.log('Reward deleted (deactivated) successfully');
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['reward-catalog'] });
@@ -367,7 +404,7 @@ export const useDeleteReward = () => {
       console.error('Error deleting reward:', error);
       toast({
         title: 'Error',
-        description: 'Gagal menghapus hadiah',
+        description: error.message || 'Gagal menghapus hadiah',
         variant: 'destructive',
       });
     },
