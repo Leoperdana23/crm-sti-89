@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -26,6 +25,7 @@ import { useResellerLoginHistory } from '@/hooks/useResellerLoginHistory';
 import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { useProducts } from '@/hooks/useProducts';
 import { useRewardRedemptions } from '@/hooks/useRewards';
+import { useOrders } from '@/hooks/useOrders';
 import DateRangeFilter from './DateRangeFilter';
 import { getDateRange, filterDataByDateRange } from '@/utils/dateFilters';
 
@@ -50,6 +50,7 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
   const { data: loginHistory, isLoading: loginLoading, error: loginError } = useResellerLoginHistory();
   const { data: products, isLoading: productsLoading, error: productsError } = useProducts();
   const { data: rewardRedemptions, isLoading: redemptionsLoading } = useRewardRedemptions();
+  const { data: orders, isLoading: ordersLoading } = useOrders();
 
   const { startDate, endDate } = getDateRange(selectedPeriod, customStartDate, customEndDate);
 
@@ -58,12 +59,13 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
     loginHistory: loginHistory?.length || 0,
     products: products?.length || 0,
     rewardRedemptions: rewardRedemptions?.length || 0,
+    orders: orders?.length || 0,
     selectedPeriod,
     dateRange: { startDate, endDate }
   });
 
   // Handle loading state
-  if (resellersLoading || loginLoading || productsLoading || redemptionsLoading) {
+  if (resellersLoading || loginLoading || productsLoading || redemptionsLoading || ordersLoading) {
     return (
       <div className="space-y-6">
         <DateRangeFilter
@@ -118,6 +120,7 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
   // Filter data berdasarkan periode
   const filteredLoginHistory = loginHistory ? filterDataByDateRange(loginHistory, 'login_time', startDate, endDate) : [];
   const filteredRedemptions = rewardRedemptions ? filterDataByDateRange(rewardRedemptions, 'created_at', startDate, endDate) : [];
+  const filteredOrders = orders ? filterDataByDateRange(orders, 'created_at', startDate, endDate) : [];
   
   // Statistik utama
   const totalActiveResellers = (resellers || []).filter(r => r.is_active).length;
@@ -152,22 +155,63 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
     current.count > max.count ? current : max, loginByHour[0]
   );
 
-  // Top products analysis dengan mock data yang lebih realistis
+  // Top products analysis dengan data real dari orders
   const topProducts = (products || [])
-    .map(product => ({
-      ...product,
-      totalOrders: Math.floor(Math.random() * 50) + 5,
-      totalQuantity: Math.floor(Math.random() * 200) + 10,
-      totalRevenue: Math.floor(Math.random() * 10000000) + 500000
-    }))
+    .map(product => {
+      // Hitung data real dari orders yang sudah selesai
+      const completedOrders = filteredOrders.filter(order => 
+        order.status === 'selesai' || order.status === 'completed'
+      );
+      
+      let totalOrders = 0;
+      let totalQuantity = 0;
+      let totalRevenue = 0;
+      
+      completedOrders.forEach(order => {
+        const orderItems = order.order_items || [];
+        orderItems.forEach(item => {
+          if (item.product_id === product.id) {
+            totalOrders += 1;
+            totalQuantity += item.quantity;
+            totalRevenue += item.subtotal;
+          }
+        });
+      });
+      
+      return {
+        ...product,
+        totalOrders,
+        totalQuantity,
+        totalRevenue
+      };
+    })
+    .filter(product => product.totalQuantity > 0) // Only products with sales
     .sort((a, b) => b.totalQuantity - a.totalQuantity)
     .slice(0, 10);
 
-  // Commission and points per reseller dengan statistik lengkap
+  // Commission and points per reseller dengan data real
   const resellerCommissionReport = (resellers || []).map(reseller => {
-    const totalOrders = Math.floor(Math.random() * 30) + 1;
-    const totalCommission = Math.floor(Math.random() * 2000000) + 100000;
-    const totalPoints = Math.floor(Math.random() * 1000) + 50;
+    // Get real orders for this reseller
+    const resellerOrders = filteredOrders.filter(order => {
+      return order.reseller && order.reseller.id === reseller.id && 
+             (order.status === 'selesai' || order.status === 'completed');
+    });
+    
+    // Calculate real commission and points from order items
+    let totalCommission = 0;
+    let totalPoints = 0;
+    
+    resellerOrders.forEach(order => {
+      const orderItems = order.order_items || [];
+      orderItems.forEach(item => {
+        // Use snapshot values if available, otherwise use current product values
+        const commission = item.product_commission_snapshot || item.products?.commission_value || 0;
+        const points = item.product_points_snapshot || item.products?.points_value || 0;
+        
+        totalCommission += commission * item.quantity;
+        totalPoints += points * item.quantity;
+      });
+    });
     
     // Calculate redemptions for this reseller
     const resellerRedemptions = filteredRedemptions.filter(r => r.reseller_id === reseller.id);
@@ -180,16 +224,17 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
     
     return {
       ...reseller,
-      totalOrders,
+      totalOrders: resellerOrders.length,
       totalCommission,
       totalPoints,
       commissionRedeemed,
       pointsRedeemed,
       availableCommission: totalCommission - commissionRedeemed,
       availablePoints: totalPoints - pointsRedeemed,
-      avgCommissionPerOrder: totalOrders > 0 ? totalCommission / totalOrders : 0
+      avgCommissionPerOrder: resellerOrders.length > 0 ? totalCommission / resellerOrders.length : 0
     };
-  }).sort((a, b) => b.totalCommission - a.totalCommission);
+  }).filter(reseller => reseller.totalOrders > 0) // Only show resellers with orders
+    .sort((a, b) => b.totalCommission - a.totalCommission);
 
   // Daily login trends untuk 7 hari terakhir
   const dailyLoginTrends = Array.from({ length: 7 }, (_, i) => {
@@ -364,7 +409,7 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
             <CardHeader>
               <CardTitle>Laporan Produk Terlaris SEDEKAT App</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Ranking produk berdasarkan jumlah terjual, order, dan revenue
+                Ranking produk berdasarkan data real dari order yang selesai
               </p>
             </CardHeader>
             <CardContent>
@@ -399,7 +444,7 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <Package className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Tidak ada data produk tersedia</p>
+                  <p>Tidak ada data produk terjual untuk periode yang dipilih</p>
                 </div>
               )}
             </CardContent>
@@ -409,9 +454,9 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
         <TabsContent value="reseller-commission">
           <Card>
             <CardHeader>
-              <CardTitle>Laporan Komisi & Poin Per Reseller</CardTitle>
+              <CardTitle>Laporan Komisi & Poin Per Reseller (Data Real)</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Detail komisi, poin, dan performance setiap reseller termasuk yang sudah ditukar
+                Detail komisi, poin dari order selesai dan yang sudah ditukar hadiah
               </p>
             </CardHeader>
             <CardContent>
@@ -479,7 +524,7 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
               ) : (
                 <div className="text-center py-8 text-gray-500">
                   <Users className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>Tidak ada data reseller tersedia</p>
+                  <p>Tidak ada data reseller dengan order selesai untuk periode yang dipilih</p>
                 </div>
               )}
             </CardContent>
