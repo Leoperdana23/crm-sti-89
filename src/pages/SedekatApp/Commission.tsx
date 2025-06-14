@@ -1,4 +1,5 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -32,89 +33,26 @@ import {
   Award, 
   Download,
   Search,
-  AlertCircle,
-  RefreshCw
+  AlertCircle
 } from 'lucide-react';
+import { useResellers } from '@/hooks/useResellers';
+import { useOrders } from '@/hooks/useOrders';
 import { useRewardCatalog, useRewardRedemptions, useCreateRedemption, useApproveRedemption } from '@/hooks/useRewards';
-import { useResellerCommissionStats, useTriggerOrderSync } from '@/hooks/useResellerOrderHistory';
 import { useToast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 
 const Commission = () => {
-  const { data: commissionStats, isLoading, refetch: refetchStats } = useResellerCommissionStats();
+  const { data: resellers, isLoading } = useResellers();
+  const { data: orders } = useOrders();
   const { data: rewardCatalog } = useRewardCatalog();
   const { data: redemptions } = useRewardRedemptions();
   const createRedemption = useCreateRedemption();
   const approveRedemption = useApproveRedemption();
-  const triggerSync = useTriggerOrderSync();
   const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [selectedReseller, setSelectedReseller] = useState<any>(null);
   const [isRedemptionDialogOpen, setIsRedemptionDialogOpen] = useState(false);
-  const [isManualSyncing, setIsManualSyncing] = useState(false);
-
-  // Set up real-time subscription for order history updates
-  useEffect(() => {
-    console.log('=== SETTING UP COMMISSION REAL-TIME SUBSCRIPTION ===');
-    
-    const channel = supabase
-      .channel('commission-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'reseller_order_history'
-        },
-        (payload) => {
-          console.log('✓ Commission data updated via real-time:', payload.eventType);
-          refetchStats();
-        }
-      )
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'orders'
-        },
-        (payload) => {
-          console.log('✓ Orders updated, refreshing commission stats:', payload.eventType);
-          // Delay to allow trigger to process
-          setTimeout(() => refetchStats(), 1000);
-        }
-      )
-      .subscribe();
-
-    return () => {
-      console.log('Cleaning up commission real-time subscription');
-      supabase.removeChannel(channel);
-    };
-  }, [refetchStats]);
-
-  const handleManualSync = async () => {
-    setIsManualSyncing(true);
-    try {
-      console.log('Starting manual sync from Commission page...');
-      await triggerSync();
-      await refetchStats();
-      toast({
-        title: 'Sukses',
-        description: 'Data berhasil disinkronisasi',
-      });
-    } catch (error) {
-      console.error('Error in manual sync:', error);
-      toast({
-        title: 'Error',
-        description: 'Gagal melakukan sinkronisasi data',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsManualSyncing(false);
-    }
-  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -124,7 +62,56 @@ const Commission = () => {
     }).format(amount);
   };
 
-  // Calculate redeemed amounts for each reseller from redemptions table
+  // Simplified commission calculation - directly use reseller total_points from database
+  const calculateResellerCommission = (resellerId: string) => {
+    if (!orders) return 0;
+    
+    console.log(`=== Calculating commission for reseller ${resellerId} ===`);
+    
+    // Get completed orders for this reseller
+    const completedOrders = orders.filter(order => {
+      const hasReseller = order.reseller?.id === resellerId;
+      const isCompleted = order.status === 'completed' || order.status === 'selesai';
+      
+      if (hasReseller && isCompleted) {
+        console.log(`✓ Found completed order ${order.id} for reseller`);
+      }
+      
+      return hasReseller && isCompleted;
+    });
+
+    console.log(`Found ${completedOrders.length} completed orders`);
+
+    const totalCommission = completedOrders.reduce((total, order) => {
+      const orderCommission = (order.order_items || []).reduce((itemTotal, item) => {
+        // Use snapshot value if available, otherwise use current product value
+        const commissionPerItem = item.product_commission_snapshot !== undefined 
+          ? item.product_commission_snapshot 
+          : (item.products?.commission_value || 0);
+        
+        const itemCommission = commissionPerItem * item.quantity;
+        console.log(`Item ${item.product_name}: ${commissionPerItem} x ${item.quantity} = ${itemCommission}`);
+        return itemTotal + itemCommission;
+      }, 0);
+      
+      console.log(`Order ${order.id} commission: ${orderCommission}`);
+      return total + orderCommission;
+    }, 0);
+
+    console.log(`Final commission for reseller ${resellerId}: ${totalCommission}`);
+    return totalCommission;
+  };
+
+  // Simplified points calculation - use reseller's total_points directly
+  const calculateResellerPoints = (resellerId: string) => {
+    const reseller = resellers?.find(r => r.id === resellerId);
+    const totalPoints = reseller?.total_points || 0;
+    
+    console.log(`=== Points for reseller ${resellerId}: ${totalPoints} (from reseller.total_points) ===`);
+    return totalPoints;
+  };
+
+  // Calculate redeemed amounts for each reseller
   const getRedeemedAmounts = (resellerId: string) => {
     if (!redemptions) return { redeemedCommission: 0, redeemedPoints: 0 };
     
@@ -143,27 +130,26 @@ const Commission = () => {
     return { redeemedCommission, redeemedPoints };
   };
 
-  const filteredStats = commissionStats?.filter(stat => 
-    stat.reseller?.name?.toLowerCase().includes(searchTerm.toLowerCase())
-  ) || [];
+  const filteredResellers = resellers?.filter(reseller => 
+    reseller.name.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   const totalStats = {
-    totalCommission: commissionStats?.reduce((sum, stat) => sum + stat.totalCommission, 0) || 0,
-    totalPoints: commissionStats?.reduce((sum, stat) => sum + stat.totalPoints, 0) || 0,
-    activeResellers: commissionStats?.filter(stat => stat.reseller).length || 0,
+    totalCommission: resellers?.reduce((sum, r) => sum + calculateResellerCommission(r.id), 0) || 0,
+    totalPoints: resellers?.reduce((sum, r) => sum + calculateResellerPoints(r.id), 0) || 0,
+    activeResellers: resellers?.filter(r => r.is_active).length || 0,
     totalRedemptions: redemptions?.length || 0
   };
 
   const handleRedeemReward = async (reward: any) => {
     if (!selectedReseller) return;
 
-    const resellerStat = commissionStats?.find(stat => stat.reseller?.id === selectedReseller.id);
-    if (!resellerStat) return;
-
+    const earnedCommission = calculateResellerCommission(selectedReseller.id);
+    const earnedPoints = calculateResellerPoints(selectedReseller.id);
     const { redeemedCommission, redeemedPoints } = getRedeemedAmounts(selectedReseller.id);
     
-    const availableCommission = resellerStat.paidCommission - redeemedCommission;
-    const availablePoints = resellerStat.paidPoints - redeemedPoints;
+    const availableCommission = earnedCommission - redeemedCommission;
+    const availablePoints = earnedPoints - redeemedPoints;
 
     // Validate if reseller has enough balance
     if (reward.reward_type === 'commission' && availableCommission < reward.cost) {
@@ -212,27 +198,20 @@ const Commission = () => {
     );
   }
 
-  console.log('=== COMMISSION PAGE WITH HISTORY DATA ===');
-  console.log('Commission stats from history:', commissionStats?.length);
-  console.log('Total commission calculated:', totalStats.totalCommission);
-  console.log('Sample commission stats:', commissionStats?.slice(0, 2));
+  console.log('=== COMMISSION PAGE SUMMARY ===');
+  console.log('Total orders:', orders?.length);
+  console.log('Total resellers:', resellers?.length);
+  console.log('Completed orders:', orders?.filter(o => o.status === 'completed' || o.status === 'selesai').length);
+  console.log('Orders with reseller:', orders?.filter(o => o.reseller).length);
 
   return (
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Komisi & Poin</h1>
-          <p className="text-gray-600">Kelola komisi dan sistem poin reseller (Data dari histori order)</p>
+          <p className="text-gray-600">Kelola komisi dan sistem poin reseller</p>
         </div>
         <div className="flex gap-2">
-          <Button 
-            variant="outline"
-            onClick={handleManualSync}
-            disabled={isManualSyncing}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isManualSyncing ? 'animate-spin' : ''}`} />
-            {isManualSyncing ? 'Sinkron...' : 'Sinkron Data'}
-          </Button>
           <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
             Export Excel
@@ -292,31 +271,6 @@ const Commission = () => {
         </Card>
       </div>
 
-      {/* Show data status */}
-      {commissionStats && commissionStats.length === 0 && (
-        <Card className="border-yellow-200 bg-yellow-50">
-          <CardContent className="p-4">
-            <div className="flex items-center space-x-3">
-              <AlertCircle className="h-8 w-8 text-yellow-600" />
-              <div>
-                <p className="text-sm font-medium text-yellow-800">Tidak ada data komisi ditemukan</p>
-                <p className="text-xs text-yellow-600">Coba lakukan sinkronisasi data atau pastikan ada order dari reseller</p>
-                <Button 
-                  variant="outline" 
-                  size="sm"
-                  className="mt-2"
-                  onClick={handleManualSync}
-                  disabled={isManualSyncing}
-                >
-                  <RefreshCw className={`h-4 w-4 mr-2 ${isManualSyncing ? 'animate-spin' : ''}`} />
-                  Sinkronisasi Sekarang
-                </Button>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      )}
-
       {/* Filters */}
       <Card>
         <CardContent className="p-4">
@@ -349,7 +303,7 @@ const Commission = () => {
       {/* Commission Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Laporan Komisi & Poin Reseller (Dari Histori Order)</CardTitle>
+          <CardTitle>Laporan Komisi & Poin Reseller</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>
@@ -358,46 +312,50 @@ const Commission = () => {
                 <TableHead>Reseller</TableHead>
                 <TableHead>Cabang</TableHead>
                 <TableHead>Komisi Diperoleh</TableHead>
-                <TableHead>Komisi Terbayar</TableHead>
                 <TableHead>Komisi Ditukar</TableHead>
                 <TableHead>Sisa Komisi</TableHead>
                 <TableHead>Poin Diperoleh</TableHead>
-                <TableHead>Poin Terbayar</TableHead>
                 <TableHead>Poin Ditukar</TableHead>
                 <TableHead>Sisa Poin</TableHead>
+                <TableHead>Status</TableHead>
                 <TableHead>Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredStats.map((stat) => {
-                const { redeemedCommission, redeemedPoints } = getRedeemedAmounts(stat.reseller?.id);
-                const availableCommission = stat.paidCommission - redeemedCommission;
-                const availablePoints = stat.paidPoints - redeemedPoints;
+              {filteredResellers?.map((reseller) => {
+                const earnedCommission = calculateResellerCommission(reseller.id);
+                const earnedPoints = calculateResellerPoints(reseller.id);
+                const { redeemedCommission, redeemedPoints } = getRedeemedAmounts(reseller.id);
+                const availableCommission = earnedCommission - redeemedCommission;
+                const availablePoints = earnedPoints - redeemedPoints;
                 
                 return (
-                  <TableRow key={stat.reseller?.id}>
+                  <TableRow key={reseller.id}>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{stat.reseller?.name}</div>
-                        <div className="text-sm text-gray-500">{stat.reseller?.phone}</div>
+                        <div className="font-medium">{reseller.name}</div>
+                        <div className="text-sm text-gray-500">{reseller.phone}</div>
                       </div>
                     </TableCell>
-                    <TableCell>{stat.reseller?.branches?.name || '-'}</TableCell>
-                    <TableCell>{formatCurrency(stat.totalCommission)}</TableCell>
-                    <TableCell className="text-green-600">{formatCurrency(stat.paidCommission)}</TableCell>
+                    <TableCell>{reseller.branches?.name || '-'}</TableCell>
+                    <TableCell>{formatCurrency(earnedCommission)}</TableCell>
                     <TableCell>{formatCurrency(redeemedCommission)}</TableCell>
                     <TableCell className="font-semibold text-green-600">
                       {formatCurrency(availableCommission)}
                     </TableCell>
-                    <TableCell>{stat.totalPoints}</TableCell>
-                    <TableCell className="text-blue-600">{stat.paidPoints}</TableCell>
+                    <TableCell>{earnedPoints}</TableCell>
                     <TableCell>{redeemedPoints}</TableCell>
                     <TableCell className="font-semibold text-blue-600">
                       {availablePoints}
                     </TableCell>
                     <TableCell>
+                      <Badge variant={reseller.is_active ? 'default' : 'secondary'}>
+                        {reseller.is_active ? 'Aktif' : 'Nonaktif'}
+                      </Badge>
+                    </TableCell>
+                    <TableCell>
                       <Dialog 
-                        open={isRedemptionDialogOpen && selectedReseller?.id === stat.reseller?.id} 
+                        open={isRedemptionDialogOpen && selectedReseller?.id === reseller.id} 
                         onOpenChange={(open) => {
                           setIsRedemptionDialogOpen(open);
                           if (!open) setSelectedReseller(null);
@@ -408,7 +366,7 @@ const Commission = () => {
                             size="sm" 
                             variant="outline"
                             onClick={() => {
-                              setSelectedReseller(stat.reseller);
+                              setSelectedReseller(reseller);
                               setIsRedemptionDialogOpen(true);
                             }}
                           >
@@ -418,9 +376,9 @@ const Commission = () => {
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
                           <DialogHeader>
-                            <DialogTitle>Tukar Hadiah untuk {stat.reseller?.name}</DialogTitle>
+                            <DialogTitle>Tukar Hadiah untuk {reseller.name}</DialogTitle>
                             <DialogDescription>
-                              Pilih hadiah dari katalog yang tersedia (berdasarkan komisi/poin terbayar)
+                              Pilih hadiah dari katalog yang tersedia
                             </DialogDescription>
                           </DialogHeader>
                           <div className="space-y-4">

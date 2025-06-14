@@ -1,12 +1,12 @@
+
 import React, { useState, useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
-import { useResellerOrderHistory, useTriggerOrderSync } from '@/hooks/useResellerOrderHistory';
+import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Package, Clock, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
+import { Package, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ResellerOrdersProps {
@@ -14,63 +14,43 @@ interface ResellerOrdersProps {
 }
 
 const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
-  const { data: orderHistory, isLoading: loading, refetch } = useResellerOrderHistory(reseller.id);
-  const triggerSync = useTriggerOrderSync();
+  const { data: orders, isLoading: loading, refetch } = useResellerOrders(reseller.id);
   const [activeTab, setActiveTab] = useState('all');
-  const [isManualSyncing, setIsManualSyncing] = useState(false);
 
   // Set up real-time subscription for order updates
   useEffect(() => {
-    console.log('=== SETTING UP REAL-TIME SUBSCRIPTION ===');
-    
     const channel = supabase
-      .channel('reseller-order-history-changes')
+      .channel('order-changes')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
-          table: 'reseller_order_history',
-          filter: `reseller_id=eq.${reseller.id}`
+          table: 'orders'
         },
         (payload) => {
-          console.log('✓ Reseller order history updated via real-time:', payload);
+          console.log('Order updated:', payload);
           refetch();
         }
       )
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: 'UPDATE',
           schema: 'public',
-          table: 'orders'
+          table: 'reseller_orders'
         },
         (payload) => {
-          console.log('✓ Orders table updated via real-time:', payload);
-          // Refetch after a short delay to allow trigger to process
-          setTimeout(() => refetch(), 1000);
+          console.log('Reseller order updated:', payload);
+          refetch();
         }
       )
       .subscribe();
 
     return () => {
-      console.log('Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
-  }, [refetch, reseller.id]);
-
-  const handleManualSync = async () => {
-    setIsManualSyncing(true);
-    try {
-      await triggerSync();
-      await refetch();
-      console.log('✓ Manual sync and refetch completed');
-    } catch (error) {
-      console.error('Error in manual sync:', error);
-    } finally {
-      setIsManualSyncing(false);
-    }
-  };
+  }, [refetch]);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -132,10 +112,26 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
     return mapping[status.toLowerCase()] || status;
   };
 
+  const calculateCommission = (orderItems: any[]) => {
+    // Use snapshot commission values instead of current product values
+    return orderItems.reduce((total, item) => {
+      const snapshotCommission = item.product_commission_snapshot || 0;
+      return total + (snapshotCommission * item.quantity);
+    }, 0);
+  };
+
+  const calculateTotalPoints = (orderItems: any[]) => {
+    // Use snapshot points values instead of current product values
+    return orderItems.reduce((total, item) => {
+      const snapshotPoints = item.product_points_snapshot || 0;
+      return total + (snapshotPoints * item.quantity);
+    }, 0);
+  };
+
   const filterOrdersByStatus = (status: string) => {
-    if (status === 'all') return orderHistory || [];
-    return (orderHistory || []).filter(order => {
-      const orderStatus = order.order_status?.toLowerCase();
+    if (status === 'all') return orders || [];
+    return (orders || []).filter(order => {
+      const orderStatus = order.status?.toLowerCase();
       if (status === 'proses') return orderStatus === 'processing' || orderStatus === 'proses';
       if (status === 'selesai') return orderStatus === 'completed' || orderStatus === 'selesai';
       if (status === 'batal') return orderStatus === 'cancelled' || orderStatus === 'batal';
@@ -144,22 +140,25 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
   };
 
   const renderOrderCard = (order: any) => {
+    const commission = calculateCommission(order.order_items || []);
+    const totalPoints = calculateTotalPoints(order.order_items || []);
+
     return (
       <Card key={order.id}>
         <CardHeader className="pb-3">
           <div className="flex justify-between items-start">
             <div>
               <CardTitle className="text-sm">
-                Order #{order.order_id?.slice(-8)}
+                Order #{order.id?.slice(-8)}
               </CardTitle>
               <p className="text-xs text-gray-500">
-                {formatDate(order.order_date)}
+                {formatDate(order.created_at)}
               </p>
             </div>
-            <Badge className={getStatusColor(order.order_status || 'pending')}>
+            <Badge className={getStatusColor(order.status || 'pending')}>
               <span className="flex items-center gap-1">
-                {getStatusIcon(order.order_status || 'pending')}
-                {getStatusLabel(order.order_status || 'pending')}
+                {getStatusIcon(order.status || 'pending')}
+                {getStatusLabel(order.status || 'pending')}
               </span>
             </Badge>
           </div>
@@ -176,14 +175,14 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Komisi:</span>
-              <span className="font-medium text-green-600">{formatCurrency(order.commission_earned || 0)}</span>
+              <span className="font-medium text-green-600">{formatCurrency(commission)}</span>
             </div>
             <div className="flex justify-between text-sm">
               <span className="text-gray-600">Poin:</span>
-              <span className="font-medium text-blue-600">{order.points_earned || 0} poin</span>
+              <span className="font-medium text-blue-600">{totalPoints} poin</span>
             </div>
             
-            {/* Order Items from JSONB */}
+            {/* Order Items */}
             {order.order_items && order.order_items.length > 0 && (
               <div className="mt-3 pt-3 border-t">
                 <p className="text-xs text-gray-600 mb-2">Produk:</p>
@@ -193,12 +192,12 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
                     <div className="text-right">
                       <div>{formatCurrency(item.subtotal)}</div>
                       <div className="flex gap-2">
-                        {item.points_snapshot > 0 && (
-                          <div className="text-blue-600">{item.points_snapshot * item.quantity} poin</div>
+                        {item.product_points_snapshot > 0 && (
+                          <div className="text-blue-600">{item.product_points_snapshot * item.quantity} poin</div>
                         )}
-                        {item.commission_snapshot > 0 && (
+                        {item.product_commission_snapshot > 0 && (
                           <div className="text-green-600">
-                            +{formatCurrency(item.commission_snapshot * item.quantity)}
+                            +{formatCurrency(item.product_commission_snapshot * item.quantity)}
                           </div>
                         )}
                       </div>
@@ -231,29 +230,18 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
 
   return (
     <div className="p-4 space-y-4">
-      <div className="flex justify-between items-center">
-        <h2 className="text-xl font-bold">Riwayat Order (Dari Histori)</h2>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleManualSync}
-          disabled={isManualSyncing}
-        >
-          <RefreshCw className={`h-4 w-4 mr-2 ${isManualSyncing ? 'animate-spin' : ''}`} />
-          {isManualSyncing ? 'Sinkron...' : 'Refresh'}
-        </Button>
-      </div>
+      <h2 className="text-xl font-bold">Riwayat Order</h2>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
-          <TabsTrigger value="all">Semua ({(orderHistory || []).length})</TabsTrigger>
+          <TabsTrigger value="all">Semua ({(orders || []).length})</TabsTrigger>
           <TabsTrigger value="proses">Proses ({filterOrdersByStatus('proses').length})</TabsTrigger>
           <TabsTrigger value="selesai">Selesai ({filterOrdersByStatus('selesai').length})</TabsTrigger>
           <TabsTrigger value="batal">Batal ({filterOrdersByStatus('batal').length})</TabsTrigger>
         </TabsList>
 
         <TabsContent value="all" className="space-y-4">
-          {(orderHistory || []).map(renderOrderCard)}
+          {(orders || []).map(renderOrderCard)}
         </TabsContent>
 
         <TabsContent value="proses" className="space-y-4">
@@ -269,19 +257,10 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
         </TabsContent>
       </Tabs>
 
-      {(orderHistory || []).length === 0 && (
+      {(orders || []).length === 0 && (
         <div className="text-center py-8 text-gray-500">
           <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
           <p>Belum ada order</p>
-          <Button 
-            variant="outline" 
-            className="mt-4"
-            onClick={handleManualSync}
-            disabled={isManualSyncing}
-          >
-            <RefreshCw className={`h-4 w-4 mr-2 ${isManualSyncing ? 'animate-spin' : ''}`} />
-            Coba Sinkronisasi Ulang
-          </Button>
         </div>
       )}
     </div>

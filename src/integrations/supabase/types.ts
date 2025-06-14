@@ -1455,69 +1455,6 @@ export type Database = {
           },
         ]
       }
-      reseller_order_history: {
-        Row: {
-          commission_earned: number
-          created_at: string
-          customer_name: string
-          customer_phone: string
-          id: string
-          order_date: string
-          order_id: string
-          order_items: Json
-          order_status: string
-          points_earned: number
-          reseller_id: string
-          total_amount: number
-          updated_at: string
-        }
-        Insert: {
-          commission_earned?: number
-          created_at?: string
-          customer_name: string
-          customer_phone: string
-          id?: string
-          order_date: string
-          order_id: string
-          order_items?: Json
-          order_status?: string
-          points_earned?: number
-          reseller_id: string
-          total_amount?: number
-          updated_at?: string
-        }
-        Update: {
-          commission_earned?: number
-          created_at?: string
-          customer_name?: string
-          customer_phone?: string
-          id?: string
-          order_date?: string
-          order_id?: string
-          order_items?: Json
-          order_status?: string
-          points_earned?: number
-          reseller_id?: string
-          total_amount?: number
-          updated_at?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "reseller_order_history_order_id_fkey"
-            columns: ["order_id"]
-            isOneToOne: false
-            referencedRelation: "orders"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "reseller_order_history_reseller_id_fkey"
-            columns: ["reseller_id"]
-            isOneToOne: false
-            referencedRelation: "resellers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       reseller_orders: {
         Row: {
           commission_amount: number | null
