@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -15,7 +14,10 @@ import {
   Star,
   Target,
   Calendar,
-  AlertCircle
+  AlertCircle,
+  CheckCircle,
+  ThumbsUp,
+  BarChart3
 } from 'lucide-react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useBranches } from '@/hooks/useBranches';
@@ -120,6 +122,19 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
   const totalFollowUps = filteredCustomers.filter(c => c.status === 'Follow-up').length;
   const conversionRate = totalCustomers > 0 ? (totalDeals / totalCustomers) * 100 : 0;
 
+  // Survey analytics
+  const totalSurveys = filteredSurveys.length;
+  const averageRatings = filteredSurveys.length > 0 ? {
+    product_quality: filteredSurveys.reduce((sum, s) => sum + s.product_quality, 0) / filteredSurveys.length,
+    service_technician: filteredSurveys.reduce((sum, s) => sum + s.service_technician, 0) / filteredSurveys.length,
+    service_sales: filteredSurveys.reduce((sum, s) => sum + s.service_sales, 0) / filteredSurveys.length,
+    usage_clarity: filteredSurveys.reduce((sum, s) => sum + s.usage_clarity, 0) / filteredSurveys.length,
+  } : { product_quality: 0, service_technician: 0, service_sales: 0, usage_clarity: 0 };
+
+  const overallRating = Object.values(averageRatings).reduce((sum, rating) => sum + rating, 0) / 4;
+  const priceApprovalRate = filteredSurveys.length > 0 ? 
+    (filteredSurveys.filter(s => s.price_approval).length / filteredSurveys.length) * 100 : 0;
+
   // Tren conversion rate
   const conversionTrends = Array.from({ length: 6 }, (_, i) => {
     const date = new Date();
@@ -206,6 +221,26 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
     };
   });
 
+  // Survey analytics by rating levels
+  const ratingDistribution = {
+    excellent: filteredSurveys.filter(s => {
+      const avg = (s.product_quality + s.service_technician + s.service_sales + s.usage_clarity) / 4;
+      return avg >= 4.5;
+    }).length,
+    good: filteredSurveys.filter(s => {
+      const avg = (s.product_quality + s.service_technician + s.service_sales + s.usage_clarity) / 4;
+      return avg >= 3.5 && avg < 4.5;
+    }).length,
+    average: filteredSurveys.filter(s => {
+      const avg = (s.product_quality + s.service_technician + s.service_sales + s.usage_clarity) / 4;
+      return avg >= 2.5 && avg < 3.5;
+    }).length,
+    poor: filteredSurveys.filter(s => {
+      const avg = (s.product_quality + s.service_technician + s.service_sales + s.usage_clarity) / 4;
+      return avg < 2.5;
+    }).length
+  };
+
   const getStatusBadge = (status: string) => {
     const statusConfig = {
       prospect: { label: 'Prospek', variant: 'secondary' as const },
@@ -275,14 +310,62 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
         </Card>
       </div>
 
+      {/* Survey Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Total Survei</CardTitle>
+            <MessageSquare className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{totalSurveys}</div>
+            <p className="text-xs text-muted-foreground">Survei selesai</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Rating Rata-rata</CardTitle>
+            <Star className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{overallRating.toFixed(1)}</div>
+            <p className="text-xs text-muted-foreground">Dari 5.0</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Persetujuan Harga</CardTitle>
+            <CheckCircle className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{priceApprovalRate.toFixed(1)}%</div>
+            <p className="text-xs text-muted-foreground">Menyetujui harga</p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <CardTitle className="text-sm font-medium">Kepuasan Tinggi</CardTitle>
+            <ThumbsUp className="h-4 w-4 text-muted-foreground" />
+          </CardHeader>
+          <CardContent>
+            <div className="text-2xl font-bold">{ratingDistribution.excellent}</div>
+            <p className="text-xs text-muted-foreground">Rating ≥ 4.5</p>
+          </CardContent>
+        </Card>
+      </div>
+
       <Tabs defaultValue="trends" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-6">
+        <TabsList className="grid w-full grid-cols-7">
           <TabsTrigger value="trends">Tren</TabsTrigger>
           <TabsTrigger value="conversion">Konversi</TabsTrigger>
           <TabsTrigger value="status">Status</TabsTrigger>
           <TabsTrigger value="branches">Cabang</TabsTrigger>
           <TabsTrigger value="sales">Sales</TabsTrigger>
           <TabsTrigger value="surveys">Survei</TabsTrigger>
+          <TabsTrigger value="analytics">Analitik Survei</TabsTrigger>
         </TabsList>
 
         <TabsContent value="trends">
@@ -517,6 +600,116 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
               )}
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="analytics">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <Card>
+              <CardHeader>
+                <CardTitle>Distribusi Rating Kepuasan</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between p-3 border rounded-lg bg-green-50">
+                    <div className="flex items-center space-x-3">
+                      <ThumbsUp className="h-5 w-5 text-green-600" />
+                      <span className="font-medium">Sangat Puas (4.5-5.0)</span>
+                    </div>
+                    <div className="text-xl font-bold text-green-600">{ratingDistribution.excellent}</div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 border rounded-lg bg-blue-50">
+                    <div className="flex items-center space-x-3">
+                      <Star className="h-5 w-5 text-blue-600" />
+                      <span className="font-medium">Puas (3.5-4.4)</span>
+                    </div>
+                    <div className="text-xl font-bold text-blue-600">{ratingDistribution.good}</div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 border rounded-lg bg-yellow-50">
+                    <div className="flex items-center space-x-3">
+                      <Target className="h-5 w-5 text-yellow-600" />
+                      <span className="font-medium">Cukup (2.5-3.4)</span>
+                    </div>
+                    <div className="text-xl font-bold text-yellow-600">{ratingDistribution.average}</div>
+                  </div>
+                  <div className="flex items-center justify-between p-3 border rounded-lg bg-red-50">
+                    <div className="flex items-center space-x-3">
+                      <AlertCircle className="h-5 w-5 text-red-600" />
+                      <span className="font-medium">Kurang (<2.5)</span>
+                    </div>
+                    <div className="text-xl font-bold text-red-600">{ratingDistribution.poor}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Rating Rata-rata per Kategori</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Kualitas Produk</span>
+                      <span className="font-bold">{averageRatings.product_quality.toFixed(1)}/5</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full" 
+                        style={{ width: `${(averageRatings.product_quality / 5) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Layanan Teknisi</span>
+                      <span className="font-bold">{averageRatings.service_technician.toFixed(1)}/5</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-green-600 h-2 rounded-full" 
+                        style={{ width: `${(averageRatings.service_technician / 5) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Layanan Sales</span>
+                      <span className="font-bold">{averageRatings.service_sales.toFixed(1)}/5</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-yellow-600 h-2 rounded-full" 
+                        style={{ width: `${(averageRatings.service_sales / 5) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="font-medium">Kejelasan Penggunaan</span>
+                      <span className="font-bold">{averageRatings.usage_clarity.toFixed(1)}/5</span>
+                    </div>
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <div 
+                        className="bg-purple-600 h-2 rounded-full" 
+                        style={{ width: `${(averageRatings.usage_clarity / 5) * 100}%` }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t">
+                    <div className="flex justify-between items-center">
+                      <span className="font-medium text-lg">Rating Keseluruhan</span>
+                      <span className="font-bold text-xl">{overallRating.toFixed(1)}/5</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
         </TabsContent>
       </Tabs>
     </div>
