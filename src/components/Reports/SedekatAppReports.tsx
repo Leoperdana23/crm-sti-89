@@ -302,15 +302,15 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
       </div>
 
       <Tabs defaultValue="hourly-curve" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-8">
-          <TabsTrigger value="hourly-curve">Kurva Per Jam</TabsTrigger>
-          <TabsTrigger value="top-products">Produk Terlaris</TabsTrigger>
-          <TabsTrigger value="reseller-commission">Komisi & Poin</TabsTrigger>
-          <TabsTrigger value="login-analytics">Analitik Login</TabsTrigger>
-          <TabsTrigger value="daily-trends">Tren Harian</TabsTrigger>
-          <TabsTrigger value="commission-rewards">Komisi Hadiah</TabsTrigger>
-          <TabsTrigger value="points-rewards">Poin Hadiah</TabsTrigger>
-          <TabsTrigger value="reward-summary">Ringkasan Hadiah</TabsTrigger>
+        <TabsList className="grid grid-cols-4 gap-2 h-auto p-2">
+          <TabsTrigger value="hourly-curve" className="text-xs">Kurva Per Jam</TabsTrigger>
+          <TabsTrigger value="top-products" className="text-xs">Produk Terlaris</TabsTrigger>
+          <TabsTrigger value="reseller-commission" className="text-xs">Komisi & Poin</TabsTrigger>
+          <TabsTrigger value="login-analytics" className="text-xs">Analitik Login</TabsTrigger>
+          <TabsTrigger value="daily-trends" className="text-xs">Tren Harian</TabsTrigger>
+          <TabsTrigger value="commission-rewards" className="text-xs">Komisi Hadiah</TabsTrigger>
+          <TabsTrigger value="points-rewards" className="text-xs">Poin Hadiah</TabsTrigger>
+          <TabsTrigger value="reward-summary" className="text-xs">Ringkasan Hadiah</TabsTrigger>
         </TabsList>
 
         <TabsContent value="hourly-curve">
