@@ -15,6 +15,8 @@ interface WarrantyProductFormProps {
   onClose: () => void;
 }
 
+type ProductStatus = 'in_stock' | 'sold' | 'damaged' | 'returned';
+
 const WarrantyProductForm: React.FC<WarrantyProductFormProps> = ({ product, onClose }) => {
   const { data: suppliers } = useWarrantySuppliers();
   const createProduct = useCreateWarrantyProduct();
@@ -27,7 +29,7 @@ const WarrantyProductForm: React.FC<WarrantyProductFormProps> = ({ product, onCl
     supplier_invoice_date: '',
     warranty_months: 12,
     warranty_start_date: new Date().toISOString().split('T')[0],
-    status: 'in_stock' as const,
+    status: 'in_stock' as ProductStatus,
     notes: ''
   });
 
@@ -179,7 +181,7 @@ const WarrantyProductForm: React.FC<WarrantyProductFormProps> = ({ product, onCl
                 <Label htmlFor="status">Status</Label>
                 <Select 
                   value={formData.status} 
-                  onValueChange={(value) => handleChange('status', value)}
+                  onValueChange={(value: ProductStatus) => handleChange('status', value)}
                 >
                   <SelectTrigger>
                     <SelectValue />

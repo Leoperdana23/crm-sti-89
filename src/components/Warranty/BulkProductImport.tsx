@@ -4,7 +4,6 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { X, Plus, Trash2, Download } from 'lucide-react';
 import { useCreateBulkWarrantyProducts, useWarrantySuppliers } from '@/hooks/useWarranty';
@@ -13,6 +12,8 @@ interface BulkProductImportProps {
   onClose: () => void;
 }
 
+type ProductStatus = 'in_stock' | 'sold' | 'damaged' | 'returned';
+
 interface ProductEntry {
   product_name: string;
   serial_number: string;
@@ -20,7 +21,7 @@ interface ProductEntry {
   received_date: string;
   warranty_months: number;
   warranty_start_date: string;
-  status: 'in_stock' | 'sold' | 'damaged' | 'returned';
+  status: ProductStatus;
   notes: string;
 }
 
@@ -216,7 +217,7 @@ const BulkProductImport: React.FC<BulkProductImportProps> = ({ onClose }) => {
                         <Label>Status</Label>
                         <Select 
                           value={product.status} 
-                          onValueChange={(value) => updateProduct(index, 'status', value)}
+                          onValueChange={(value: ProductStatus) => updateProduct(index, 'status', value)}
                         >
                           <SelectTrigger>
                             <SelectValue />

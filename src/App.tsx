@@ -1,8 +1,9 @@
+
 import { Toaster } from "@/components/ui/toaster";
 import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
 import Layout from "@/components/Layout";
 import ProtectedRoute from "@/components/ProtectedRoute";
@@ -25,8 +26,6 @@ import RolePermissions from "./pages/RolePermissions";
 import UsersPage from "./pages/Users";
 import Sales from "./pages/Sales";
 import Branches from "./pages/Branches";
-import Categories from "./pages/Categories";
-import SedekatApp from "./pages/SedekatApp";
 import ProductManagement from "./pages/SedekatApp/ProductManagement";
 import CatalogManagement from "./pages/SedekatApp/CatalogManagement";
 import ResellerManagement from "./pages/SedekatApp/ResellerManagement";
@@ -56,7 +55,7 @@ const App = () => (
             <Route path="/public-survey/:token" element={<PublicSurvey />} />
             <Route path="/reseller-app/*" element={<ResellerApp />} />
             
-            <Route element={<ProtectedRoute><Layout /></ProtectedRoute>}>
+            <Route element={<ProtectedRoute><Layout><Outlet /></Layout></ProtectedRoute>}>
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/orders" element={<Orders />} />
               <Route path="/customers" element={<Customers />} />
@@ -72,10 +71,8 @@ const App = () => (
               <Route path="/users" element={<UsersPage />} />
               <Route path="/sales" element={<Sales />} />
               <Route path="/branches" element={<Branches />} />
-              <Route path="/categories" element={<Categories />} />
               
               {/* SEDEKAT APP Routes */}
-              <Route path="/sedekat-app" element={<SedekatApp />} />
               <Route path="/sedekat-app/product-management" element={<ProductManagement />} />
               <Route path="/sedekat-app/catalog-management" element={<CatalogManagement />} />
               <Route path="/sedekat-app/reseller-management" element={<ResellerManagement />} />
