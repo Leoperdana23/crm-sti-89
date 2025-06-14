@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,7 +33,8 @@ import {
   Award, 
   Download,
   Search,
-  AlertCircle
+  AlertCircle,
+  Loader2
 } from 'lucide-react';
 import { useResellers } from '@/hooks/useResellers';
 import { useRewardCatalog, useRewardRedemptions, useCreateRedemption, useApproveRedemption } from '@/hooks/useRewards';
@@ -182,11 +184,11 @@ const Commission = () => {
 
     const redeemedCommission = approvedRedemptions
       .filter((r: any) => r.reward_type === 'commission')
-      .reduce((sum: number, r: any) => sum + r.amount_redeemed, 0);
+      .reduce((sum: number, r: any) => sum + (r.amount_redeemed || 0), 0);
 
     const redeemedPoints = approvedRedemptions
       .filter((r: any) => r.reward_type === 'points')
-      .reduce((sum: number, r: any) => sum + r.amount_redeemed, 0);
+      .reduce((sum: number, r: any) => sum + (r.amount_redeemed || 0), 0);
 
     return { redeemedCommission, redeemedPoints };
   };
@@ -243,7 +245,7 @@ const Commission = () => {
     if (reward.reward_type === 'commission' && availableCommission < reward.cost) {
       toast({
         title: 'Error',
-        description: 'Komisi tidak mencukupi untuk penukaran ini',
+        description: `Komisi tidak mencukupi. Saldo: ${formatCurrency(availableCommission)}, dibutuhkan: ${formatCurrency(reward.cost)}`,
         variant: 'destructive',
       });
       return;
@@ -252,7 +254,7 @@ const Commission = () => {
     if (reward.reward_type === 'points' && availablePoints < reward.cost) {
       toast({
         title: 'Error',
-        description: 'Poin tidak mencukupi untuk penukaran ini',
+        description: `Poin tidak mencukupi. Saldo: ${availablePoints}, dibutuhkan: ${reward.cost}`,
         variant: 'destructive',
       });
       return;
@@ -269,18 +271,9 @@ const Commission = () => {
 
       setIsRedemptionDialogOpen(false);
       setSelectedReseller(null);
-      
-      toast({
-        title: 'Sukses',
-        description: 'Penukaran hadiah berhasil diproses',
-      });
     } catch (error) {
       console.error('Failed to create redemption:', error);
-      toast({
-        title: 'Error',
-        description: 'Gagal memproses penukaran hadiah',
-        variant: 'destructive',
-      });
+      // Error is already handled by the mutation
     }
   };
 
@@ -301,8 +294,6 @@ const Commission = () => {
   console.log('Total resellers:', resellers?.length);
   console.log('Calculated total commission:', totalStats.totalCommission);
   console.log('Calculated total points:', totalStats.totalPoints);
-  console.log('Total orders:', totalStats.totalOrders);
-  console.log('Total quantity:', totalStats.totalQuantity);
 
   return (
     <div className="p-6 space-y-6">
@@ -482,6 +473,7 @@ const Commission = () => {
                               setSelectedReseller(resellerInfo);
                               setIsRedemptionDialogOpen(true);
                             }}
+                            disabled={!resellerInfo.isActive}
                           >
                             <Gift className="h-4 w-4 mr-1" />
                             Tukar Hadiah
@@ -550,7 +542,12 @@ const Commission = () => {
                                             onClick={() => handleRedeemReward(reward)}
                                             className="ml-4"
                                           >
-                                            {createRedemption.isPending ? 'Memproses...' : canRedeem ? 'Tukar' : 'Tidak Cukup'}
+                                            {createRedemption.isPending ? (
+                                              <>
+                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                                Memproses...
+                                              </>
+                                            ) : canRedeem ? 'Tukar' : 'Tidak Cukup'}
                                           </Button>
                                         </div>
                                       </div>
@@ -628,6 +625,9 @@ const Commission = () => {
                             status: 'approved'
                           })}
                         >
+                          {approveRedemption.isPending ? (
+                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                          ) : null}
                           Setujui
                         </Button>
                         <Button

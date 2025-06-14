@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -91,25 +90,83 @@ export const useCreateRedemption = () => {
     }) => {
       console.log('Creating redemption:', redemption);
 
-      // First validate that the reseller has enough balance
-      if (redemption.reward_type === 'points') {
-        const { data: resellerData, error: fetchError } = await supabase
-          .from('resellers')
-          .select('total_points')
-          .eq('id', redemption.reseller_id)
-          .single();
+      // Validate input data
+      if (!redemption.reseller_id || !redemption.reward_id || !redemption.reward_type || !redemption.amount_redeemed) {
+        throw new Error('Data penukaran tidak lengkap');
+      }
 
-        if (fetchError) {
-          console.error('Error fetching reseller data:', fetchError);
-          throw fetchError;
+      if (redemption.amount_redeemed <= 0) {
+        throw new Error('Jumlah penukaran harus lebih dari 0');
+      }
+
+      // Check if reward exists and is active
+      const { data: rewardData, error: rewardError } = await supabase
+        .from('reward_catalog')
+        .select('*')
+        .eq('id', redemption.reward_id)
+        .eq('is_active', true)
+        .single();
+
+      if (rewardError || !rewardData) {
+        console.error('Reward not found or inactive:', rewardError);
+        throw new Error('Hadiah tidak ditemukan atau tidak aktif');
+      }
+
+      // Check if reseller exists and is active
+      const { data: resellerData, error: resellerError } = await supabase
+        .from('resellers')
+        .select('*')
+        .eq('id', redemption.reseller_id)
+        .eq('is_active', true)
+        .single();
+
+      if (resellerError || !resellerData) {
+        console.error('Reseller not found or inactive:', resellerError);
+        throw new Error('Reseller tidak ditemukan atau tidak aktif');
+      }
+
+      // Validate that reseller has enough balance
+      if (redemption.reward_type === 'points') {
+        const currentPoints = resellerData.total_points || 0;
+        if (currentPoints < redemption.amount_redeemed) {
+          throw new Error(`Poin tidak mencukupi. Saldo saat ini: ${currentPoints}, dibutuhkan: ${redemption.amount_redeemed}`);
+        }
+      } else if (redemption.reward_type === 'commission') {
+        // For commission, we need to check calculated available commission
+        // Get all approved redemptions for this reseller
+        const { data: approvedRedemptions, error: redemptionError } = await supabase
+          .from('reward_redemptions')
+          .select('amount_redeemed')
+          .eq('reseller_id', redemption.reseller_id)
+          .eq('reward_type', 'commission')
+          .eq('status', 'approved');
+
+        if (redemptionError) {
+          console.error('Error fetching approved redemptions:', redemptionError);
+          throw new Error('Gagal memvalidasi saldo komisi');
         }
 
-        const currentPoints = resellerData?.total_points || 0;
-        if (currentPoints < redemption.amount_redeemed) {
-          throw new Error('Poin tidak mencukupi untuk penukaran ini');
+        // Get total commission earned from reseller orders
+        const { data: resellerOrders, error: ordersError } = await supabase
+          .from('reseller_orders')
+          .select('commission_amount')
+          .eq('reseller_id', redemption.reseller_id);
+
+        if (ordersError) {
+          console.error('Error fetching reseller orders:', ordersError);
+          throw new Error('Gagal memvalidasi saldo komisi');
+        }
+
+        const totalCommissionEarned = resellerOrders?.reduce((sum, order) => sum + (order.commission_amount || 0), 0) || 0;
+        const totalCommissionRedeemed = approvedRedemptions?.reduce((sum, r) => sum + (r.amount_redeemed || 0), 0) || 0;
+        const availableCommission = totalCommissionEarned - totalCommissionRedeemed;
+
+        if (availableCommission < redemption.amount_redeemed) {
+          throw new Error(`Komisi tidak mencukupi. Saldo saat ini: ${availableCommission}, dibutuhkan: ${redemption.amount_redeemed}`);
         }
       }
 
+      // Create redemption record
       const { data, error } = await supabase
         .from('reward_redemptions')
         .insert({
@@ -124,7 +181,7 @@ export const useCreateRedemption = () => {
 
       if (error) {
         console.error('Error creating redemption:', error);
-        throw error;
+        throw new Error('Gagal membuat permintaan penukaran hadiah');
       }
 
       console.log('Redemption created successfully:', data);
@@ -134,6 +191,7 @@ export const useCreateRedemption = () => {
       queryClient.invalidateQueries({ queryKey: ['reward-redemptions'] });
       queryClient.invalidateQueries({ queryKey: ['resellers'] });
       queryClient.invalidateQueries({ queryKey: ['reseller-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['all-reseller-orders'] });
       toast({
         title: 'Sukses',
         description: 'Penukaran hadiah berhasil diproses dan menunggu persetujuan',
@@ -158,6 +216,10 @@ export const useApproveRedemption = () => {
     mutationFn: async ({ redemptionId, status }: { redemptionId: string; status: 'approved' | 'rejected' }) => {
       console.log('Updating redemption status:', redemptionId, status);
       
+      if (!redemptionId || !status) {
+        throw new Error('Data persetujuan tidak lengkap');
+      }
+
       // First get the redemption details
       const { data: redemption, error: fetchError } = await supabase
         .from('reward_redemptions')
@@ -165,9 +227,13 @@ export const useApproveRedemption = () => {
         .eq('id', redemptionId)
         .single();
 
-      if (fetchError) {
+      if (fetchError || !redemption) {
         console.error('Error fetching redemption:', fetchError);
-        throw fetchError;
+        throw new Error('Penukaran hadiah tidak ditemukan');
+      }
+
+      if (redemption.status !== 'pending') {
+        throw new Error('Penukaran hadiah sudah diproses sebelumnya');
       }
 
       // Update redemption status
@@ -184,7 +250,7 @@ export const useApproveRedemption = () => {
 
       if (error) {
         console.error('Error updating redemption:', error);
-        throw error;
+        throw new Error('Gagal memperbarui status penukaran hadiah');
       }
 
       // If approved and it's a points redemption, deduct points from reseller
@@ -197,12 +263,16 @@ export const useApproveRedemption = () => {
           .eq('id', redemption.reseller_id)
           .single();
 
-        if (fetchResellerError) {
+        if (fetchResellerError || !resellerData) {
           console.error('Error fetching reseller for points deduction:', fetchResellerError);
-          throw fetchResellerError;
+          throw new Error('Gagal mengupdate poin reseller');
         }
 
-        const currentPoints = resellerData?.total_points || 0;
+        const currentPoints = resellerData.total_points || 0;
+        if (currentPoints < redemption.amount_redeemed) {
+          throw new Error('Poin reseller tidak mencukupi untuk penukaran ini');
+        }
+
         const newPoints = Math.max(0, currentPoints - redemption.amount_redeemed);
 
         const { error: updateResellerError } = await supabase
@@ -212,7 +282,7 @@ export const useApproveRedemption = () => {
         
         if (updateResellerError) {
           console.error('Error updating reseller points:', updateResellerError);
-          throw updateResellerError;
+          throw new Error('Gagal mengupdate poin reseller');
         }
 
         console.log('Points deducted successfully. New balance:', newPoints);
@@ -225,6 +295,7 @@ export const useApproveRedemption = () => {
       queryClient.invalidateQueries({ queryKey: ['reward-redemptions'] });
       queryClient.invalidateQueries({ queryKey: ['resellers'] });
       queryClient.invalidateQueries({ queryKey: ['reseller-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['all-reseller-orders'] });
       toast({
         title: 'Sukses',
         description: `Penukaran hadiah berhasil ${variables.status === 'approved' ? 'disetujui' : 'ditolak'}`,
@@ -234,7 +305,7 @@ export const useApproveRedemption = () => {
       console.error('Error updating redemption:', error);
       toast({
         title: 'Error',
-        description: 'Gagal memperbarui status penukaran hadiah',
+        description: error.message || 'Gagal memperbarui status penukaran hadiah',
         variant: 'destructive',
       });
     },
