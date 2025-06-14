@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -45,7 +46,7 @@ export const useOrders = () => {
   return useQuery({
     queryKey: ['orders'],
     queryFn: async () => {
-      console.log('Fetching orders with detailed commission and points data...');
+      console.log('=== FETCHING ORDERS WITH ENHANCED DEBUGGING ===');
       
       const { data, error } = await supabase
         .from('orders')
@@ -75,14 +76,16 @@ export const useOrders = () => {
         throw error;
       }
 
-      console.log('Raw orders data fetched:', data?.length);
+      console.log(`Raw orders fetched: ${data?.length}`);
 
-      // Get reseller info for orders with catalog tokens
+      // Enhanced reseller mapping with better debugging
       const ordersWithResellers = await Promise.all(
         (data || []).map(async (order) => {
           if (order.catalog_token) {
             try {
-              const { data: catalogData } = await supabase
+              console.log(`Processing order ${order.id} with catalog_token: ${order.catalog_token}`);
+              
+              const { data: catalogData, error: catalogError } = await supabase
                 .from('catalog_tokens')
                 .select(`
                   reseller_id,
@@ -96,6 +99,11 @@ export const useOrders = () => {
                 .eq('token', order.catalog_token)
                 .single();
 
+              if (catalogError) {
+                console.error(`Error fetching catalog for token ${order.catalog_token}:`, catalogError);
+                return order;
+              }
+
               if (catalogData?.resellers) {
                 const orderWithReseller = {
                   ...order,
@@ -107,39 +115,67 @@ export const useOrders = () => {
                   }
                 };
                 
-                // Log order details for debugging
-                console.log(`Order ${order.id} - Reseller: ${catalogData.resellers.name}, Status: ${order.status}, Items: ${order.order_items?.length || 0}`);
+                console.log(`✓ Order ${order.id} linked to reseller: ${catalogData.resellers.name} (${catalogData.resellers.id})`);
+                console.log(`  Status: ${order.status}`);
+                console.log(`  Items count: ${order.order_items?.length || 0}`);
                 
-                // Log commission and points details for each item
+                // Enhanced item debugging
                 order.order_items?.forEach((item: any, index: number) => {
                   console.log(`  Item ${index + 1}: ${item.product_name}`);
+                  console.log(`    Qty: ${item.quantity}`);
                   console.log(`    Commission snapshot: ${item.product_commission_snapshot}`);
                   console.log(`    Points snapshot: ${item.product_points_snapshot}`);
                   console.log(`    Current commission: ${item.products?.commission_value}`);
                   console.log(`    Current points: ${item.products?.points_value}`);
                   console.log(`    Points earned: ${item.points_earned}`);
-                  console.log(`    Quantity: ${item.quantity}`);
                 });
                 
                 return orderWithReseller;
+              } else {
+                console.warn(`No reseller found for catalog token: ${order.catalog_token}`);
               }
             } catch (err) {
-              console.warn('Could not fetch reseller for order:', order.id, err);
+              console.error(`Error processing catalog token for order ${order.id}:`, err);
             }
+          } else {
+            console.log(`Order ${order.id} has no catalog_token - likely manual order`);
           }
           return order;
         })
       );
 
       const finalOrders = ordersWithResellers as Order[];
-      console.log('Orders fetched successfully with reseller info:', finalOrders.length);
       
-      // Count orders by status for debugging
+      // Enhanced debugging summary
+      console.log('=== ORDERS PROCESSING SUMMARY ===');
+      console.log(`Total orders processed: ${finalOrders.length}`);
+      console.log(`Orders with reseller info: ${finalOrders.filter(o => o.reseller).length}`);
+      console.log(`Orders without reseller: ${finalOrders.filter(o => !o.reseller).length}`);
+      
       const statusCounts = finalOrders.reduce((acc, order) => {
         acc[order.status] = (acc[order.status] || 0) + 1;
         return acc;
       }, {} as Record<string, number>);
       console.log('Order status distribution:', statusCounts);
+      
+      const completedOrdersWithReseller = finalOrders.filter(o => 
+        o.reseller && (o.status === 'completed' || o.status === 'selesai')
+      );
+      console.log(`Completed orders with reseller: ${completedOrdersWithReseller.length}`);
+      
+      // Debug each completed order's commission/points
+      completedOrdersWithReseller.forEach(order => {
+        console.log(`Completed order ${order.id} for reseller ${order.reseller?.name}:`);
+        const totalCommission = order.order_items?.reduce((sum, item) => {
+          const commission = item.product_commission_snapshot || item.products?.commission_value || 0;
+          return sum + (commission * item.quantity);
+        }, 0) || 0;
+        const totalPoints = order.order_items?.reduce((sum, item) => {
+          const points = item.product_points_snapshot || item.products?.points_value || 0;
+          return sum + (points * item.quantity);
+        }, 0) || 0;
+        console.log(`  Commission: ${totalCommission}, Points: ${totalPoints}`);
+      });
       
       return finalOrders;
     },
