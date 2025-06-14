@@ -105,10 +105,14 @@ export const useCreateRedemption = () => {
         .select('*')
         .eq('id', redemption.reward_id)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-      if (rewardError || !rewardData) {
-        console.error('Reward not found or inactive:', rewardError);
+      if (rewardError) {
+        console.error('Error checking reward:', rewardError);
+        throw new Error('Gagal memvalidasi hadiah');
+      }
+
+      if (!rewardData) {
         throw new Error('Hadiah tidak ditemukan atau tidak aktif');
       }
 
@@ -118,52 +122,15 @@ export const useCreateRedemption = () => {
         .select('*')
         .eq('id', redemption.reseller_id)
         .eq('is_active', true)
-        .single();
+        .maybeSingle();
 
-      if (resellerError || !resellerData) {
-        console.error('Reseller not found or inactive:', resellerError);
-        throw new Error('Reseller tidak ditemukan atau tidak aktif');
+      if (resellerError) {
+        console.error('Error checking reseller:', resellerError);
+        throw new Error('Gagal memvalidasi reseller');
       }
 
-      // Validate that reseller has enough balance
-      if (redemption.reward_type === 'points') {
-        const currentPoints = resellerData.total_points || 0;
-        if (currentPoints < redemption.amount_redeemed) {
-          throw new Error(`Poin tidak mencukupi. Saldo saat ini: ${currentPoints}, dibutuhkan: ${redemption.amount_redeemed}`);
-        }
-      } else if (redemption.reward_type === 'commission') {
-        // For commission, we need to check calculated available commission
-        // Get all approved redemptions for this reseller
-        const { data: approvedRedemptions, error: redemptionError } = await supabase
-          .from('reward_redemptions')
-          .select('amount_redeemed')
-          .eq('reseller_id', redemption.reseller_id)
-          .eq('reward_type', 'commission')
-          .eq('status', 'approved');
-
-        if (redemptionError) {
-          console.error('Error fetching approved redemptions:', redemptionError);
-          throw new Error('Gagal memvalidasi saldo komisi');
-        }
-
-        // Get total commission earned from reseller orders
-        const { data: resellerOrders, error: ordersError } = await supabase
-          .from('reseller_orders')
-          .select('commission_amount')
-          .eq('reseller_id', redemption.reseller_id);
-
-        if (ordersError) {
-          console.error('Error fetching reseller orders:', ordersError);
-          throw new Error('Gagal memvalidasi saldo komisi');
-        }
-
-        const totalCommissionEarned = resellerOrders?.reduce((sum, order) => sum + (order.commission_amount || 0), 0) || 0;
-        const totalCommissionRedeemed = approvedRedemptions?.reduce((sum, r) => sum + (r.amount_redeemed || 0), 0) || 0;
-        const availableCommission = totalCommissionEarned - totalCommissionRedeemed;
-
-        if (availableCommission < redemption.amount_redeemed) {
-          throw new Error(`Komisi tidak mencukupi. Saldo saat ini: ${availableCommission}, dibutuhkan: ${redemption.amount_redeemed}`);
-        }
+      if (!resellerData) {
+        throw new Error('Reseller tidak ditemukan atau tidak aktif');
       }
 
       // Create redemption record
@@ -225,10 +192,14 @@ export const useApproveRedemption = () => {
         .from('reward_redemptions')
         .select('*')
         .eq('id', redemptionId)
-        .single();
+        .maybeSingle();
 
-      if (fetchError || !redemption) {
+      if (fetchError) {
         console.error('Error fetching redemption:', fetchError);
+        throw new Error('Gagal mengambil data penukaran hadiah');
+      }
+
+      if (!redemption) {
         throw new Error('Penukaran hadiah tidak ditemukan');
       }
 
@@ -261,11 +232,15 @@ export const useApproveRedemption = () => {
           .from('resellers')
           .select('total_points')
           .eq('id', redemption.reseller_id)
-          .single();
+          .maybeSingle();
 
-        if (fetchResellerError || !resellerData) {
+        if (fetchResellerError) {
           console.error('Error fetching reseller for points deduction:', fetchResellerError);
           throw new Error('Gagal mengupdate poin reseller');
+        }
+
+        if (!resellerData) {
+          throw new Error('Data reseller tidak ditemukan');
         }
 
         const currentPoints = resellerData.total_points || 0;
@@ -382,10 +357,14 @@ export const useUpdateReward = () => {
         .from('reward_catalog')
         .select('id')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
-      if (checkError || !existingReward) {
-        console.error('Reward not found:', id);
+      if (checkError) {
+        console.error('Error checking reward:', checkError);
+        throw new Error('Gagal memvalidasi hadiah');
+      }
+
+      if (!existingReward) {
         throw new Error('Hadiah tidak ditemukan');
       }
 
@@ -442,10 +421,14 @@ export const useDeleteReward = () => {
         .from('reward_catalog')
         .select('id')
         .eq('id', id)
-        .single();
+        .maybeSingle();
 
-      if (checkError || !existingReward) {
-        console.error('Reward not found:', id);
+      if (checkError) {
+        console.error('Error checking reward:', checkError);
+        throw new Error('Gagal memvalidasi hadiah');
+      }
+
+      if (!existingReward) {
         throw new Error('Hadiah tidak ditemukan');
       }
 
