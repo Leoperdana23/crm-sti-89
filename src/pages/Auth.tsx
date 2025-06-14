@@ -67,8 +67,8 @@ const Auth = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 via-white to-indigo-50 p-2 md:p-4">
+      <Card className="w-full max-w-md shadow-lg">
         <CardHeader className="text-center">
           <CardTitle className="text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent">
             CRM Dashboard
@@ -78,7 +78,11 @@ const Auth = () => {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleAppUserAuth} className="space-y-4">
+          <form 
+            onSubmit={handleAppUserAuth} 
+            className="space-y-4"
+            autoComplete="on"
+          >
             <div className="space-y-2">
               <Label htmlFor="userEmail">Email</Label>
               <Input
@@ -88,6 +92,8 @@ const Auth = () => {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 placeholder="Masukkan email"
+                autoComplete="username"
+                className="text-base"
               />
             </div>
             <div className="space-y-2">
@@ -99,9 +105,11 @@ const Auth = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 placeholder="Masukkan password"
+                autoComplete="current-password"
+                className="text-base"
               />
             </div>
-            <Button type="submit" className="w-full" disabled={loading}>
+            <Button type="submit" className="w-full py-2 text-base" disabled={loading}>
               {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Masuk
             </Button>

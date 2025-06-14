@@ -41,11 +41,7 @@ interface CustomerData {
 }
 
 const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({ 
-  survey, 
-  customer,
-  onSubmit, 
-  onUpdateCustomer,
-  isCompleted = false 
+  survey, customer, onSubmit, onUpdateCustomer, isCompleted = false 
 }) => {
   const { toast } = useToast();
   
@@ -228,7 +224,7 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
 
   if (isCompleted) {
     return (
-      <Card className="max-w-2xl mx-auto">
+      <Card className="max-w-xl mx-auto my-12">
         <CardHeader className="text-center">
           <div className="flex justify-center mb-4">
             <CheckCircle className="h-16 w-16 text-green-500" />
@@ -247,7 +243,7 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
   }
 
   return (
-    <div className="max-w-2xl mx-auto space-y-6">
+    <div className="w-full max-w-2xl mx-auto px-2 md:px-0 space-y-6">
       {/* Customer Data Section */}
       <Card>
         <CardHeader>
@@ -306,30 +302,32 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
               )}
             </div>
 
-            <div>
-              <Label htmlFor="birth-date" className="text-sm font-medium">
-                Tanggal Lahir
-              </Label>
-              <Input
-                id="birth-date"
-                type="date"
-                value={customerData.birth_date}
-                onChange={(e) => setCustomerData(prev => ({ ...prev, birth_date: e.target.value }))}
-                disabled={customerDataSaved}
-              />
-            </div>
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1">
+                <Label htmlFor="birth-date" className="text-sm font-medium">
+                  Tanggal Lahir
+                </Label>
+                <Input
+                  id="birth-date"
+                  type="date"
+                  value={customerData.birth_date}
+                  onChange={(e) => setCustomerData(prev => ({ ...prev, birth_date: e.target.value }))}
+                  disabled={customerDataSaved}
+                />
+              </div>
 
-            <div>
-              <Label htmlFor="id-number" className="text-sm font-medium">
-                Nomor Identitas (KTP/SIM/Passport)
-              </Label>
-              <Input
-                id="id-number"
-                value={customerData.id_number}
-                onChange={(e) => setCustomerData(prev => ({ ...prev, id_number: e.target.value }))}
-                placeholder="Masukkan nomor identitas"
-                disabled={customerDataSaved}
-              />
+              <div className="flex-1">
+                <Label htmlFor="id-number" className="text-sm font-medium">
+                  Nomor Identitas (KTP/SIM/Passport)
+                </Label>
+                <Input
+                  id="id-number"
+                  value={customerData.id_number}
+                  onChange={(e) => setCustomerData(prev => ({ ...prev, id_number: e.target.value }))}
+                  placeholder="Masukkan nomor identitas"
+                  disabled={customerDataSaved}
+                />
+              </div>
             </div>
 
             {!customerDataSaved ? (
@@ -367,10 +365,12 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
           )}
           
           <form onSubmit={handleSubmit} className="space-y-6">
-            {renderRatingScale('service_technician', 'Pelayanan Teknisi (1-10)')}
-            {renderRatingScale('service_sales', 'Pelayanan Sales/CS (1-10)')}
-            {renderRatingScale('product_quality', 'Kualitas Produk (1-10)')}
-            {renderRatingScale('usage_clarity', 'Kejelasan Penggunaan (1-10)')}
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
+              {renderRatingScale('service_technician', 'Pelayanan Teknisi (1-10)')}
+              {renderRatingScale('service_sales', 'Pelayanan Sales/CS (1-10)')}
+              {renderRatingScale('product_quality', 'Kualitas Produk (1-10)')}
+              {renderRatingScale('usage_clarity', 'Kejelasan Penggunaan (1-10)')}
+            </div>
 
             <div className="space-y-3">
               <Label className={`text-sm font-medium ${errors.price_approval ? 'text-red-600' : ''}`}>
@@ -384,7 +384,7 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
                     setErrors(prev => ({ ...prev, price_approval: '' }));
                   }
                 }}
-                className="flex gap-4"
+                className="flex flex-col sm:flex-row gap-4"
                 disabled={isCompleted || !customerDataSaved}
               >
                 <div className="flex items-center space-x-2">
@@ -401,28 +401,29 @@ const PublicSurveyForm: React.FC<PublicSurveyFormProps> = ({
               )}
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="testimonial">Testimoni</Label>
-              <Textarea
-                id="testimonial"
-                value={formData.testimonial}
-                onChange={(e) => setFormData(prev => ({ ...prev, testimonial: e.target.value }))}
-                placeholder="Bagikan pengalaman Anda dengan produk/layanan kami..."
-                rows={4}
-                disabled={isCompleted || !customerDataSaved}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="suggestions">Saran dan Kritik</Label>
-              <Textarea
-                id="suggestions"
-                value={formData.suggestions}
-                onChange={(e) => setFormData(prev => ({ ...prev, suggestions: e.target.value }))}
-                placeholder="Berikan saran atau kritik untuk perbaikan layanan kami..."
-                rows={4}
-                disabled={isCompleted || !customerDataSaved}
-              />
+            <div className="flex flex-col md:flex-row gap-4">
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="testimonial">Testimoni</Label>
+                <Textarea
+                  id="testimonial"
+                  value={formData.testimonial}
+                  onChange={(e) => setFormData(prev => ({ ...prev, testimonial: e.target.value }))}
+                  placeholder="Bagikan pengalaman Anda dengan produk/layanan kami..."
+                  rows={4}
+                  disabled={isCompleted || !customerDataSaved}
+                />
+              </div>
+              <div className="flex-1 space-y-2">
+                <Label htmlFor="suggestions">Saran dan Kritik</Label>
+                <Textarea
+                  id="suggestions"
+                  value={formData.suggestions}
+                  onChange={(e) => setFormData(prev => ({ ...prev, suggestions: e.target.value }))}
+                  placeholder="Berikan saran atau kritik untuk perbaikan layanan kami..."
+                  rows={4}
+                  disabled={isCompleted || !customerDataSaved}
+                />
+              </div>
             </div>
 
             {errors.general && (
