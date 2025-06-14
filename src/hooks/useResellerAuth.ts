@@ -29,34 +29,55 @@ export const useResellerAuth = () => {
     try {
       console.log('=== RESELLER AUTH START ===');
       console.log('Phone:', phone);
+
+      // Get client IP and user agent for logging
+      const userAgent = navigator.userAgent;
+      let clientIP = 'Unknown';
       
-      // Find reseller by phone number
-      const { data: resellerData, error: resellerError } = await supabase
-        .from('resellers')
-        .select('*')
-        .eq('phone', phone)
-        .eq('is_active', true)
-        .single();
-
-      console.log('Reseller query result:', { resellerData, resellerError });
-
-      if (resellerError || !resellerData) {
-        throw new Error('Reseller tidak ditemukan atau tidak aktif');
+      try {
+        // Try to get client IP (this is optional and might not work in all environments)
+        const ipResponse = await fetch('https://api.ipify.org?format=json');
+        const ipData = await ipResponse.json();
+        clientIP = ipData.ip;
+      } catch (error) {
+        console.log('Could not fetch IP address:', error);
       }
 
-      // Simple password verification (enhance this with proper hashing)
-      if (password !== '123456') {
-        throw new Error('Password salah');
+      // Call the database function to authenticate and log the attempt
+      const { data, error } = await supabase.rpc('authenticate_reseller_app', {
+        phone_input: phone,
+        password_input: password
+      });
+
+      console.log('Database authentication result:', { data, error });
+
+      if (error) {
+        throw new Error(error.message || 'Authentication failed');
       }
 
-      console.log('Password verified, creating session...');
+      if (!data.success) {
+        throw new Error(data.message || 'Authentication failed');
+      }
 
-      // Create a simple session without requiring catalog token from database
+      // Update the login history record with IP and user agent
+      if (data.login_history_id) {
+        await supabase
+          .from('reseller_login_history')
+          .update({
+            ip_address: clientIP,
+            user_agent: userAgent
+          })
+          .eq('id', data.login_history_id);
+      }
+
+      console.log('Login history updated with IP and user agent');
+
+      // Create session data
       const sessionData: ResellerSession = {
-        id: resellerData.id,
-        name: resellerData.name,
-        phone: resellerData.phone,
-        catalogToken: `reseller_${resellerData.id}_${Date.now()}` // Simple token generation
+        id: data.reseller.id,
+        name: data.reseller.name,
+        phone: data.reseller.phone,
+        catalogToken: data.token
       };
 
       console.log('Session created:', sessionData);

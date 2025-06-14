@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
   Table, 
   TableBody, 
@@ -45,11 +46,13 @@ import {
   Phone,
   MapPin,
   Building,
-  Hash
+  Hash,
+  History
 } from 'lucide-react';
 import { useResellers, useDeleteReseller } from '@/hooks/useResellers';
 import { useBranches } from '@/hooks/useBranches';
 import ResellerForm from '@/components/ResellerForm';
+import ResellerLoginHistory from '@/components/ResellerLoginHistory';
 
 const ResellerManagement = () => {
   const { data: resellers, isLoading } = useResellers();
@@ -190,138 +193,158 @@ const ResellerManagement = () => {
         </Card>
       </div>
 
-      {/* Filters */}
-      <Card>
-        <CardContent className="p-4">
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-              <Input
-                placeholder="Cari berdasarkan nama, telepon, email, atau ID reseller..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            
-            <Select value={statusFilter} onValueChange={setStatusFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Semua Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Status</SelectItem>
-                <SelectItem value="active">Aktif</SelectItem>
-                <SelectItem value="inactive">Nonaktif</SelectItem>
-              </SelectContent>
-            </Select>
+      {/* Tabs for Resellers and Login History */}
+      <Tabs defaultValue="resellers" className="w-full">
+        <TabsList>
+          <TabsTrigger value="resellers" className="flex items-center gap-2">
+            <Users className="h-4 w-4" />
+            Data Reseller
+          </TabsTrigger>
+          <TabsTrigger value="login-history" className="flex items-center gap-2">
+            <History className="h-4 w-4" />
+            Riwayat Login
+          </TabsTrigger>
+        </TabsList>
 
-            <Select value={branchFilter} onValueChange={setBranchFilter}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Semua Cabang" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Cabang</SelectItem>
-                {branches?.map((branch) => (
-                  <SelectItem key={branch.id} value={branch.id}>
-                    {branch.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
+        <TabsContent value="resellers" className="space-y-4">
+          {/* Filters */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="flex flex-col sm:flex-row gap-4">
+                <div className="relative flex-1">
+                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+                  <Input
+                    placeholder="Cari berdasarkan nama, telepon, email, atau ID reseller..."
+                    value={searchTerm}
+                    onChange={(e) => setSearchTerm(e.target.value)}
+                    className="pl-10"
+                  />
+                </div>
+                
+                <Select value={statusFilter} onValueChange={setStatusFilter}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Semua Status" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Status</SelectItem>
+                    <SelectItem value="active">Aktif</SelectItem>
+                    <SelectItem value="inactive">Nonaktif</SelectItem>
+                  </SelectContent>
+                </Select>
 
-      {/* Resellers Table */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Daftar Reseller</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>ID Reseller</TableHead>
-                <TableHead>Reseller</TableHead>
-                <TableHead>Kontak</TableHead>
-                <TableHead>Cabang</TableHead>
-                <TableHead>Alamat</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Tanggal Daftar</TableHead>
-                <TableHead>Aksi</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {filteredResellers?.map((reseller) => (
-                <TableRow key={reseller.id}>
-                  <TableCell>
-                    <div className="flex items-center gap-1 text-sm">
-                      <Hash className="h-3 w-3" />
-                      {reseller.reseller_id || reseller.id.slice(-8)}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div>
-                      <div className="font-medium">{reseller.name}</div>
-                      {reseller.email && (
-                        <div className="text-sm text-gray-500">{reseller.email}</div>
-                      )}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 text-sm">
-                      <Phone className="h-3 w-3" />
-                      {reseller.phone}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 text-sm">
-                      <Building className="h-3 w-3" />
-                      {reseller.branches?.name || '-'}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <div className="flex items-center gap-1 text-sm max-w-xs truncate">
-                      <MapPin className="h-3 w-3 flex-shrink-0" />
-                      {reseller.address}
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={reseller.is_active ? 'default' : 'secondary'}>
-                      {reseller.is_active ? 'Aktif' : 'Nonaktif'}
-                    </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {new Date(reseller.created_at).toLocaleDateString('id-ID')}
-                  </TableCell>
-                  <TableCell>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" className="h-8 w-8 p-0">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem onClick={() => handleEdit(reseller)}>
-                          <Edit className="mr-2 h-4 w-4" />
-                          Edit
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => handleDelete(reseller.id)}
-                          className="text-red-600"
-                        >
-                          <Trash2 className="mr-2 h-4 w-4" />
-                          Hapus
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </CardContent>
-      </Card>
+                <Select value={branchFilter} onValueChange={setBranchFilter}>
+                  <SelectTrigger className="w-full sm:w-48">
+                    <SelectValue placeholder="Semua Cabang" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Semua Cabang</SelectItem>
+                    {branches?.map((branch) => (
+                      <SelectItem key={branch.id} value={branch.id}>
+                        {branch.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Resellers Table */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Daftar Reseller</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID Reseller</TableHead>
+                    <TableHead>Reseller</TableHead>
+                    <TableHead>Kontak</TableHead>
+                    <TableHead>Cabang</TableHead>
+                    <TableHead>Alamat</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead>Tanggal Daftar</TableHead>
+                    <TableHead>Aksi</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredResellers?.map((reseller) => (
+                    <TableRow key={reseller.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm">
+                          <Hash className="h-3 w-3" />
+                          {reseller.reseller_id || reseller.id.slice(-8)}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div>
+                          <div className="font-medium">{reseller.name}</div>
+                          {reseller.email && (
+                            <div className="text-sm text-gray-500">{reseller.email}</div>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm">
+                          <Phone className="h-3 w-3" />
+                          {reseller.phone}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm">
+                          <Building className="h-3 w-3" />
+                          {reseller.branches?.name || '-'}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-1 text-sm max-w-xs truncate">
+                          <MapPin className="h-3 w-3 flex-shrink-0" />
+                          {reseller.address}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant={reseller.is_active ? 'default' : 'secondary'}>
+                          {reseller.is_active ? 'Aktif' : 'Nonaktif'}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        {new Date(reseller.created_at).toLocaleDateString('id-ID')}
+                      </TableCell>
+                      <TableCell>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" className="h-8 w-8 p-0">
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEdit(reseller)}>
+                              <Edit className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => handleDelete(reseller.id)}
+                              className="text-red-600"
+                            >
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Hapus
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="login-history">
+          <ResellerLoginHistory />
+        </TabsContent>
+      </Tabs>
     </div>
   );
 };

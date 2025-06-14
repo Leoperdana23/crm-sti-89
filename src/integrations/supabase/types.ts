@@ -1590,6 +1590,56 @@ export type Database = {
           },
         ]
       }
+      reseller_login_history: {
+        Row: {
+          created_at: string
+          id: string
+          ip_address: string | null
+          login_method: string | null
+          login_time: string
+          logout_time: string | null
+          reseller_id: string | null
+          session_duration: number | null
+          session_token: string | null
+          updated_at: string
+          user_agent: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          login_method?: string | null
+          login_time?: string
+          logout_time?: string | null
+          reseller_id?: string | null
+          session_duration?: number | null
+          session_token?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          ip_address?: string | null
+          login_method?: string | null
+          login_time?: string
+          logout_time?: string | null
+          reseller_id?: string | null
+          session_duration?: number | null
+          session_token?: string | null
+          updated_at?: string
+          user_agent?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reseller_login_history_reseller_id_fkey"
+            columns: ["reseller_id"]
+            isOneToOne: false
+            referencedRelation: "resellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       reseller_order_history: {
         Row: {
           commission_earned: number
