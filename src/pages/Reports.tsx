@@ -205,7 +205,7 @@ const Reports = () => {
     }).length || 0;
 
     const monthRevenue = orders?.filter(o => {
-      const orderDate = new New(o.created_at);
+      const orderDate = new Date(o.created_at);
       return orderDate.getMonth() === date.getMonth() && 
              orderDate.getFullYear() === date.getFullYear() &&
              (o.status === 'completed' || o.status === 'selesai');
