@@ -70,7 +70,13 @@ const WorkProcess = () => {
   const handleCancelWork = async (customer: Customer) => {
     if (confirm('Yakin ingin membatalkan proses pekerjaan ini?')) {
       try {
-        await cancelWorkProcess(customer.id);
+        await updateCustomer({ 
+          id: customer.id,
+          work_status: 'not_started',
+          work_start_date: undefined,
+          work_completed_date: undefined,
+          work_notes: undefined
+        });
         toast({
           title: "Berhasil",
           description: "Proses pekerjaan berhasil dibatalkan",
@@ -88,7 +94,8 @@ const WorkProcess = () => {
   const handleAssignmentComplete = async (assignmentData: any) => {
     try {
       if (selectedCustomer) {
-        await updateCustomer(selectedCustomer.id, {
+        await updateCustomer({
+          id: selectedCustomer.id,
           work_status: 'in_progress',
           work_start_date: new Date().toISOString(),
           estimated_days: assignmentData.estimatedDays ? parseInt(assignmentData.estimatedDays) : undefined,
@@ -115,7 +122,8 @@ const WorkProcess = () => {
   const handleWorkComplete = async () => {
     try {
       if (selectedCustomer) {
-        await updateCustomer(selectedCustomer.id, {
+        await updateCustomer({
+          id: selectedCustomer.id,
           work_status: 'completed',
           work_completed_date: new Date().toISOString(),
           work_notes: workNotes

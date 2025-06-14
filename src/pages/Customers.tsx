@@ -70,7 +70,7 @@ const Customers = () => {
       } else {
         // Save as customer (existing logic)
         if (editingCustomer) {
-          await updateCustomer(editingCustomer.id, data);
+          await updateCustomer({ id: editingCustomer.id, ...data });
           toast({
             title: "Berhasil",
             description: "Data pelanggan berhasil diperbarui",
@@ -152,7 +152,7 @@ const Customers = () => {
         updateData.work_status = 'not_started';
       }
       
-      await updateCustomer(customerId, updateData);
+      await updateCustomer({ id: customerId, ...updateData });
       toast({
         title: "Berhasil",
         description: "Status pelanggan berhasil diperbarui",

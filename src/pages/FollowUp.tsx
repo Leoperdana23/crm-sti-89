@@ -66,7 +66,7 @@ const FollowUp = () => {
       updates.deal_date = dealDate;
     }
     
-    updateCustomer(customerId, updates);
+    updateCustomer({ id: customerId, ...updates });
     toast({
       title: "Berhasil",
       description: `Status pelanggan berhasil diubah menjadi ${newStatus}`,
@@ -74,7 +74,7 @@ const FollowUp = () => {
   };
 
   const handleMoveToFollowUp = (customerId: string) => {
-    updateCustomer(customerId, { status: 'Follow-up' });
+    updateCustomer({ id: customerId, status: 'Follow-up' });
     toast({
       title: "Berhasil",
       description: "Prospek dipindahkan ke follow-up",
