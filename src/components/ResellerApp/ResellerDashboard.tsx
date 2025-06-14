@@ -18,7 +18,17 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
 
   const totalOrders = orders.length;
   const pendingOrders = orders.filter(order => order.status === 'pending').length;
-  const completedOrders = orders.filter(order => order.status === 'selesai').length;
+  
+  // Count completed orders by quantity of items, not just order count
+  const completedOrdersQty = orders
+    .filter(order => order.status === 'selesai')
+    .reduce((sum, order) => {
+      if (order.order_items) {
+        return sum + order.order_items.reduce((itemSum, item) => itemSum + item.quantity, 0);
+      }
+      return sum;
+    }, 0);
+  
   const totalCommission = orders.reduce((sum, order) => sum + order.commission_amount, 0);
   
   // Calculate total quantity and average order
@@ -32,8 +42,9 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
   const averageOrder = totalOrders > 0 ? Math.round(totalCommission / totalOrders) : 0;
 
   const siteName = appSettings?.catalog?.siteName || 'SEDEKAT App';
-  const welcomeText = appSettings?.catalog?.welcomeText || 'Selamat datang di katalog produk kami';
+  const welcomeText = appSettings?.catalog?.welcomeText || 'Jadikan belanjamu banyak untung';
   const bannerUrl = appSettings?.catalog?.bannerUrl || '';
+  const secondaryColor = appSettings?.catalog?.secondaryColor || '#059669';
 
   return (
     <div className="p-4 space-y-6">
@@ -53,9 +64,12 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
         </div>
       ) : (
         <Card>
-          <CardContent className="p-6 text-center">
-            <h2 className="text-xl font-bold text-gray-800 mb-2">{siteName}</h2>
-            <p className="text-gray-600">{welcomeText}</p>
+          <CardContent 
+            className="p-6 text-center rounded-lg" 
+            style={{ backgroundColor: secondaryColor }}
+          >
+            <h2 className="text-xl font-bold text-white mb-2">{siteName}</h2>
+            <p className="text-white opacity-90">{welcomeText}</p>
           </CardContent>
         </Card>
       )}
@@ -122,7 +136,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Selesai</p>
-                <p className="text-2xl font-bold">{completedOrders}</p>
+                <p className="text-2xl font-bold">{completedOrdersQty}</p>
               </div>
               <Star className="h-8 w-8 text-yellow-500" />
             </div>

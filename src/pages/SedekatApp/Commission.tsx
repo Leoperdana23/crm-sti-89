@@ -54,16 +54,24 @@ const Commission = () => {
   const [selectedReseller, setSelectedReseller] = useState<any>(null);
   const [isRedemptionDialogOpen, setIsRedemptionDialogOpen] = useState(false);
 
-  // Fetch reseller order history data
-  const { data: resellerOrderHistory } = useQuery({
-    queryKey: ['reseller-order-history'],
+  // Fetch all reseller orders with order items for commission calculation
+  const { data: allResellerOrders } = useQuery({
+    queryKey: ['all-reseller-orders'],
     queryFn: async () => {
-      console.log('Fetching reseller order history...');
+      console.log('Fetching all reseller orders for commission calculation...');
       
       const { data, error } = await supabase
-        .from('reseller_order_history')
+        .from('reseller_orders')
         .select(`
           *,
+          orders (
+            *,
+            order_items (
+              *,
+              product_commission_snapshot,
+              product_points_snapshot
+            )
+          ),
           resellers (
             id,
             name,
@@ -75,15 +83,14 @@ const Commission = () => {
             )
           )
         `)
-        .eq('order_status', 'selesai')
         .order('created_at', { ascending: false });
 
       if (error) {
-        console.error('Error fetching reseller order history:', error);
+        console.error('Error fetching reseller orders:', error);
         throw error;
       }
 
-      console.log('Reseller order history fetched:', data);
+      console.log('All reseller orders fetched:', data);
       return data || [];
     },
     refetchInterval: 5000,
@@ -97,11 +104,11 @@ const Commission = () => {
     }).format(amount);
   };
 
-  // Calculate commission and points data from reseller order history
+  // Calculate commission and points data from reseller orders
   const calculateResellerData = () => {
-    if (!resellerOrderHistory || !resellers) return [];
+    if (!allResellerOrders || !resellers) return [];
 
-    console.log('Calculating reseller data from order history...');
+    console.log('Calculating reseller data from orders...');
     
     const resellerMap = new Map();
 
@@ -115,17 +122,49 @@ const Commission = () => {
         isActive: reseller.is_active,
         totalCommission: 0,
         totalPoints: 0,
-        totalOrders: 0
+        totalOrders: 0,
+        totalQuantity: 0,
+        completedOrders: 0,
+        pendingOrders: 0
       });
     });
 
-    // Aggregate data from order history
-    resellerOrderHistory.forEach(order => {
-      if (order.reseller_id && resellerMap.has(order.reseller_id)) {
-        const resellerData = resellerMap.get(order.reseller_id);
-        resellerData.totalCommission += order.commission_earned || 0;
-        resellerData.totalPoints += order.points_earned || 0;
-        resellerData.totalOrders += 1;
+    // Aggregate data from reseller orders
+    allResellerOrders.forEach(resellerOrder => {
+      if (resellerOrder.reseller_id && resellerMap.has(resellerOrder.reseller_id)) {
+        const resellerData = resellerMap.get(resellerOrder.reseller_id);
+        const order = resellerOrder.orders;
+        
+        if (order) {
+          // Calculate commission from snapshot values
+          const orderCommission = order.order_items?.reduce((total: number, item: any) => {
+            const snapshotCommission = item.product_commission_snapshot || 0;
+            return total + (snapshotCommission * item.quantity);
+          }, 0) || 0;
+
+          // Calculate points from snapshot values
+          const orderPoints = order.order_items?.reduce((total: number, item: any) => {
+            const snapshotPoints = item.product_points_snapshot || 0;
+            return total + (snapshotPoints * item.quantity);
+          }, 0) || 0;
+
+          // Calculate total quantity
+          const orderQuantity = order.order_items?.reduce((total: number, item: any) => {
+            return total + item.quantity;
+          }, 0) || 0;
+
+          resellerData.totalCommission += orderCommission;
+          resellerData.totalPoints += orderPoints;
+          resellerData.totalOrders += 1;
+          resellerData.totalQuantity += orderQuantity;
+
+          // Count by status
+          if (order.status === 'selesai') {
+            resellerData.completedOrders += 1;
+          } else if (order.status === 'pending') {
+            resellerData.pendingOrders += 1;
+          }
+        }
       }
     });
 
@@ -162,6 +201,8 @@ const Commission = () => {
   const totalStats = {
     totalCommission: resellerData.reduce((sum, r) => sum + r.totalCommission, 0),
     totalPoints: resellerData.reduce((sum, r) => sum + r.totalPoints, 0),
+    totalOrders: resellerData.reduce((sum, r) => sum + r.totalOrders, 0),
+    totalQuantity: resellerData.reduce((sum, r) => sum + r.totalQuantity, 0),
     activeResellers: resellerData.filter(r => r.isActive).length,
     totalRedemptions: redemptions?.length || 0
   };
@@ -225,10 +266,12 @@ const Commission = () => {
   }
 
   console.log('=== COMMISSION PAGE SUMMARY ===');
-  console.log('Total reseller order history:', resellerOrderHistory?.length);
+  console.log('Total reseller orders:', allResellerOrders?.length);
   console.log('Total resellers:', resellers?.length);
   console.log('Calculated total commission:', totalStats.totalCommission);
   console.log('Calculated total points:', totalStats.totalPoints);
+  console.log('Total orders:', totalStats.totalOrders);
+  console.log('Total quantity:', totalStats.totalQuantity);
 
   return (
     <div className="p-6 space-y-6">
@@ -250,7 +293,7 @@ const Commission = () => {
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
@@ -278,8 +321,8 @@ const Commission = () => {
             <div className="flex items-center space-x-3">
               <Gift className="h-8 w-8 text-orange-500" />
               <div>
-                <p className="text-sm text-gray-600">Total Penukaran</p>
-                <p className="text-2xl font-bold">{totalStats.totalRedemptions}</p>
+                <p className="text-sm text-gray-600">Total Qty</p>
+                <p className="text-2xl font-bold">{totalStats.totalQuantity}</p>
               </div>
             </div>
           </CardContent>
@@ -288,6 +331,17 @@ const Commission = () => {
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <TrendingUp className="h-8 w-8 text-blue-500" />
+              <div>
+                <p className="text-sm text-gray-600">Total Order</p>
+                <p className="text-2xl font-bold">{totalStats.totalOrders}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <TrendingUp className="h-8 w-8 text-indigo-500" />
               <div>
                 <p className="text-sm text-gray-600">Reseller Aktif</p>
                 <p className="text-2xl font-bold">{totalStats.activeResellers}</p>
@@ -338,6 +392,7 @@ const Commission = () => {
                 <TableHead>Reseller</TableHead>
                 <TableHead>Cabang</TableHead>
                 <TableHead>Total Order</TableHead>
+                <TableHead>Total Qty</TableHead>
                 <TableHead>Komisi Diperoleh</TableHead>
                 <TableHead>Komisi Ditukar</TableHead>
                 <TableHead>Sisa Komisi</TableHead>
@@ -364,6 +419,7 @@ const Commission = () => {
                     </TableCell>
                     <TableCell>{resellerInfo.branch}</TableCell>
                     <TableCell>{resellerInfo.totalOrders}</TableCell>
+                    <TableCell>{resellerInfo.totalQuantity}</TableCell>
                     <TableCell>{formatCurrency(resellerInfo.totalCommission)}</TableCell>
                     <TableCell>{formatCurrency(redeemedCommission)}</TableCell>
                     <TableCell className="font-semibold text-green-600">
