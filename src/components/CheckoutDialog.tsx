@@ -87,8 +87,13 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, resellerSession, 
         product_price: item.product.reseller_price || item.product.price,
         quantity: item.quantity,
         subtotal: (item.product.reseller_price || item.product.price) * item.quantity,
+        // Add snapshot values for commission and points
+        product_commission_snapshot: item.product.commission_value || 0,
+        product_points_snapshot: item.product.points_value || 0
       }))
     };
+
+    console.log('Creating order with data:', orderData);
 
     try {
       await createOrderMutation.mutateAsync(orderData);

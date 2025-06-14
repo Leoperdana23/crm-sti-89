@@ -12,6 +12,8 @@ export interface OrderItem {
   quantity: number;
   subtotal: number;
   points_earned: number;
+  product_commission_snapshot?: number;
+  product_points_snapshot?: number;
 }
 
 export interface Order {
@@ -54,7 +56,9 @@ export const useOrders = () => {
             product_price,
             quantity,
             subtotal,
-            points_earned
+            points_earned,
+            product_commission_snapshot,
+            product_points_snapshot
           )
         `)
         .order('created_at', { ascending: false });
@@ -137,6 +141,7 @@ export const useUpdateOrderStatus = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['reseller-orders'] });
       toast({
         title: 'Sukses',
         description: 'Status pesanan berhasil diperbarui',
@@ -189,6 +194,7 @@ export const useDeleteOrder = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['reseller-orders'] });
       toast({
         title: 'Sukses',
         description: 'Pesanan berhasil dihapus',
@@ -224,6 +230,8 @@ export const useCreateOrder = () => {
         product_price: number;
         quantity: number;
         subtotal: number;
+        product_commission_snapshot?: number;
+        product_points_snapshot?: number;
       }>;
     }) => {
       console.log('Creating order:', orderData);
@@ -252,7 +260,9 @@ export const useCreateOrder = () => {
         throw orderError;
       }
 
-      // Create order items
+      console.log('Order created:', order);
+
+      // Create order items with snapshot values
       const { error: itemsError } = await supabase
         .from('order_items')
         .insert(
@@ -262,7 +272,10 @@ export const useCreateOrder = () => {
             product_name: item.product_name,
             product_price: item.product_price,
             quantity: item.quantity,
-            subtotal: item.subtotal
+            subtotal: item.subtotal,
+            product_commission_snapshot: item.product_commission_snapshot || 0,
+            product_points_snapshot: item.product_points_snapshot || 0,
+            points_earned: (item.product_points_snapshot || 0) * item.quantity
           }))
         );
 
@@ -271,12 +284,61 @@ export const useCreateOrder = () => {
         throw itemsError;
       }
 
-      console.log('Order created successfully');
+      console.log('Order items created successfully');
+
+      // Create reseller order record if catalog_token exists
+      if (orderData.catalog_token) {
+        console.log('Creating reseller order for catalog token:', orderData.catalog_token);
+        
+        // Get reseller info from catalog token
+        const { data: catalogData, error: catalogError } = await supabase
+          .from('catalog_tokens')
+          .select(`
+            reseller_id,
+            resellers (
+              id,
+              commission_rate
+            )
+          `)
+          .eq('token', orderData.catalog_token)
+          .single();
+
+        if (catalogError) {
+          console.error('Error fetching catalog token:', catalogError);
+        } else if (catalogData?.resellers) {
+          // Calculate total commission from snapshot values
+          const totalCommission = orderData.items.reduce((sum, item) => {
+            const commission = (item.product_commission_snapshot || 0) * item.quantity;
+            return sum + commission;
+          }, 0);
+
+          console.log('Creating reseller order with commission:', totalCommission);
+
+          const { error: resellerOrderError } = await supabase
+            .from('reseller_orders')
+            .insert({
+              reseller_id: catalogData.resellers.id,
+              order_id: order.id,
+              commission_rate: catalogData.resellers.commission_rate || 10.0,
+              commission_amount: totalCommission,
+              status: 'pending'
+            });
+
+          if (resellerOrderError) {
+            console.error('Error creating reseller order:', resellerOrderError);
+          } else {
+            console.log('Reseller order created successfully');
+          }
+        }
+      }
+
+      console.log('Order creation completed successfully');
       return order;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      queryClient.invalidateQueries({ queryKey: ['reseller-orders'] });
       toast({
         title: 'Sukses',
         description: 'Pesanan berhasil dibuat',
