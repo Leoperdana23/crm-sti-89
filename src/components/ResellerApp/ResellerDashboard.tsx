@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,15 +20,8 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
   const totalOrders = orders.length;
   const pendingOrders = orders.filter(order => order.status === 'pending').length;
   
-  // Count completed orders by quantity of items, not just order count
-  const completedOrdersQty = orders
-    .filter(order => order.status === 'selesai')
-    .reduce((sum, order) => {
-      if (order.order_items) {
-        return sum + order.order_items.reduce((itemSum, item) => itemSum + item.quantity, 0);
-      }
-      return sum;
-    }, 0);
+  // Count completed orders by number of orders (not quantity)
+  const completedOrders = orders.filter(order => order.status === 'selesai').length;
   
   // Use calculated commission from balance hook instead of order sum
   const totalCommission = balance?.remainingCommission || 0;
@@ -150,7 +142,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm text-gray-600">Selesai</p>
-                <p className="text-2xl font-bold">{completedOrdersQty}</p>
+                <p className="text-2xl font-bold">{completedOrders}</p>
               </div>
               <Star className="h-8 w-8 text-yellow-500" />
             </div>

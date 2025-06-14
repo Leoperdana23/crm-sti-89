@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -43,7 +44,8 @@ import {
   Download,
   Phone,
   MapPin,
-  Building
+  Building,
+  Hash
 } from 'lucide-react';
 import { useResellers, useDeleteReseller } from '@/hooks/useResellers';
 import { useBranches } from '@/hooks/useBranches';
@@ -80,7 +82,8 @@ const ResellerManagement = () => {
     const matchesSearch = 
       reseller.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reseller.phone.includes(searchTerm) ||
-      reseller.email?.toLowerCase().includes(searchTerm.toLowerCase());
+      reseller.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reseller.reseller_id?.toLowerCase().includes(searchTerm.toLowerCase());
     
     const matchesStatus = statusFilter === 'all' || 
       (statusFilter === 'active' && reseller.is_active) ||
@@ -194,7 +197,7 @@ const ResellerManagement = () => {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
               <Input
-                placeholder="Cari berdasarkan nama, telepon, atau email..."
+                placeholder="Cari berdasarkan nama, telepon, email, atau ID reseller..."
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 className="pl-10"
@@ -238,6 +241,7 @@ const ResellerManagement = () => {
           <Table>
             <TableHeader>
               <TableRow>
+                <TableHead>ID Reseller</TableHead>
                 <TableHead>Reseller</TableHead>
                 <TableHead>Kontak</TableHead>
                 <TableHead>Cabang</TableHead>
@@ -250,6 +254,12 @@ const ResellerManagement = () => {
             <TableBody>
               {filteredResellers?.map((reseller) => (
                 <TableRow key={reseller.id}>
+                  <TableCell>
+                    <div className="flex items-center gap-1 text-sm">
+                      <Hash className="h-3 w-3" />
+                      {reseller.reseller_id || reseller.id.slice(-8)}
+                    </div>
+                  </TableCell>
                   <TableCell>
                     <div>
                       <div className="font-medium">{reseller.name}</div>

@@ -7,7 +7,7 @@ import { useRewardRedemptions } from '@/hooks/useRewards';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, DollarSign, Award, Package, Gift } from 'lucide-react';
+import { TrendingUp, DollarSign, Award, Package, Gift, Target } from 'lucide-react';
 
 interface ResellerReportsProps {
   reseller: ResellerSession;
@@ -54,6 +54,11 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
       const productPoints = item.products?.points_value || 0;
       return orderTotal + (productPoints * item.quantity);
     }, 0);
+  }, 0);
+
+  // Calculate total order value from completed orders
+  const totalOrderValue = completedOrders.reduce((total, order) => {
+    return total + (order.total_amount || 0);
   }, 0);
 
   // Get redemption data for this reseller
@@ -125,9 +130,13 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
     }, 0);
   }, 0);
 
+  const filteredOrderValue = filteredOrders.reduce((total, order) => {
+    return total + (order.total_amount || 0);
+  }, 0);
+
   return (
     <div className="p-4 space-y-6">
-      <h2 className="text-xl font-bold">Laporan Komisi</h2>
+      <h2 className="text-xl font-bold">Laporan Pencapaian</h2>
 
       {/* Summary Cards */}
       <div className="grid grid-cols-2 gap-4">
@@ -194,8 +203,8 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-              <TrendingUp className="h-4 w-4 mr-2 text-orange-500" />
-              Rata-rata Order
+              <Target className="h-4 w-4 mr-2 text-orange-500" />
+              Total Nilai Order
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -203,11 +212,11 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
               <Skeleton className="h-8 w-20" />
             ) : (
               <div className="text-lg font-bold text-orange-600">
-                {formatCurrency(averageOrderValue)}
+                {formatCurrency(totalOrderValue)}
               </div>
             )}
             <p className="text-xs text-gray-500 mt-1">
-              Total nilai ÷ Jumlah order selesai
+              Total nilai order selesai
             </p>
           </CardContent>
         </Card>
@@ -243,10 +252,10 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
         </CardContent>
       </Card>
 
-      {/* Commission Breakdown */}
+      {/* Achievement Breakdown */}
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Breakdown Komisi & Poin</CardTitle>
+          <CardTitle className="text-lg">Breakdown Pencapaian</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
@@ -274,6 +283,10 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Poin Periode Ini:</span>
                 <span className="font-semibold text-blue-600">{filteredPoints} poin</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600">Nilai Order Periode Ini:</span>
+                <span className="font-semibold text-orange-600">{formatCurrency(filteredOrderValue)}</span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600">Order Selesai Periode Ini:</span>
