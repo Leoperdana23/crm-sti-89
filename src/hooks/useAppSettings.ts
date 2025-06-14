@@ -27,8 +27,8 @@ export interface AppSettings {
     enabled: boolean;
     message: string;
   };
-  allowRegistration?: boolean;
-  autoModeration?: boolean;
+  allow_registration?: boolean;
+  auto_moderation?: boolean;
   created_at: string;
   updated_at: string;
 }
@@ -64,19 +64,45 @@ export const useUpdateAppSettings = () => {
     mutationFn: async (settings: Partial<AppSettings>) => {
       console.log('Updating app settings:', settings);
       
-      const { data, error } = await supabase
+      // Get existing data first for upsert
+      const { data: existing } = await supabase
         .from('app_settings')
-        .upsert(settings)
-        .select()
-        .single();
+        .select('*')
+        .limit(1)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error updating app settings:', error);
-        throw error;
+      let result;
+      if (existing) {
+        // Update existing record
+        const { data, error } = await supabase
+          .from('app_settings')
+          .update(settings)
+          .eq('id', existing.id)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error updating app settings:', error);
+          throw error;
+        }
+        result = data;
+      } else {
+        // Insert new record
+        const { data, error } = await supabase
+          .from('app_settings')
+          .insert(settings)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error inserting app settings:', error);
+          throw error;
+        }
+        result = data;
       }
 
       console.log('App settings updated successfully');
-      return data;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['app-settings'] });

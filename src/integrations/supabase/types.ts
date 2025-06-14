@@ -41,6 +41,8 @@ export type Database = {
       }
       app_settings: {
         Row: {
+          allow_registration: boolean | null
+          auto_moderation: boolean | null
           auto_reply: Json | null
           catalog: Json | null
           created_at: string
@@ -50,6 +52,8 @@ export type Database = {
           updated_at: string
         }
         Insert: {
+          allow_registration?: boolean | null
+          auto_moderation?: boolean | null
           auto_reply?: Json | null
           catalog?: Json | null
           created_at?: string
@@ -59,6 +63,8 @@ export type Database = {
           updated_at?: string
         }
         Update: {
+          allow_registration?: boolean | null
+          auto_moderation?: boolean | null
           auto_reply?: Json | null
           catalog?: Json | null
           created_at?: string

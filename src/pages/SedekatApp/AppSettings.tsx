@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -58,8 +57,8 @@ const AppSettings = () => {
         ...prev,
         siteName: appSettings.catalog?.siteName || 'SEDEKAT App',
         description: appSettings.catalog?.description || '',
-        allowRegistration: appSettings.allowRegistration !== undefined ? appSettings.allowRegistration : true,
-        autoModeration: appSettings.autoModeration !== undefined ? appSettings.autoModeration : true
+        allowRegistration: appSettings.allow_registration !== undefined ? appSettings.allow_registration : true,
+        autoModeration: appSettings.auto_moderation !== undefined ? appSettings.auto_moderation : true
       }));
 
       // Update appearance form
@@ -100,10 +99,14 @@ const AppSettings = () => {
         catalog: {
           ...appSettings?.catalog,
           siteName: generalForm.siteName,
-          description: generalForm.description
+          description: generalForm.description,
+          welcomeText: appSettings?.catalog?.welcomeText || 'Selamat datang di aplikasi SEDEKAT',
+          bannerUrl: appSettings?.catalog?.bannerUrl || '',
+          primaryColor: appSettings?.catalog?.primaryColor || '#16a34a',
+          secondaryColor: appSettings?.catalog?.secondaryColor || '#059669'
         },
-        allowRegistration: generalForm.allowRegistration,
-        autoModeration: generalForm.autoModeration
+        allow_registration: generalForm.allowRegistration,
+        auto_moderation: generalForm.autoModeration
       });
 
       toast({
@@ -133,7 +136,9 @@ const AppSettings = () => {
           primaryColor: appearanceForm.primaryColor,
           secondaryColor: appearanceForm.secondaryColor,
           bannerUrl: appearanceForm.bannerUrl,
-          welcomeText: appearanceForm.welcomeText
+          welcomeText: appearanceForm.welcomeText,
+          siteName: appSettings?.catalog?.siteName || 'SEDEKAT App',
+          description: appSettings?.catalog?.description || ''
         }
       });
 

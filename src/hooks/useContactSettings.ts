@@ -22,9 +22,9 @@ export const useContactSettings = () => {
         .from('contact_settings')
         .select('*')
         .limit(1)
-        .single();
+        .maybeSingle();
 
-      if (error && error.code !== 'PGRST116') {
+      if (error) {
         console.error('Error fetching contact settings:', error);
         throw error;
       }
@@ -43,19 +43,45 @@ export const useUpdateContactSettings = () => {
     mutationFn: async (settings: Partial<ContactSettings>) => {
       console.log('Updating contact settings:', settings);
       
-      const { data, error } = await supabase
+      // Get existing data first
+      const { data: existing } = await supabase
         .from('contact_settings')
-        .upsert(settings)
-        .select()
-        .single();
+        .select('*')
+        .limit(1)
+        .maybeSingle();
 
-      if (error) {
-        console.error('Error updating contact settings:', error);
-        throw error;
+      let result;
+      if (existing) {
+        // Update existing record
+        const { data, error } = await supabase
+          .from('contact_settings')
+          .update(settings)
+          .eq('id', existing.id)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error updating contact settings:', error);
+          throw error;
+        }
+        result = data;
+      } else {
+        // Insert new record
+        const { data, error } = await supabase
+          .from('contact_settings')
+          .insert(settings)
+          .select()
+          .single();
+        
+        if (error) {
+          console.error('Error inserting contact settings:', error);
+          throw error;
+        }
+        result = data;
       }
 
       console.log('Contact settings updated successfully');
-      return data;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['contact-settings'] });
