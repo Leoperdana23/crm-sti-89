@@ -28,7 +28,7 @@ export interface DashboardStats {
 }
 
 export const useDashboardStats = () => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async (): Promise<DashboardStats> => {
       console.log('Fetching dashboard stats...');
@@ -152,4 +152,11 @@ export const useDashboardStats = () => {
     },
     refetchInterval: 30000, // Refresh every 30 seconds
   });
+
+  return {
+    stats: query.data,
+    loading: query.isLoading,
+    error: query.error,
+    ...query
+  };
 };

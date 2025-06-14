@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -41,7 +40,7 @@ export interface Customer {
 }
 
 export const useCustomers = () => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['customers'],
     queryFn: async () => {
       console.log('Fetching customers...');
@@ -70,6 +69,13 @@ export const useCustomers = () => {
       return data as Customer[];
     },
   });
+
+  return {
+    customers: query.data,
+    loading: query.isLoading,
+    error: query.error,
+    ...query
+  };
 };
 
 export const useCreateCustomer = () => {

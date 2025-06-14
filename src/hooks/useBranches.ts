@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -15,7 +14,7 @@ export interface Branch {
 }
 
 export const useBranches = () => {
-  return useQuery({
+  const query = useQuery({
     queryKey: ['branches'],
     queryFn: async () => {
       console.log('Fetching branches...');
@@ -34,6 +33,13 @@ export const useBranches = () => {
       return data as Branch[];
     },
   });
+
+  return {
+    branches: query.data,
+    loading: query.isLoading,
+    error: query.error,
+    ...query
+  };
 };
 
 export const useCreateBranch = () => {

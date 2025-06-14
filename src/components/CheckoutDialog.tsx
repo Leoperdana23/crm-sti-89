@@ -78,23 +78,20 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, resellerSession, 
       customer_name: customerName.trim(),
       customer_phone: customerPhone.trim(),
       catalog_token: catalogToken,
-      total_amount: getTotalAmount(),
       delivery_method: deliveryMethod,
       expedisi: deliveryMethod === 'delivery' ? expedisi.trim() : undefined,
       notes: notes.trim() || undefined,
+      items: cart.map(item => ({
+        product_id: item.product.id,
+        product_name: item.product.name,
+        product_price: item.product.reseller_price || item.product.price,
+        quantity: item.quantity,
+        subtotal: (item.product.reseller_price || item.product.price) * item.quantity,
+      }))
     };
 
-    const orderItems = cart.map(item => ({
-      order_id: '', // Will be set by the mutation
-      product_id: item.product.id,
-      product_name: item.product.name,
-      product_price: item.product.reseller_price || item.product.price,
-      quantity: item.quantity,
-      subtotal: (item.product.reseller_price || item.product.price) * item.quantity,
-    }));
-
     try {
-      await createOrderMutation.mutateAsync({ orderData, orderItems });
+      await createOrderMutation.mutateAsync(orderData);
       onOrderSuccess();
       onClose();
       // Reset form

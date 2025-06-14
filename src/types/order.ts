@@ -1,4 +1,15 @@
 
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  product_name: string;
+  product_price: number;
+  quantity: number;
+  subtotal: number;
+  points_earned: number;
+}
+
 export interface Order {
   id: string;
   customer_name: string;
@@ -17,18 +28,8 @@ export interface Order {
     id: string;
     name: string;
     phone: string;
+    branch_id?: string;
   };
-}
-
-export interface OrderItem {
-  id: string;
-  order_id: string;
-  product_id: string;
-  product_name: string;
-  product_price: number;
-  quantity: number;
-  subtotal: number;
-  points_earned: number;
 }
 
 export const ORDER_STATUS_MAPPING = {

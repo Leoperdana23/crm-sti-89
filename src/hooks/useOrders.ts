@@ -3,6 +3,17 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  product_name: string;
+  product_price: number;
+  quantity: number;
+  subtotal: number;
+  points_earned: number;
+}
+
 export interface Order {
   id: string;
   customer_name: string;
@@ -21,18 +32,8 @@ export interface Order {
     id: string;
     name: string;
     phone: string;
+    branch_id?: string;
   };
-}
-
-export interface OrderItem {
-  id: string;
-  order_id: string;
-  product_id: string;
-  product_name: string;
-  product_price: number;
-  quantity: number;
-  subtotal: number;
-  points_earned: number;
 }
 
 export const useOrders = () => {
@@ -47,6 +48,7 @@ export const useOrders = () => {
           *,
           order_items (
             id,
+            order_id,
             product_id,
             product_name,
             product_price,
@@ -74,7 +76,8 @@ export const useOrders = () => {
                   resellers (
                     id,
                     name,
-                    phone
+                    phone,
+                    branch_id
                   )
                 `)
                 .eq('token', order.catalog_token)
@@ -83,7 +86,12 @@ export const useOrders = () => {
               if (catalogData?.resellers) {
                 return {
                   ...order,
-                  reseller: catalogData.resellers
+                  reseller: {
+                    id: catalogData.resellers.id,
+                    name: catalogData.resellers.name,
+                    phone: catalogData.resellers.phone,
+                    branch_id: catalogData.resellers.branch_id
+                  }
                 };
               }
             } catch (err) {
