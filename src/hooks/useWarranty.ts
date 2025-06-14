@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
@@ -39,6 +40,14 @@ type WarrantyClaimInput = {
   completed_date?: string;
   created_by?: string;
   processed_by?: string;
+};
+
+// Helper function to calculate warranty end date
+const calculateWarrantyEndDate = (startDate: string, months: number): string => {
+  const start = new Date(startDate);
+  const end = new Date(start);
+  end.setMonth(end.getMonth() + months);
+  return end.toISOString().split('T')[0];
 };
 
 // Warranty Suppliers
@@ -138,9 +147,15 @@ export const useCreateWarrantyProduct = () => {
   
   return useMutation({
     mutationFn: async (product: WarrantyProductInput) => {
+      // Calculate warranty end date
+      const warranty_end_date = calculateWarrantyEndDate(product.warranty_start_date, product.warranty_months);
+      
       const { data, error } = await supabase
         .from('warranty_products')
-        .insert(product)
+        .insert({
+          ...product,
+          warranty_end_date
+        })
         .select()
         .single();
       
@@ -170,9 +185,15 @@ export const useCreateBulkWarrantyProducts = () => {
   
   return useMutation({
     mutationFn: async (products: WarrantyProductInput[]) => {
+      // Calculate warranty end dates for all products
+      const productsWithEndDates = products.map(product => ({
+        ...product,
+        warranty_end_date: calculateWarrantyEndDate(product.warranty_start_date, product.warranty_months)
+      }));
+      
       const { data, error } = await supabase
         .from('warranty_products')
-        .insert(products)
+        .insert(productsWithEndDates)
         .select();
       
       if (error) throw error;
@@ -222,9 +243,27 @@ export const useCreateWarrantySale = () => {
   
   return useMutation({
     mutationFn: async (sale: WarrantySaleInput) => {
+      // Get warranty months from the product to calculate customer warranty end date
+      const { data: product } = await supabase
+        .from('warranty_products')
+        .select('warranty_months')
+        .eq('id', sale.warranty_product_id)
+        .single();
+      
+      if (!product) throw new Error('Product not found');
+      
+      // Calculate customer warranty end date
+      const customer_warranty_end_date = calculateWarrantyEndDate(
+        sale.customer_warranty_start_date, 
+        product.warranty_months
+      );
+      
       const { data, error } = await supabase
         .from('warranty_sales')
-        .insert(sale)
+        .insert({
+          ...sale,
+          customer_warranty_end_date
+        })
         .select()
         .single();
       
