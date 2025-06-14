@@ -188,6 +188,45 @@ export type Database = {
         }
         Relationships: []
       }
+      broadcast_messages: {
+        Row: {
+          channels: string[]
+          created_at: string
+          created_by: string | null
+          id: string
+          message: string
+          sent_at: string | null
+          status: string
+          target_audience: string[]
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          channels?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message: string
+          sent_at?: string | null
+          status?: string
+          target_audience?: string[]
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          channels?: string[]
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          message?: string
+          sent_at?: string | null
+          status?: string
+          target_audience?: string[]
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       catalog_settings: {
         Row: {
           contact_address: string | null
@@ -343,6 +382,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      contact_settings: {
+        Row: {
+          created_at: string
+          email: string | null
+          id: string
+          phone_number: string | null
+          updated_at: string
+          whatsapp_number: string | null
+        }
+        Insert: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          phone_number?: string | null
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Update: {
+          created_at?: string
+          email?: string | null
+          id?: string
+          phone_number?: string | null
+          updated_at?: string
+          whatsapp_number?: string | null
+        }
+        Relationships: []
       }
       customers: {
         Row: {
@@ -561,6 +627,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      faq_items: {
+        Row: {
+          answer: string
+          category: string
+          created_at: string
+          id: string
+          is_active: boolean
+          question: string
+          sort_order: number | null
+          updated_at: string
+        }
+        Insert: {
+          answer: string
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          question: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Update: {
+          answer?: string
+          category?: string
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          question?: string
+          sort_order?: number | null
+          updated_at?: string
+        }
+        Relationships: []
       }
       interactions: {
         Row: {
@@ -1981,6 +2080,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      usage_tips: {
+        Row: {
+          category: string
+          created_at: string
+          description: string
+          id: string
+          is_active: boolean
+          sort_order: number | null
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          category?: string
+          created_at?: string
+          description: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number | null
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          category?: string
+          created_at?: string
+          description?: string
+          id?: string
+          is_active?: boolean
+          sort_order?: number | null
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       work_schedules: {
         Row: {

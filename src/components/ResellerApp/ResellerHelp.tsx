@@ -4,46 +4,36 @@ import { ResellerSession } from '@/types/resellerApp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { MessageCircle, Phone, Mail, HelpCircle, ExternalLink } from 'lucide-react';
+import { useContactSettings } from '@/hooks/useContactSettings';
+import { useFAQItems } from '@/hooks/useFAQ';
+import { useUsageTips } from '@/hooks/useUsageTips';
 
 interface ResellerHelpProps {
   reseller: ResellerSession;
 }
 
 const ResellerHelp: React.FC<ResellerHelpProps> = ({ reseller }) => {
+  const { data: contactSettings } = useContactSettings();
+  const { data: faqItems = [] } = useFAQItems();
+  const { data: usageTips = [] } = useUsageTips();
+
   const handleWhatsAppContact = () => {
-    const adminPhone = '6281234567890'; // Replace with actual admin phone
+    const adminPhone = contactSettings?.whatsapp_number || '6281234567890';
     const message = encodeURIComponent(`Halo Admin, saya ${reseller.name} (${reseller.phone}) membutuhkan bantuan dengan aplikasi reseller.`);
     window.open(`https://wa.me/${adminPhone}?text=${message}`, '_blank');
   };
 
   const handleEmailContact = () => {
+    const adminEmail = contactSettings?.email || 'admin@company.com';
     const subject = encodeURIComponent('Bantuan Aplikasi Reseller');
     const body = encodeURIComponent(`Halo Admin,\n\nSaya ${reseller.name} (${reseller.phone}) membutuhkan bantuan dengan aplikasi reseller.\n\nTerima kasih.`);
-    window.open(`mailto:admin@company.com?subject=${subject}&body=${body}`, '_blank');
+    window.open(`mailto:${adminEmail}?subject=${subject}&body=${body}`, '_blank');
   };
 
-  const faqItems = [
-    {
-      question: 'Bagaimana cara mendapatkan link reseller?',
-      answer: 'Link reseller akan diberikan oleh admin setelah akun Anda diaktivasi. Anda bisa menghubungi admin untuk mendapatkan link tersebut.'
-    },
-    {
-      question: 'Kapan komisi dibayarkan?',
-      answer: 'Komisi biasanya dibayarkan setiap akhir bulan setelah semua order selesai dan confirmed.'
-    },
-    {
-      question: 'Bagaimana cara tracking order customer?',
-      answer: 'Anda bisa melihat semua order yang masuk melalui link reseller Anda di menu "Order". Status akan diupdate secara real-time.'
-    },
-    {
-      question: 'Apakah ada minimal order untuk mendapat komisi?',
-      answer: 'Tidak ada minimal order. Setiap order yang berhasil akan mendapatkan komisi sesuai rate yang telah ditentukan.'
-    },
-    {
-      question: 'Bagaimana cara mengubah password?',
-      answer: 'Anda bisa mengubah password di menu Profil > Keamanan > Ubah Password, atau hubungi admin untuk reset password.'
-    }
-  ];
+  const handlePhoneContact = () => {
+    const adminPhone = contactSettings?.phone_number || '+6281234567890';
+    window.open(`tel:${adminPhone}`, '_self');
+  };
 
   return (
     <div className="p-4 space-y-6">
@@ -80,7 +70,7 @@ const ResellerHelp: React.FC<ResellerHelpProps> = ({ reseller }) => {
           <Button 
             variant="outline"
             className="w-full justify-start"
-            onClick={() => window.open('tel:+6281234567890', '_self')}
+            onClick={handlePhoneContact}
           >
             <Phone className="h-4 w-4 mr-2" />
             Telepon Admin
@@ -97,8 +87,8 @@ const ResellerHelp: React.FC<ResellerHelpProps> = ({ reseller }) => {
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
-          {faqItems.map((item, index) => (
-            <div key={index} className="border-b pb-4 last:border-b-0 last:pb-0">
+          {faqItems.filter(item => item.is_active).map((item) => (
+            <div key={item.id} className="border-b pb-4 last:border-b-0 last:pb-0">
               <h4 className="font-medium text-sm mb-2">{item.question}</h4>
               <p className="text-sm text-gray-600 leading-relaxed">{item.answer}</p>
             </div>
@@ -134,11 +124,9 @@ const ResellerHelp: React.FC<ResellerHelpProps> = ({ reseller }) => {
         </CardHeader>
         <CardContent>
           <ul className="space-y-2 text-sm text-gray-600">
-            <li>• Bagikan link reseller Anda ke calon customer</li>
-            <li>• Cek riwayat order secara berkala untuk tracking komisi</li>
-            <li>• Update profil Anda agar informasi selalu terbaru</li>
-            <li>• Hubungi admin jika ada kendala teknis</li>
-            <li>• Manfaatkan katalog untuk promosi produk</li>
+            {usageTips.filter(tip => tip.is_active).map((tip) => (
+              <li key={tip.id}>• {tip.description}</li>
+            ))}
           </ul>
         </CardContent>
       </Card>
