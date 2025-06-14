@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -123,16 +124,22 @@ export const useCreateRedemption = () => {
         throw new Error('Reseller tidak aktif');
       }
 
-      // Create redemption record
+      // Create redemption record with explicit field mapping
+      const insertData = {
+        reseller_id: redemption.reseller_id,
+        reward_type: redemption.reward_type,
+        amount_redeemed: Number(redemption.amount_redeemed),
+        reward_description: redemption.reward_description,
+        status: 'pending' as const,
+        created_at: new Date().toISOString(),
+        updated_at: new Date().toISOString()
+      };
+
+      console.log('Inserting redemption data:', insertData);
+
       const { data, error } = await supabase
         .from('reward_redemptions')
-        .insert({
-          reseller_id: redemption.reseller_id,
-          reward_type: redemption.reward_type,
-          amount_redeemed: redemption.amount_redeemed,
-          reward_description: redemption.reward_description,
-          status: 'pending'
-        })
+        .insert(insertData)
         .select()
         .single();
 
