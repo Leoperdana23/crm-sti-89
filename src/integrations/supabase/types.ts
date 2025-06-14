@@ -1650,6 +1650,89 @@ export type Database = {
           },
         ]
       }
+      reward_catalog: {
+        Row: {
+          cost: number
+          created_at: string | null
+          description: string | null
+          id: string
+          image_url: string | null
+          is_active: boolean | null
+          name: string
+          reward_type: string
+          updated_at: string | null
+        }
+        Insert: {
+          cost: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name: string
+          reward_type: string
+          updated_at?: string | null
+        }
+        Update: {
+          cost?: number
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          image_url?: string | null
+          is_active?: boolean | null
+          name?: string
+          reward_type?: string
+          updated_at?: string | null
+        }
+        Relationships: []
+      }
+      reward_redemptions: {
+        Row: {
+          amount_redeemed: number
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string | null
+          id: string
+          reseller_id: string | null
+          reward_description: string
+          reward_type: string
+          status: string | null
+          updated_at: string | null
+        }
+        Insert: {
+          amount_redeemed: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          reseller_id?: string | null
+          reward_description: string
+          reward_type: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Update: {
+          amount_redeemed?: number
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string | null
+          id?: string
+          reseller_id?: string | null
+          reward_description?: string
+          reward_type?: string
+          status?: string | null
+          updated_at?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "reward_redemptions_reseller_id_fkey"
+            columns: ["reseller_id"]
+            isOneToOne: false
+            referencedRelation: "resellers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       role_permissions: {
         Row: {
           can_create: boolean

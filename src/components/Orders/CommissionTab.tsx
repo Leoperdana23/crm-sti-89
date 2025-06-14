@@ -31,7 +31,7 @@ const CommissionTab = () => {
     }).format(amount);
   };
 
-  // Calculate commission data from orders
+  // Calculate commission data from orders using snapshot values
   const calculateCommissionData = (): CommissionData[] => {
     if (!orders) return [];
 
@@ -43,11 +43,10 @@ const CommissionTab = () => {
       const resellerId = order.reseller.id;
       const resellerName = order.reseller.name;
 
-      // Calculate commission from order items
+      // Calculate commission using snapshot values from order items
       const orderCommission = order.order_items?.reduce((total, item) => {
-        // Get commission_value from product (assumed to be in the item data)
-        const productCommission = (item as any).products?.commission_value || 0;
-        return total + (productCommission * item.quantity);
+        const snapshotCommission = (item as any).product_commission_snapshot || 0;
+        return total + (snapshotCommission * item.quantity);
       }, 0) || 0;
 
       if (!commissionMap.has(resellerId)) {
@@ -66,8 +65,8 @@ const CommissionTab = () => {
       data.totalCommission += orderCommission;
       data.totalOrders += 1;
 
-      // For simplicity, consider completed orders as paid, others as unpaid
-      if (order.status === 'completed') {
+      // Consider completed orders as paid, others as unpaid
+      if (order.status === 'completed' || order.status === 'selesai') {
         data.paidCommission += orderCommission;
       } else {
         data.unpaidCommission += orderCommission;

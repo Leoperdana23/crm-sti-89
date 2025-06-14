@@ -13,40 +13,89 @@ import {
   TableRow 
 } from '@/components/ui/table';
 import { 
-  Plus, 
-  Search, 
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { 
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
+import { 
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from '@/components/ui/dropdown-menu';
+import { 
+  Users, 
+  UserPlus, 
+  MoreHorizontal, 
   Edit, 
   Trash2, 
-  Users,
-  Key
+  Search,
+  Filter,
+  Download,
+  Phone,
+  MapPin,
+  Building
 } from 'lucide-react';
-import { useResellers } from '@/hooks/useResellers';
+import { useResellers, useDeleteReseller } from '@/hooks/useResellers';
+import { useBranches } from '@/hooks/useBranches';
 import ResellerForm from '@/components/ResellerForm';
 
 const ResellerManagement = () => {
   const { data: resellers, isLoading } = useResellers();
+  const { data: branches } = useBranches();
+  const deleteReseller = useDeleteReseller();
+  
   const [searchTerm, setSearchTerm] = useState('');
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingReseller, setEditingReseller] = useState(null);
-
-  const filteredResellers = resellers?.filter(reseller => 
-    reseller.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    reseller.phone.includes(searchTerm)
-  );
+  const [statusFilter, setStatusFilter] = useState('all');
+  const [branchFilter, setBranchFilter] = useState('');
+  const [selectedReseller, setSelectedReseller] = useState<any>(null);
+  const [isFormOpen, setIsFormOpen] = useState(false);
 
   const handleEdit = (reseller: any) => {
-    setEditingReseller(reseller);
-    setIsDialogOpen(true);
+    setSelectedReseller(reseller);
+    setIsFormOpen(true);
   };
 
-  const handleAdd = () => {
-    setEditingReseller(null);
-    setIsDialogOpen(true);
+  const handleDelete = async (resellerId: string) => {
+    if (confirm('Apakah Anda yakin ingin menghapus reseller ini?')) {
+      await deleteReseller.mutateAsync(resellerId);
+    }
   };
 
-  const handleCloseDialog = () => {
-    setIsDialogOpen(false);
-    setEditingReseller(null);
+  const handleFormClose = () => {
+    setIsFormOpen(false);
+    setSelectedReseller(null);
+  };
+
+  const filteredResellers = resellers?.filter(reseller => {
+    const matchesSearch = 
+      reseller.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      reseller.phone.includes(searchTerm) ||
+      reseller.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    
+    const matchesStatus = statusFilter === 'all' || 
+      (statusFilter === 'active' && reseller.is_active) ||
+      (statusFilter === 'inactive' && !reseller.is_active);
+    
+    const matchesBranch = !branchFilter || reseller.branch_id === branchFilter;
+    
+    return matchesSearch && matchesStatus && matchesBranch;
+  });
+
+  const stats = {
+    total: resellers?.length || 0,
+    active: resellers?.filter(r => r.is_active).length || 0,
+    inactive: resellers?.filter(r => !r.is_active).length || 0,
   };
 
   if (isLoading) {
@@ -65,24 +114,51 @@ const ResellerManagement = () => {
     <div className="p-6 space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h1 className="text-2xl font-bold">Daftar Reseller</h1>
-          <p className="text-gray-600">Kelola reseller SEDEKAT App</p>
+          <h1 className="text-2xl font-bold">Manajemen Reseller</h1>
+          <p className="text-gray-600">Kelola data reseller dan distributor</p>
         </div>
-        <Button onClick={handleAdd}>
-          <Plus className="h-4 w-4 mr-2" />
-          Tambah Reseller
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline">
+            <Download className="h-4 w-4 mr-2" />
+            Export
+          </Button>
+          <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setSelectedReseller(null)}>
+                <UserPlus className="h-4 w-4 mr-2" />
+                Tambah Reseller
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="max-w-2xl">
+              <DialogHeader>
+                <DialogTitle>
+                  {selectedReseller ? 'Edit Reseller' : 'Tambah Reseller Baru'}
+                </DialogTitle>
+                <DialogDescription>
+                  {selectedReseller 
+                    ? 'Perbarui informasi reseller' 
+                    : 'Masukkan informasi reseller baru'
+                  }
+                </DialogDescription>
+              </DialogHeader>
+              <ResellerForm 
+                reseller={selectedReseller} 
+                onClose={handleFormClose}
+              />
+            </DialogContent>
+          </Dialog>
+        </div>
       </div>
 
       {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
               <Users className="h-8 w-8 text-blue-500" />
               <div>
                 <p className="text-sm text-gray-600">Total Reseller</p>
-                <p className="text-2xl font-bold">{resellers?.length || 0}</p>
+                <p className="text-2xl font-bold">{stats.total}</p>
               </div>
             </div>
           </CardContent>
@@ -93,26 +169,62 @@ const ResellerManagement = () => {
               <Users className="h-8 w-8 text-green-500" />
               <div>
                 <p className="text-sm text-gray-600">Reseller Aktif</p>
-                <p className="text-2xl font-bold">
-                  {resellers?.filter(r => r.is_active).length || 0}
-                </p>
+                <p className="text-2xl font-bold">{stats.active}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <Users className="h-8 w-8 text-red-500" />
+              <div>
+                <p className="text-sm text-gray-600">Reseller Nonaktif</p>
+                <p className="text-2xl font-bold">{stats.inactive}</p>
               </div>
             </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Search Filter */}
+      {/* Filters */}
       <Card>
         <CardContent className="p-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-            <Input
-              placeholder="Cari reseller berdasarkan nama atau telepon..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
+          <div className="flex flex-col sm:flex-row gap-4">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
+              <Input
+                placeholder="Cari berdasarkan nama, telepon, atau email..."
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+            
+            <Select value={statusFilter} onValueChange={setStatusFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Semua Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Status</SelectItem>
+                <SelectItem value="active">Aktif</SelectItem>
+                <SelectItem value="inactive">Nonaktif</SelectItem>
+              </SelectContent>
+            </Select>
+
+            <Select value={branchFilter} onValueChange={setBranchFilter}>
+              <SelectTrigger className="w-full sm:w-48">
+                <SelectValue placeholder="Semua Cabang" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="">Semua Cabang</SelectItem>
+                {branches?.map((branch) => (
+                  <SelectItem key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
@@ -126,36 +238,42 @@ const ResellerManagement = () => {
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead>Nama</TableHead>
-                <TableHead>Telepon</TableHead>
-                <TableHead>Email</TableHead>
+                <TableHead>Reseller</TableHead>
+                <TableHead>Kontak</TableHead>
                 <TableHead>Cabang</TableHead>
-                <TableHead>Komisi Rate</TableHead>
-                <TableHead>Total Poin</TableHead>
-                <TableHead>Password</TableHead>
+                <TableHead>Alamat</TableHead>
                 <TableHead>Status</TableHead>
+                <TableHead>Tanggal Daftar</TableHead>
                 <TableHead>Aksi</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {filteredResellers?.map((reseller) => (
                 <TableRow key={reseller.id}>
-                  <TableCell className="font-medium">{reseller.name}</TableCell>
-                  <TableCell>{reseller.phone}</TableCell>
-                  <TableCell>{reseller.email || '-'}</TableCell>
-                  <TableCell>{reseller.branches?.name || '-'}</TableCell>
-                  <TableCell>{reseller.commission_rate}%</TableCell>
-                  <TableCell>{reseller.total_points || 0} poin</TableCell>
                   <TableCell>
-                    <div className="flex items-center gap-2">
-                      {reseller.password_hash ? (
-                        <Badge variant="default">Ada</Badge>
-                      ) : (
-                        <Badge variant="secondary">Belum diatur</Badge>
+                    <div>
+                      <div className="font-medium">{reseller.name}</div>
+                      {reseller.email && (
+                        <div className="text-sm text-gray-500">{reseller.email}</div>
                       )}
-                      <Button size="sm" variant="outline">
-                        <Key className="h-3 w-3" />
-                      </Button>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 text-sm">
+                      <Phone className="h-3 w-3" />
+                      {reseller.phone}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 text-sm">
+                      <Building className="h-3 w-3" />
+                      {reseller.branches?.name || '-'}
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="flex items-center gap-1 text-sm max-w-xs truncate">
+                      <MapPin className="h-3 w-3 flex-shrink-0" />
+                      {reseller.address}
                     </div>
                   </TableCell>
                   <TableCell>
@@ -164,22 +282,29 @@ const ResellerManagement = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => handleEdit(reseller)}
-                      >
-                        <Edit className="h-4 w-4" />
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        className="text-red-600 hover:text-red-800"
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    </div>
+                    {new Date(reseller.created_at).toLocaleDateString('id-ID')}
+                  </TableCell>
+                  <TableCell>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" className="h-8 w-8 p-0">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem onClick={() => handleEdit(reseller)}>
+                          <Edit className="mr-2 h-4 w-4" />
+                          Edit
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => handleDelete(reseller.id)}
+                          className="text-red-600"
+                        >
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          Hapus
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
                   </TableCell>
                 </TableRow>
               ))}
@@ -187,13 +312,6 @@ const ResellerManagement = () => {
           </Table>
         </CardContent>
       </Card>
-
-      {/* Form Dialog */}
-      <ResellerForm
-        isOpen={isDialogOpen}
-        onClose={handleCloseDialog}
-        reseller={editingReseller}
-      />
     </div>
   );
 };
