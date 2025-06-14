@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -14,6 +13,10 @@ export interface OrderItem {
   points_earned: number;
   product_commission_snapshot?: number;
   product_points_snapshot?: number;
+  products?: {
+    commission_value?: number;
+    points_value?: number;
+  };
 }
 
 export interface Order {
@@ -42,7 +45,7 @@ export const useOrders = () => {
   return useQuery({
     queryKey: ['orders'],
     queryFn: async () => {
-      console.log('Fetching orders...');
+      console.log('Fetching orders with detailed commission and points data...');
       
       const { data, error } = await supabase
         .from('orders')
@@ -58,7 +61,11 @@ export const useOrders = () => {
             subtotal,
             points_earned,
             product_commission_snapshot,
-            product_points_snapshot
+            product_points_snapshot,
+            products (
+              commission_value,
+              points_value
+            )
           )
         `)
         .order('created_at', { ascending: false });
@@ -67,6 +74,8 @@ export const useOrders = () => {
         console.error('Error fetching orders:', error);
         throw error;
       }
+
+      console.log('Raw orders data fetched:', data?.length);
 
       // Get reseller info for orders with catalog tokens
       const ordersWithResellers = await Promise.all(
@@ -88,7 +97,7 @@ export const useOrders = () => {
                 .single();
 
               if (catalogData?.resellers) {
-                return {
+                const orderWithReseller = {
                   ...order,
                   reseller: {
                     id: catalogData.resellers.id,
@@ -97,6 +106,22 @@ export const useOrders = () => {
                     branch_id: catalogData.resellers.branch_id
                   }
                 };
+                
+                // Log order details for debugging
+                console.log(`Order ${order.id} - Reseller: ${catalogData.resellers.name}, Status: ${order.status}, Items: ${order.order_items?.length || 0}`);
+                
+                // Log commission and points details for each item
+                order.order_items?.forEach((item: any, index: number) => {
+                  console.log(`  Item ${index + 1}: ${item.product_name}`);
+                  console.log(`    Commission snapshot: ${item.product_commission_snapshot}`);
+                  console.log(`    Points snapshot: ${item.product_points_snapshot}`);
+                  console.log(`    Current commission: ${item.products?.commission_value}`);
+                  console.log(`    Current points: ${item.products?.points_value}`);
+                  console.log(`    Points earned: ${item.points_earned}`);
+                  console.log(`    Quantity: ${item.quantity}`);
+                });
+                
+                return orderWithReseller;
               }
             } catch (err) {
               console.warn('Could not fetch reseller for order:', order.id, err);
@@ -106,8 +131,17 @@ export const useOrders = () => {
         })
       );
 
-      console.log('Orders fetched successfully:', ordersWithResellers.length);
-      return ordersWithResellers as Order[];
+      const finalOrders = ordersWithResellers as Order[];
+      console.log('Orders fetched successfully with reseller info:', finalOrders.length);
+      
+      // Count orders by status for debugging
+      const statusCounts = finalOrders.reduce((acc, order) => {
+        acc[order.status] = (acc[order.status] || 0) + 1;
+        return acc;
+      }, {} as Record<string, number>);
+      console.log('Order status distribution:', statusCounts);
+      
+      return finalOrders;
     },
   });
 };

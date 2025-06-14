@@ -62,75 +62,119 @@ const Commission = () => {
     }).format(amount);
   };
 
-  // Calculate commission from completed orders - improved calculation
+  // Calculate commission from orders using improved logic with better debugging
   const calculateResellerCommission = (resellerId: string) => {
-    if (!orders) return 0;
+    if (!orders) {
+      console.log('No orders data available');
+      return 0;
+    }
     
-    // Filter completed orders for this reseller
-    const completedOrders = orders.filter(order => 
-      order.reseller?.id === resellerId && 
-      (order.status === 'completed' || order.status === 'selesai')
-    );
+    console.log(`Calculating commission for reseller ${resellerId}`);
+    console.log(`Total orders in system: ${orders.length}`);
+    
+    // Filter orders for this reseller - check both completed statuses and catalog token
+    const resellerOrders = orders.filter(order => {
+      const hasReseller = order.reseller?.id === resellerId;
+      const isCompleted = order.status === 'completed' || order.status === 'selesai';
+      
+      if (hasReseller) {
+        console.log(`Order ${order.id} for reseller ${resellerId}: status=${order.status}, completed=${isCompleted}`);
+      }
+      
+      return hasReseller && isCompleted;
+    });
 
-    console.log(`Orders for reseller ${resellerId}:`, completedOrders.length);
+    console.log(`Found ${resellerOrders.length} completed orders for reseller ${resellerId}`);
 
-    return completedOrders.reduce((total, order) => {
+    const totalCommission = resellerOrders.reduce((total, order) => {
       const orderCommission = order.order_items?.reduce((itemTotal, item) => {
-        // Try snapshot first, fallback to current product values
         let commissionPerItem = 0;
         
-        if ((item as any).product_commission_snapshot !== undefined) {
-          commissionPerItem = (item as any).product_commission_snapshot || 0;
-        } else {
-          // Fallback to using commission from product if available
-          commissionPerItem = (item as any).products?.commission_value || 0;
+        // Prioritas 1: gunakan snapshot value
+        if (item.product_commission_snapshot !== undefined && item.product_commission_snapshot !== null) {
+          commissionPerItem = item.product_commission_snapshot;
+          console.log(`Using snapshot commission: ${commissionPerItem} for item ${item.product_name}`);
+        } 
+        // Prioritas 2: gunakan nilai dari relasi products
+        else if ((item as any).products?.commission_value !== undefined) {
+          commissionPerItem = (item as any).products.commission_value;
+          console.log(`Using current commission: ${commissionPerItem} for item ${item.product_name}`);
+        }
+        // Prioritas 3: coba ambil dari database products secara manual (fallback)
+        else {
+          console.log(`No commission found for item ${item.product_name}, using 0`);
+          commissionPerItem = 0;
         }
         
         const itemCommission = commissionPerItem * item.quantity;
-        console.log(`Item commission: ${commissionPerItem} x ${item.quantity} = ${itemCommission}`);
+        console.log(`Item ${item.product_name}: ${commissionPerItem} x ${item.quantity} = ${itemCommission}`);
         return itemTotal + itemCommission;
       }, 0) || 0;
       
-      console.log(`Order ${order.id} commission: ${orderCommission}`);
+      console.log(`Order ${order.id} total commission: ${orderCommission}`);
       return total + orderCommission;
     }, 0);
+
+    console.log(`Total commission for reseller ${resellerId}: ${totalCommission}`);
+    return totalCommission;
   };
 
-  // Calculate points from completed orders - improved calculation
+  // Calculate points from orders using improved logic with better debugging
   const calculateResellerPoints = (resellerId: string) => {
-    if (!orders) return 0;
+    if (!orders) {
+      console.log('No orders data available for points calculation');
+      return 0;
+    }
     
-    // Filter completed orders for this reseller
-    const completedOrders = orders.filter(order => 
-      order.reseller?.id === resellerId && 
-      (order.status === 'completed' || order.status === 'selesai')
-    );
+    console.log(`Calculating points for reseller ${resellerId}`);
+    
+    const resellerOrders = orders.filter(order => {
+      const hasReseller = order.reseller?.id === resellerId;
+      const isCompleted = order.status === 'completed' || order.status === 'selesai';
+      
+      if (hasReseller) {
+        console.log(`Order ${order.id} for reseller ${resellerId}: status=${order.status}, completed=${isCompleted}`);
+      }
+      
+      return hasReseller && isCompleted;
+    });
 
-    console.log(`Orders for points calculation ${resellerId}:`, completedOrders.length);
+    console.log(`Found ${resellerOrders.length} completed orders for points calculation`);
 
-    return completedOrders.reduce((total, order) => {
+    const totalPoints = resellerOrders.reduce((total, order) => {
       const orderPoints = order.order_items?.reduce((itemTotal, item) => {
-        // Try snapshot first, fallback to current product values or points_earned
         let pointsPerItem = 0;
         
-        if ((item as any).product_points_snapshot !== undefined) {
-          pointsPerItem = (item as any).product_points_snapshot || 0;
-        } else if (item.points_earned !== undefined) {
-          // Use points_earned if available
+        // Prioritas 1: gunakan snapshot value
+        if (item.product_points_snapshot !== undefined && item.product_points_snapshot !== null) {
+          pointsPerItem = item.product_points_snapshot;
+          console.log(`Using snapshot points: ${pointsPerItem} for item ${item.product_name}`);
+        }
+        // Prioritas 2: gunakan points_earned langsung jika ada
+        else if (item.points_earned !== undefined && item.points_earned !== null) {
           return itemTotal + item.points_earned;
-        } else {
-          // Fallback to using points from product if available
-          pointsPerItem = (item as any).products?.points_value || 0;
+        }
+        // Prioritas 3: gunakan nilai dari relasi products
+        else if ((item as any).products?.points_value !== undefined) {
+          pointsPerItem = (item as any).products.points_value;
+          console.log(`Using current points: ${pointsPerItem} for item ${item.product_name}`);
+        }
+        else {
+          console.log(`No points found for item ${item.product_name}, using 0`);
+          pointsPerItem = 0;
         }
         
         const itemPoints = pointsPerItem * item.quantity;
-        console.log(`Item points: ${pointsPerItem} x ${item.quantity} = ${itemPoints}`);
+        console.log(`Item ${item.product_name}: ${pointsPerItem} x ${item.quantity} = ${itemPoints}`);
         return itemTotal + itemPoints;
       }, 0) || 0;
       
-      console.log(`Order ${order.id} points: ${orderPoints}`);
+      console.log(`Order ${order.id} total points: ${orderPoints}`);
       return total + orderPoints;
     }, 0);
+
+    console.log(`Total points for reseller ${resellerId}: ${totalPoints}`);
+    return totalPoints;
   };
 
   // Calculate redeemed amounts for each reseller
