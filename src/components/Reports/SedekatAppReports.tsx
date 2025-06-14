@@ -191,11 +191,26 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
 
   // Commission and points per reseller dengan data real
   const resellerCommissionReport = (resellers || []).map(reseller => {
-    // Get real orders for this reseller
-    const resellerOrders = filteredOrders.filter(order => {
-      return order.reseller && order.reseller.id === reseller.id && 
-             (order.status === 'selesai' || order.status === 'completed');
+    console.log(`Processing reseller: ${reseller.name} (${reseller.id})`);
+    
+    // Get ALL orders linked to this reseller through catalog tokens
+    const resellerOrders = (orders || []).filter(order => {
+      // Check if order has catalog_token and matches this reseller
+      if (!order.catalog_token || !order.reseller) return false;
+      
+      const isResellerOrder = order.reseller.id === reseller.id;
+      const isCompleted = order.status === 'selesai' || order.status === 'completed';
+      
+      // Filter by date range
+      const orderDate = new Date(order.created_at);
+      const isInDateRange = orderDate >= new Date(startDate) && orderDate <= new Date(endDate);
+      
+      console.log(`Order ${order.id}: reseller_match=${isResellerOrder}, completed=${isCompleted}, in_date_range=${isInDateRange}`);
+      
+      return isResellerOrder && isCompleted && isInDateRange;
     });
+    
+    console.log(`Reseller ${reseller.name} has ${resellerOrders.length} completed orders in date range`);
     
     // Calculate real commission and points from order items
     let totalCommission = 0;
@@ -203,24 +218,46 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
     
     resellerOrders.forEach(order => {
       const orderItems = order.order_items || [];
+      console.log(`Order ${order.id} has ${orderItems.length} items`);
+      
       orderItems.forEach(item => {
-        // Use snapshot values if available, otherwise use current product values
-        const commission = item.product_commission_snapshot || item.products?.commission_value || 0;
-        const points = item.product_points_snapshot || item.products?.points_value || 0;
+        // Use snapshot values first, then fall back to current product values
+        const commissionPerUnit = item.product_commission_snapshot || 
+                                 item.products?.commission_value || 0;
+        const pointsPerUnit = item.product_points_snapshot || 
+                             item.products?.points_value || 0;
         
-        totalCommission += commission * item.quantity;
-        totalPoints += points * item.quantity;
+        const itemCommission = commissionPerUnit * item.quantity;
+        const itemPoints = pointsPerUnit * item.quantity;
+        
+        totalCommission += itemCommission;
+        totalPoints += itemPoints;
+        
+        console.log(`Item ${item.product_name}: commission=${itemCommission}, points=${itemPoints}`);
       });
     });
     
-    // Calculate redemptions for this reseller
-    const resellerRedemptions = filteredRedemptions.filter(r => r.reseller_id === reseller.id);
+    console.log(`Reseller ${reseller.name} totals: commission=${totalCommission}, points=${totalPoints}`);
+    
+    // Calculate redemptions for this reseller in the date range
+    const resellerRedemptions = (rewardRedemptions || []).filter(r => {
+      const redemptionDate = new Date(r.created_at);
+      const isInDateRange = redemptionDate >= new Date(startDate) && redemptionDate <= new Date(endDate);
+      return r.reseller_id === reseller.id && r.status === 'approved' && isInDateRange;
+    });
+    
     const commissionRedeemed = resellerRedemptions
-      .filter(r => r.reward_type === 'commission' && r.status === 'approved')
+      .filter(r => r.reward_type === 'commission')
       .reduce((sum, r) => sum + Number(r.amount_redeemed), 0);
     const pointsRedeemed = resellerRedemptions
-      .filter(r => r.reward_type === 'points' && r.status === 'approved')
+      .filter(r => r.reward_type === 'points')
       .reduce((sum, r) => sum + Number(r.amount_redeemed), 0);
+    
+    const availableCommission = Math.max(0, totalCommission - commissionRedeemed);
+    const availablePoints = Math.max(0, totalPoints - pointsRedeemed);
+    const avgCommissionPerOrder = resellerOrders.length > 0 ? totalCommission / resellerOrders.length : 0;
+    
+    console.log(`Reseller ${reseller.name} final: available_commission=${availableCommission}, available_points=${availablePoints}`);
     
     return {
       ...reseller,
@@ -229,12 +266,14 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
       totalPoints,
       commissionRedeemed,
       pointsRedeemed,
-      availableCommission: totalCommission - commissionRedeemed,
-      availablePoints: totalPoints - pointsRedeemed,
-      avgCommissionPerOrder: resellerOrders.length > 0 ? totalCommission / resellerOrders.length : 0
+      availableCommission,
+      availablePoints,
+      avgCommissionPerOrder
     };
   }).filter(reseller => reseller.totalOrders > 0) // Only show resellers with orders
     .sort((a, b) => b.totalCommission - a.totalCommission);
+
+  console.log('Final reseller commission report:', resellerCommissionReport);
 
   // Daily login trends untuk 7 hari terakhir
   const dailyLoginTrends = Array.from({ length: 7 }, (_, i) => {
@@ -456,7 +495,7 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
             <CardHeader>
               <CardTitle>Laporan Komisi & Poin Per Reseller (Data Real)</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Detail komisi, poin dari order selesai dan yang sudah ditukar hadiah
+                Detail komisi, poin dari order selesai dan yang sudah ditukar hadiah untuk periode {selectedPeriod}
               </p>
             </CardHeader>
             <CardContent>
