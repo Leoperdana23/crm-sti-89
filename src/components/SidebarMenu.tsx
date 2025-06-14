@@ -103,7 +103,7 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
 
   const sedekatAppMenuItems = [
     {
-      to: '/sedekat-app/products',
+      to: '/sedekat-app/product-management',
       icon: Package,
       label: 'Manajemen Produk',
       permission: 'products'
