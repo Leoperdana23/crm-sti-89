@@ -1,5 +1,6 @@
+
 import React, { useState } from 'react';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line, Area, AreaChart } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
@@ -24,10 +25,7 @@ import {
   Building,
   MessageSquare,
   CheckCircle,
-  Phone,
-  Activity,
-  Crown,
-  Timer
+  Phone
 } from 'lucide-react';
 import { useResellers } from '@/hooks/useResellers';
 import { useOrders } from '@/hooks/useOrders';
@@ -37,14 +35,10 @@ import { useCustomers } from '@/hooks/useCustomers';
 import { useSurveys } from '@/hooks/useSurveys';
 import { useBranches } from '@/hooks/useBranches';
 import { useSales } from '@/hooks/useSales';
-import DateRangeFilter from '@/components/Reports/DateRangeFilter';
-import { getDateRange, filterDataByDateRange } from '@/utils/dateFilters';
 
 const Reports = () => {
   const [selectedReport, setSelectedReport] = useState<'main' | 'sedekat' | 'umum'>('main');
-  const [selectedPeriod, setSelectedPeriod] = useState('this_month');
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
+  const [selectedPeriod, setSelectedPeriod] = useState('month');
 
   // Hook untuk data
   const { data: resellers } = useResellers();
@@ -80,12 +74,6 @@ const Reports = () => {
     a.download = 'laporan-sistem-management.csv';
     a.click();
     window.URL.revokeObjectURL(url);
-  };
-
-  // Get filtered data based on selected period
-  const getFilteredData = (data: any[], dateField: string = 'created_at') => {
-    const { startDate, endDate } = getDateRange(selectedPeriod, customStartDate, customEndDate);
-    return filterDataByDateRange(data || [], dateField, startDate, endDate);
   };
 
   // Main Menu Component
@@ -168,76 +156,38 @@ const Reports = () => {
 
   // SEDEKAT Reports Component
   const SedekatReports = () => {
-    const filteredOrders = getFilteredData(orders);
-    const filteredResellers = getFilteredData(resellers);
+    // Calculate SEDEKAT metrics
+    const totalResellers = resellers?.length || 0;
+    const activeResellers = resellers?.filter(r => r.is_active).length || 0;
+    const totalOrders = orders?.length || 0;
+    const completedOrders = orders?.filter(o => o.status === 'selesai' || o.status === 'completed').length || 0;
+    const totalRevenue = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
     
-    // Calculate SEDEKAT metrics with filtered data
-    const totalResellers = filteredResellers.length;
-    const activeResellers = filteredResellers.filter(r => r.is_active).length;
-    const totalOrders = filteredOrders.length;
-    const completedOrders = filteredOrders.filter(o => o.status === 'selesai' || o.status === 'completed').length;
-    const totalRevenue = filteredOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
-    
-    const totalCommissionPaid = filteredOrders.reduce((sum, order) => {
+    const totalCommissionPaid = orders?.reduce((sum, order) => {
       if (order.status !== 'selesai' && order.status !== 'completed') return sum;
       return sum + (order.order_items || []).reduce((orderSum, item) => {
         const commission = item.product_commission_snapshot || item.products?.commission_value || 0;
         return orderSum + (commission * item.quantity);
       }, 0);
-    }, 0);
+    }, 0) || 0;
 
-    const totalPointsEarned = filteredOrders.reduce((sum, order) => {
+    const totalPointsEarned = orders?.reduce((sum, order) => {
       if (order.status !== 'selesai' && order.status !== 'completed') return sum;
       return sum + (order.order_items || []).reduce((orderSum, item) => {
         const points = item.product_points_snapshot || item.products?.points_value || 0;
         return orderSum + (points * item.quantity);
       }, 0);
-    }, 0);
+    }, 0) || 0;
 
-    // Reseller performance data
-    const resellerPerformance = resellers?.map(reseller => {
-      const resellerOrders = filteredOrders.filter(order => 
-        order.catalog_token && orders?.find(o => o.id === order.id)?.catalog_token === reseller.id // This needs proper catalog token mapping
-      ) || [];
-      
-      const resellerRevenue = resellerOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
-      const resellerCommission = resellerOrders.reduce((sum, order) => {
-        if (order.status !== 'selesai' && order.status !== 'completed') return sum;
-        return sum + (order.order_items || []).reduce((orderSum, item) => {
-          const commission = item.product_commission_snapshot || item.products?.commission_value || 0;
-          return orderSum + (commission * item.quantity);
-        }, 0);
-      }, 0);
-      
-      const resellerPoints = resellerOrders.reduce((sum, order) => {
-        if (order.status !== 'selesai' && order.status !== 'completed') return sum;
-        return sum + (order.order_items || []).reduce((orderSum, item) => {
-          const points = item.product_points_snapshot || item.products?.points_value || 0;
-          return orderSum + (points * item.quantity);
-        }, 0);
-      }, 0);
-
-      return {
-        id: reseller.id,
-        name: reseller.name,
-        phone: reseller.phone,
-        orders: resellerOrders.length,
-        revenue: resellerRevenue,
-        commission: resellerCommission,
-        points: resellerPoints,
-        isActive: reseller.is_active
-      };
-    }).sort((a, b) => b.revenue - a.revenue) || [];
-
-    // Chart data for trends
-    const monthlyTrendData = Array.from({ length: 6 }, (_, i) => {
+    // Order trend data (last 6 months)
+    const orderTrendData = Array.from({ length: 6 }, (_, i) => {
       const date = new Date();
       date.setMonth(date.getMonth() - (5 - i));
-      const monthOrders = filteredOrders.filter(order => {
+      const monthOrders = orders?.filter(order => {
         const orderDate = new Date(order.created_at);
         return orderDate.getMonth() === date.getMonth() && 
                orderDate.getFullYear() === date.getFullYear();
-      });
+      }) || [];
 
       const monthCommission = monthOrders.reduce((sum, order) => {
         if (order.status !== 'selesai' && order.status !== 'completed') return sum;
@@ -254,12 +204,6 @@ const Reports = () => {
         commission: monthCommission
       };
     });
-
-    // Commission distribution chart
-    const commissionDistribution = [
-      { name: 'Komisi Dibayar', value: totalCommissionPaid, color: '#10B981' },
-      { name: 'Poin Diperoleh', value: totalPointsEarned, color: '#3B82F6' }
-    ];
 
     return (
       <div className="space-y-6">
@@ -280,16 +224,6 @@ const Reports = () => {
             <span>Export</span>
           </Button>
         </div>
-
-        {/* Date Filter */}
-        <DateRangeFilter
-          selectedPeriod={selectedPeriod}
-          onPeriodChange={setSelectedPeriod}
-          customStartDate={customStartDate}
-          customEndDate={customEndDate}
-          onCustomStartDateChange={setCustomStartDate}
-          onCustomEndDateChange={setCustomEndDate}
-        />
 
         {/* Key Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
@@ -322,7 +256,7 @@ const Reports = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
-              <p className="text-xs text-muted-foreground">Periode ini</p>
+              <p className="text-xs text-muted-foreground">Semua periode</p>
             </CardContent>
           </Card>
 
@@ -338,283 +272,56 @@ const Reports = () => {
           </Card>
         </div>
 
-        {/* Charts and Analytics */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Trend Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Tren Pesanan & Revenue
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <AreaChart data={monthlyTrendData}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => typeof value === 'number' ? formatCurrency(value) : value} />
-                  <Legend />
-                  <Area type="monotone" dataKey="revenue" stackId="1" stroke="#10B981" fill="#10B981" name="Revenue" />
-                  <Area type="monotone" dataKey="commission" stackId="1" stroke="#3B82F6" fill="#3B82F6" name="Komisi" />
-                </AreaChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Commission vs Points Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <PieChartIcon className="h-5 w-5" />
-                Distribusi Reward
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <PieChart>
-                  <Pie
-                    data={commissionDistribution}
-                    cx="50%"
-                    cy="50%"
-                    outerRadius={80}
-                    fill="#8884d8"
-                    dataKey="value"
-                    label={(entry) => entry.name}
-                  >
-                    {commissionDistribution.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip formatter={(value) => formatCurrency(Number(value))} />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Detailed Reports Tabs */}
-        <Tabs defaultValue="commission" className="space-y-4">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="commission">Detail Komisi</TabsTrigger>
-            <TabsTrigger value="performance">Pencapaian Reseller</TabsTrigger>
-            <TabsTrigger value="ranking">Ranking Reseller</TabsTrigger>
-            <TabsTrigger value="activity">Aktivitas Login</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="commission" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <DollarSign className="h-5 w-5" />
-                  Laporan Detail Komisi
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  {resellerPerformance.slice(0, 10).map((reseller, index) => (
-                    <div key={reseller.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div className="flex items-center space-x-4">
-                        <div className="w-10 h-10 bg-blue-500 text-white rounded-full flex items-center justify-center font-bold">
-                          {index + 1}
-                        </div>
-                        <div>
-                          <p className="font-medium">{reseller.name}</p>
-                          <p className="text-sm text-gray-600">{reseller.phone}</p>
-                          <p className="text-xs text-gray-500">{reseller.orders} pesanan</p>
-                        </div>
-                      </div>
-                      <div className="text-right">
-                        <p className="font-bold text-green-600">{formatCurrency(reseller.commission)}</p>
-                        <p className="text-sm text-blue-600">{reseller.points} poin</p>
-                        <p className="text-xs text-gray-500">Revenue: {formatCurrency(reseller.revenue)}</p>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="performance" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Target className="h-5 w-5" />
-                  Pencapaian Reseller Detail
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                  {resellerPerformance.map((reseller) => (
-                    <Card key={reseller.id} className="p-4">
-                      <div className="space-y-3">
-                        <div className="flex items-center justify-between">
-                          <h4 className="font-medium truncate">{reseller.name}</h4>
-                          <Badge variant={reseller.isActive ? "default" : "secondary"}>
-                            {reseller.isActive ? "Aktif" : "Tidak Aktif"}
-                          </Badge>
-                        </div>
-                        <div className="space-y-2 text-sm">
-                          <div className="flex justify-between">
-                            <span>Pesanan:</span>
-                            <span className="font-medium">{reseller.orders}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Revenue:</span>
-                            <span className="font-medium text-green-600">{formatCurrency(reseller.revenue)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Komisi:</span>
-                            <span className="font-medium text-blue-600">{formatCurrency(reseller.commission)}</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span>Poin:</span>
-                            <span className="font-medium text-purple-600">{reseller.points}</span>
-                          </div>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-
-          <TabsContent value="ranking" className="space-y-4">
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-              {/* Top by Revenue */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Crown className="h-5 w-5 text-yellow-500" />
-                    Top Omset
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {resellerPerformance.slice(0, 5).map((reseller, index) => (
-                      <div key={reseller.id} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-bold text-yellow-600">#{index + 1}</span>
-                          <div>
-                            <p className="text-sm font-medium">{reseller.name}</p>
-                            <p className="text-xs text-gray-500">{reseller.orders} order</p>
-                          </div>
-                        </div>
-                        <p className="text-sm font-bold text-green-600">{formatCurrency(reseller.revenue)}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Top by Commission */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Award className="h-5 w-5 text-green-500" />
-                    Top Komisi
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {resellerPerformance.sort((a, b) => b.commission - a.commission).slice(0, 5).map((reseller, index) => (
-                      <div key={reseller.id} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-bold text-green-600">#{index + 1}</span>
-                          <div>
-                            <p className="text-sm font-medium">{reseller.name}</p>
-                            <p className="text-xs text-gray-500">{reseller.orders} order</p>
-                          </div>
-                        </div>
-                        <p className="text-sm font-bold text-green-600">{formatCurrency(reseller.commission)}</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-
-              {/* Top by Points */}
-              <Card>
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <Star className="h-5 w-5 text-purple-500" />
-                    Top Poin
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-3">
-                    {resellerPerformance.sort((a, b) => b.points - a.points).slice(0, 5).map((reseller, index) => (
-                      <div key={reseller.id} className="flex items-center justify-between">
-                        <div className="flex items-center space-x-2">
-                          <span className="text-sm font-bold text-purple-600">#{index + 1}</span>
-                          <div>
-                            <p className="text-sm font-medium">{reseller.name}</p>
-                            <p className="text-xs text-gray-500">{reseller.orders} order</p>
-                          </div>
-                        </div>
-                        <p className="text-sm font-bold text-purple-600">{reseller.points} poin</p>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          </TabsContent>
-
-          <TabsContent value="activity" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Activity className="h-5 w-5" />
-                  Reseller Paling Aktif Login
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-4">
-                  <div className="text-center text-gray-500 py-8">
-                    <Timer className="h-12 w-12 mx-auto mb-4 text-gray-300" />
-                    <p>Data aktivitas login sedang dikembangkan</p>
-                    <p className="text-sm">Fitur ini akan segera tersedia untuk melacak aktivitas login reseller</p>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+        {/* Chart */}
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <TrendingUp className="h-5 w-5" />
+              Tren Pesanan & Revenue SEDEKAT (6 Bulan)
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <ResponsiveContainer width="100%" height={400}>
+              <BarChart data={orderTrendData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis dataKey="month" />
+                <YAxis />
+                <Tooltip formatter={(value) => typeof value === 'number' ? formatCurrency(value) : value} />
+                <Legend />
+                <Bar dataKey="orders" fill="#3B82F6" name="Pesanan" />
+                <Bar dataKey="revenue" fill="#10B981" name="Revenue" />
+              </BarChart>
+            </ResponsiveContainer>
+          </CardContent>
+        </Card>
       </div>
     );
   };
 
-  // General Reports Component - keeping existing implementation but adding date filtering
+  // General Reports Component
   const GeneralReports = () => {
-    const filteredCustomers = getFilteredData(customers);
-    const filteredSurveys = getFilteredData(surveys);
-    
-    // Calculate general metrics with filtered data
-    const totalCustomers = filteredCustomers.length;
-    const totalDeals = filteredCustomers.filter(c => c.deal_date).length;
-    const totalFollowUps = filteredCustomers.filter(c => c.status === 'Follow-up').length;
+    // Calculate general metrics
+    const totalCustomers = customers?.length || 0;
+    const totalDeals = customers?.filter(c => c.deal_date).length || 0;
+    const totalFollowUps = customers?.filter(c => c.status === 'Follow-up').length || 0;
     const conversionRate = totalCustomers > 0 ? ((totalDeals / totalCustomers) * 100).toFixed(1) : '0';
     
-    // Monthly trend data with filtered data
+    // Monthly trend data
     const monthlyTrend = Array.from({ length: 6 }, (_, i) => {
       const date = new Date();
       date.setMonth(date.getMonth() - (5 - i));
-      const monthCustomers = filteredCustomers.filter(customer => {
+      const monthCustomers = customers?.filter(customer => {
         const customerDate = new Date(customer.created_at);
         return customerDate.getMonth() === date.getMonth() && 
                customerDate.getFullYear() === date.getFullYear();
-      });
+      }) || [];
 
-      const monthDeals = filteredCustomers.filter(customer => {
+      const monthDeals = customers?.filter(customer => {
         if (!customer.deal_date) return false;
         const dealDate = new Date(customer.deal_date);
         return dealDate.getMonth() === date.getMonth() && 
                dealDate.getFullYear() === date.getFullYear();
-      });
+      }) || [];
 
       return {
         month: date.toLocaleDateString('id-ID', { month: 'short' }),
@@ -626,7 +333,7 @@ const Reports = () => {
 
     // Branch performance
     const branchPerformance = branches?.map(branch => {
-      const branchCustomers = filteredCustomers.filter(c => c.branch_id === branch.id);
+      const branchCustomers = customers?.filter(c => c.branch_id === branch.id) || [];
       const branchDeals = branchCustomers.filter(c => c.deal_date);
       return {
         name: branch.name,
@@ -638,7 +345,7 @@ const Reports = () => {
 
     // Sales performance
     const salesPerformance = sales?.map(sale => {
-      const saleCustomers = filteredCustomers.filter(c => c.sales_id === sale.id);
+      const saleCustomers = customers?.filter(c => c.sales_id === sale.id) || [];
       const saleDeals = saleCustomers.filter(c => c.deal_date);
       return {
         name: sale.name,
@@ -649,7 +356,7 @@ const Reports = () => {
     }).sort((a, b) => b.deals - a.deals) || [];
 
     // Survey results
-    const completedSurveys = filteredSurveys.filter(s => s.is_completed) || [];
+    const completedSurveys = surveys?.filter(s => s.is_completed) || [];
     const averageRatings = getAverageRatings();
 
     return (
@@ -672,16 +379,6 @@ const Reports = () => {
           </Button>
         </div>
 
-        {/* Date Filter */}
-        <DateRangeFilter
-          selectedPeriod={selectedPeriod}
-          onPeriodChange={setSelectedPeriod}
-          customStartDate={customStartDate}
-          customEndDate={customEndDate}
-          onCustomStartDateChange={setCustomStartDate}
-          onCustomEndDateChange={setCustomEndDate}
-        />
-
         {/* Key Metrics Cards */}
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <Card>
@@ -691,7 +388,7 @@ const Reports = () => {
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">{totalCustomers}</div>
-              <p className="text-xs text-muted-foreground">Periode ini</p>
+              <p className="text-xs text-muted-foreground">Semua periode</p>
             </CardContent>
           </Card>
 
@@ -725,53 +422,6 @@ const Reports = () => {
             <CardContent>
               <div className="text-2xl font-bold">{totalFollowUps}</div>
               <p className="text-xs text-muted-foreground">Aktif follow-up</p>
-            </CardContent>
-          </Card>
-        </div>
-
-        {/* Analytics Charts */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Customer Trend Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Tren Pelanggan
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart data={monthlyTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip />
-                  <Legend />
-                  <Line type="monotone" dataKey="customers" stroke="#3B82F6" name="Pelanggan Baru" />
-                  <Line type="monotone" dataKey="deals" stroke="#10B981" name="Deal Berhasil" />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-
-          {/* Conversion Rate Chart */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Target className="h-5 w-5" />
-                Conversion Rate Bulanan
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <ResponsiveContainer width="100%" height={300}>
-                <BarChart data={monthlyTrend}>
-                  <CartesianGrid strokeDasharray="3 3" />
-                  <XAxis dataKey="month" />
-                  <YAxis />
-                  <Tooltip formatter={(value) => `${value}%`} />
-                  <Bar dataKey="conversionRate" fill="#F59E0B" name="Conversion Rate %" />
-                </BarChart>
-              </ResponsiveContainer>
             </CardContent>
           </Card>
         </div>
@@ -890,7 +540,7 @@ const Reports = () => {
                   <div className="space-y-4">
                     <div className="flex justify-between items-center p-3 bg-blue-50 rounded">
                       <span className="text-sm font-medium">Total Survei</span>
-                      <span className="font-bold text-blue-600">{filteredSurveys.length}</span>
+                      <span className="font-bold text-blue-600">{surveys?.length || 0}</span>
                     </div>
                     <div className="flex justify-between items-center p-3 bg-green-50 rounded">
                       <span className="text-sm font-medium">Survei Selesai</span>
@@ -996,7 +646,7 @@ const Reports = () => {
                     <div className="space-y-2 text-sm">
                       <div className="flex justify-between">
                         <span>Total Survei:</span>
-                        <span className="font-medium">{filteredSurveys.length}</span>
+                        <span className="font-medium">{surveys?.length || 0}</span>
                       </div>
                       <div className="flex justify-between">
                         <span>Survei Selesai:</span>
