@@ -22,7 +22,7 @@ export interface Customer {
   estimated_days?: number;
   work_start_date?: string;
   work_completed_date?: string;
-  work_status?: string;
+  work_status?: 'not_started' | 'in_progress' | 'completed';
   work_notes?: string;
   assigned_employees?: string[];
   notes?: string;
@@ -77,6 +77,7 @@ export const useCustomers = () => {
         ...customer,
         status: customer.status as 'Prospek' | 'Follow-up' | 'Deal' | 'Tidak Jadi',
         survey_status: customer.survey_status as 'sudah_disurvei' | 'belum_disurvei' | undefined,
+        work_status: customer.work_status as 'not_started' | 'in_progress' | 'completed' | undefined,
         assigned_employees: customer.assigned_employees ? 
           (typeof customer.assigned_employees === 'string' ? 
             customer.assigned_employees.split(',').map(e => e.trim()) : 
@@ -128,16 +129,17 @@ export const useCustomers = () => {
   });
 
   const updateCustomerMutation = useMutation({
-    mutationFn: async ({ id, ...customerData }: Partial<Customer> & { id: string }) => {
-      console.log('Updating customer:', id, customerData);
+    mutationFn: async (data: { id: string } & Partial<Customer>) => {
+      console.log('Updating customer:', data.id, data);
       
+      const { id, ...customerData } = data;
       const updateData = {
         ...customerData,
         assigned_employees: customerData.assigned_employees?.join(', '),
         updated_at: new Date().toISOString()
       };
       
-      const { data, error } = await supabase
+      const { data: result, error } = await supabase
         .from('customers')
         .update(updateData)
         .eq('id', id)
@@ -150,7 +152,7 @@ export const useCustomers = () => {
       }
 
       console.log('Customer updated successfully');
-      return data;
+      return result;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
