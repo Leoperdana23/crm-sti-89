@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Home, 
@@ -61,6 +62,12 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
       icon: Store,
       label: 'Reseller',
       permission: 'resellers'
+    },
+    {
+      to: '/warranty-management',
+      icon: Shield,
+      label: 'Garansi Produk',
+      permission: 'warranty_management'
     },
     {
       to: '/follow-up',

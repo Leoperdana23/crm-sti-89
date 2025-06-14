@@ -2200,6 +2200,285 @@ export type Database = {
         }
         Relationships: []
       }
+      warranty_claims: {
+        Row: {
+          claim_date: string
+          completed_date: string | null
+          created_at: string
+          created_by: string | null
+          id: string
+          problem_description: string
+          processed_by: string | null
+          replacement_serial_number: string | null
+          resolution_notes: string | null
+          status: string
+          technician_notes: string | null
+          updated_at: string
+          warranty_sale_id: string
+        }
+        Insert: {
+          claim_date?: string
+          completed_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          problem_description: string
+          processed_by?: string | null
+          replacement_serial_number?: string | null
+          resolution_notes?: string | null
+          status?: string
+          technician_notes?: string | null
+          updated_at?: string
+          warranty_sale_id: string
+        }
+        Update: {
+          claim_date?: string
+          completed_date?: string | null
+          created_at?: string
+          created_by?: string | null
+          id?: string
+          problem_description?: string
+          processed_by?: string | null
+          replacement_serial_number?: string | null
+          resolution_notes?: string | null
+          status?: string
+          technician_notes?: string | null
+          updated_at?: string
+          warranty_sale_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranty_claims_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_claims_processed_by_fkey"
+            columns: ["processed_by"]
+            isOneToOne: false
+            referencedRelation: "app_users"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_claims_warranty_sale_id_fkey"
+            columns: ["warranty_sale_id"]
+            isOneToOne: false
+            referencedRelation: "warranty_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warranty_notifications: {
+        Row: {
+          created_at: string
+          days_until_expiry: number | null
+          id: string
+          is_sent: boolean
+          notification_date: string
+          notification_type: string
+          sent_at: string | null
+          warranty_sale_id: string
+        }
+        Insert: {
+          created_at?: string
+          days_until_expiry?: number | null
+          id?: string
+          is_sent?: boolean
+          notification_date?: string
+          notification_type: string
+          sent_at?: string | null
+          warranty_sale_id: string
+        }
+        Update: {
+          created_at?: string
+          days_until_expiry?: number | null
+          id?: string
+          is_sent?: boolean
+          notification_date?: string
+          notification_type?: string
+          sent_at?: string | null
+          warranty_sale_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranty_notifications_warranty_sale_id_fkey"
+            columns: ["warranty_sale_id"]
+            isOneToOne: false
+            referencedRelation: "warranty_sales"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warranty_products: {
+        Row: {
+          created_at: string
+          id: string
+          notes: string | null
+          product_name: string
+          received_date: string
+          serial_number: string
+          status: string
+          supplier_id: string | null
+          supplier_invoice_date: string | null
+          updated_at: string
+          warranty_end_date: string
+          warranty_months: number
+          warranty_start_date: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_name: string
+          received_date?: string
+          serial_number: string
+          status?: string
+          supplier_id?: string | null
+          supplier_invoice_date?: string | null
+          updated_at?: string
+          warranty_end_date: string
+          warranty_months?: number
+          warranty_start_date: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          notes?: string | null
+          product_name?: string
+          received_date?: string
+          serial_number?: string
+          status?: string
+          supplier_id?: string | null
+          supplier_invoice_date?: string | null
+          updated_at?: string
+          warranty_end_date?: string
+          warranty_months?: number
+          warranty_start_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranty_products_supplier_id_fkey"
+            columns: ["supplier_id"]
+            isOneToOne: false
+            referencedRelation: "warranty_suppliers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warranty_sales: {
+        Row: {
+          created_at: string
+          customer_id: string | null
+          customer_name: string
+          customer_phone: string | null
+          customer_warranty_end_date: string
+          customer_warranty_start_date: string
+          id: string
+          notes: string | null
+          reseller_id: string | null
+          sale_date: string
+          sale_price: number | null
+          updated_at: string
+          warranty_product_id: string
+        }
+        Insert: {
+          created_at?: string
+          customer_id?: string | null
+          customer_name: string
+          customer_phone?: string | null
+          customer_warranty_end_date: string
+          customer_warranty_start_date: string
+          id?: string
+          notes?: string | null
+          reseller_id?: string | null
+          sale_date?: string
+          sale_price?: number | null
+          updated_at?: string
+          warranty_product_id: string
+        }
+        Update: {
+          created_at?: string
+          customer_id?: string | null
+          customer_name?: string
+          customer_phone?: string | null
+          customer_warranty_end_date?: string
+          customer_warranty_start_date?: string
+          id?: string
+          notes?: string | null
+          reseller_id?: string | null
+          sale_date?: string
+          sale_price?: number | null
+          updated_at?: string
+          warranty_product_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warranty_sales_customer_id_fkey"
+            columns: ["customer_id"]
+            isOneToOne: false
+            referencedRelation: "customers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_sales_reseller_id_fkey"
+            columns: ["reseller_id"]
+            isOneToOne: false
+            referencedRelation: "resellers"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "warranty_sales_warranty_product_id_fkey"
+            columns: ["warranty_product_id"]
+            isOneToOne: false
+            referencedRelation: "warranty_products"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      warranty_suppliers: {
+        Row: {
+          address: string | null
+          contact_person: string | null
+          created_at: string
+          default_warranty_months: number | null
+          email: string | null
+          id: string
+          is_active: boolean
+          name: string
+          phone: string | null
+          product_types: string[] | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          default_warranty_months?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name: string
+          phone?: string | null
+          product_types?: string[] | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          contact_person?: string | null
+          created_at?: string
+          default_warranty_months?: number | null
+          email?: string | null
+          id?: string
+          is_active?: boolean
+          name?: string
+          phone?: string | null
+          product_types?: string[] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       work_schedules: {
         Row: {
           created_at: string
@@ -2283,6 +2562,10 @@ export type Database = {
       generate_short_token: {
         Args: Record<PropertyKey, never>
         Returns: string
+      }
+      generate_warranty_notifications: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       get_current_user_role: {
         Args: Record<PropertyKey, never>
