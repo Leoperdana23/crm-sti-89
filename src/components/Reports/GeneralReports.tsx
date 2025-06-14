@@ -635,7 +635,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
                   <div className="flex items-center justify-between p-3 border rounded-lg bg-red-50">
                     <div className="flex items-center space-x-3">
                       <AlertCircle className="h-5 w-5 text-red-600" />
-                      <span className="font-medium">Kurang (<2.5)</span>
+                      <span className="font-medium">Kurang (&lt;2.5)</span>
                     </div>
                     <div className="text-xl font-bold text-red-600">{ratingDistribution.poor}</div>
                   </div>
