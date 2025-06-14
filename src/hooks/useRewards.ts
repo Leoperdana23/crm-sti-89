@@ -84,46 +84,43 @@ export const useCreateRedemption = () => {
   return useMutation({
     mutationFn: async (redemption: {
       reseller_id: string;
-      reward_id: string;
       reward_type: 'commission' | 'points';
       amount_redeemed: number;
       reward_description: string;
     }) => {
-      console.log('Creating redemption:', redemption);
+      console.log('Creating redemption with data:', redemption);
 
-      // Validate input data
-      if (!redemption.reseller_id || !redemption.reward_id || !redemption.reward_type || !redemption.amount_redeemed) {
-        throw new Error('Data penukaran tidak lengkap');
+      // Validate required fields
+      if (!redemption.reseller_id) {
+        throw new Error('ID reseller diperlukan');
+      }
+      
+      if (!redemption.reward_type || !['commission', 'points'].includes(redemption.reward_type)) {
+        throw new Error('Jenis hadiah tidak valid');
       }
 
-      if (redemption.amount_redeemed <= 0) {
+      if (!redemption.amount_redeemed || redemption.amount_redeemed <= 0) {
         throw new Error('Jumlah penukaran harus lebih dari 0');
       }
 
-      // Check if reward exists and is active
-      const { data: rewardData, error: rewardError } = await supabase
-        .from('reward_catalog')
-        .select('*')
-        .eq('id', redemption.reward_id)
-        .eq('is_active', true)
-        .single();
-
-      if (rewardError) {
-        console.error('Error checking reward:', rewardError);
-        throw new Error('Hadiah tidak ditemukan atau tidak aktif');
+      if (!redemption.reward_description) {
+        throw new Error('Deskripsi hadiah diperlukan');
       }
 
       // Check if reseller exists and is active
       const { data: resellerData, error: resellerError } = await supabase
         .from('resellers')
-        .select('*')
+        .select('id, name, is_active')
         .eq('id', redemption.reseller_id)
-        .eq('is_active', true)
         .single();
 
       if (resellerError) {
         console.error('Error checking reseller:', resellerError);
-        throw new Error('Reseller tidak ditemukan atau tidak aktif');
+        throw new Error('Reseller tidak ditemukan');
+      }
+
+      if (!resellerData.is_active) {
+        throw new Error('Reseller tidak aktif');
       }
 
       // Create redemption record
@@ -141,7 +138,7 @@ export const useCreateRedemption = () => {
 
       if (error) {
         console.error('Error creating redemption:', error);
-        throw new Error('Gagal membuat permintaan penukaran hadiah');
+        throw new Error(`Gagal membuat penukaran hadiah: ${error.message}`);
       }
 
       console.log('Redemption created successfully:', data);
@@ -154,7 +151,7 @@ export const useCreateRedemption = () => {
       queryClient.invalidateQueries({ queryKey: ['all-reseller-orders'] });
       toast({
         title: 'Sukses',
-        description: 'Penukaran hadiah berhasil diproses dan menunggu persetujuan',
+        description: 'Penukaran hadiah berhasil dibuat dan menunggu persetujuan',
       });
     },
     onError: (error: any) => {
@@ -176,8 +173,12 @@ export const useApproveRedemption = () => {
     mutationFn: async ({ redemptionId, status }: { redemptionId: string; status: 'approved' | 'rejected' }) => {
       console.log('Updating redemption status:', redemptionId, status);
       
-      if (!redemptionId || !status) {
-        throw new Error('Data persetujuan tidak lengkap');
+      if (!redemptionId) {
+        throw new Error('ID penukaran diperlukan');
+      }
+
+      if (!status || !['approved', 'rejected'].includes(status)) {
+        throw new Error('Status tidak valid');
       }
 
       // First get the redemption details
@@ -189,10 +190,6 @@ export const useApproveRedemption = () => {
 
       if (fetchError) {
         console.error('Error fetching redemption:', fetchError);
-        throw new Error('Gagal mengambil data penukaran hadiah');
-      }
-
-      if (!redemption) {
         throw new Error('Penukaran hadiah tidak ditemukan');
       }
 
@@ -214,7 +211,7 @@ export const useApproveRedemption = () => {
 
       if (error) {
         console.error('Error updating redemption:', error);
-        throw new Error('Gagal memperbarui status penukaran hadiah');
+        throw new Error(`Gagal memperbarui status: ${error.message}`);
       }
 
       console.log('Redemption status updated successfully:', data);
