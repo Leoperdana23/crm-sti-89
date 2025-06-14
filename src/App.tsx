@@ -29,6 +29,7 @@ import ProtectedRoute from './components/ProtectedRoute';
 
 // SEDEKAT App pages
 import ProductManagement from './pages/SedekatApp/ProductManagement';
+import CatalogManagement from './pages/SedekatApp/CatalogManagement';
 import ResellerManagement from './pages/SedekatApp/ResellerManagement';
 import OrderManagement from './pages/SedekatApp/OrderManagement';
 import Commission from './pages/SedekatApp/Commission';
@@ -68,6 +69,7 @@ function App() {
               
               {/* SEDEKAT App Routes */}
               <Route path="/sedekat-app/products" element={<ProtectedRoute><Layout><ProductManagement /></Layout></ProtectedRoute>} />
+              <Route path="/sedekat-app/catalog-management" element={<ProtectedRoute><Layout><CatalogManagement /></Layout></ProtectedRoute>} />
               <Route path="/sedekat-app/reseller-management" element={<ProtectedRoute><Layout><ResellerManagement /></Layout></ProtectedRoute>} />
               <Route path="/sedekat-app/order-management" element={<ProtectedRoute><Layout><OrderManagement /></Layout></ProtectedRoute>} />
               <Route path="/sedekat-app/commission" element={<ProtectedRoute><Layout><Commission /></Layout></ProtectedRoute>} />
