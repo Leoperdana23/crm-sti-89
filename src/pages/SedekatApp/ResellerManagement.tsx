@@ -142,6 +142,7 @@ const ResellerManagement = () => {
                 </DialogDescription>
               </DialogHeader>
               <ResellerForm 
+                isOpen={isFormOpen}
                 reseller={selectedReseller} 
                 onClose={handleFormClose}
               />
