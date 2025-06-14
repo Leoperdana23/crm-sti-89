@@ -1,105 +1,307 @@
 
 import React, { useState } from 'react';
-import { Outlet } from 'react-router-dom';
-import { Menu, Bell, Search, User, Settings, LogOut } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
+import { Separator } from '@/components/ui/separator';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
+import {
+  Sidebar,
+  SidebarContent,
+  SidebarFooter,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarProvider,
+  SidebarTrigger,
+} from '@/components/ui/sidebar';
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { useAuth } from '@/hooks/useAuth';
-import ModernSidebar from './ModernSidebar';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
+import { useLocation, useNavigate } from 'react-router-dom';
+import { 
+  LogOut, 
+  Settings, 
+  User,
+  ChevronRight,
+  Package,
+  Store,
+  ShoppingCart,
+  BarChart3,
+  Settings as SettingsIcon,
+  HelpCircle
+} from 'lucide-react';
+import { menuItems, settingsMenuItems } from '@/constants/menuItems';
 
-const ModernLayout = ({ children }: { children: React.ReactNode }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const { user, signOut } = useAuth();
+interface ModernLayoutProps {
+  children: React.ReactNode;
+}
+
+const ModernLayout: React.FC<ModernLayoutProps> = ({ children }) => {
+  const { user, logout } = useAuth();
+  const { checkPermission } = useUserPermissions();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [sedekatAppExpanded, setSedekatAppExpanded] = useState(false);
+
+  const handleLogout = () => {
+    logout();
+    navigate('/auth');
+  };
+
+  const sedekatAppMenuItems = [
+    {
+      label: 'Manajemen Produk',
+      path: '/sedekat-app/products',
+      icon: Package,
+      permission: 'products'
+    },
+    {
+      label: 'Katalog',
+      path: '/sedekat-app/catalog',
+      icon: Store,
+      permission: 'catalog'
+    },
+    {
+      label: 'Daftar Reseller',
+      path: '/sedekat-app/resellers',
+      icon: Store,
+      permission: 'resellers'
+    },
+    {
+      label: 'Manajemen Pesanan',
+      path: '/sedekat-app/orders',
+      icon: ShoppingCart,
+      permission: 'orders'
+    },
+    {
+      label: 'Komisi & Hadiah',
+      path: '/sedekat-app/commission',
+      icon: BarChart3,
+      permission: 'commission'
+    },
+    {
+      label: 'Pengaturan App',
+      path: '/sedekat-app/settings',
+      icon: SettingsIcon,
+      permission: 'app_settings'
+    },
+    {
+      label: 'Kontak & Bantuan',
+      path: '/sedekat-app/contact-help',
+      icon: HelpCircle,
+      permission: 'contact_help'
+    }
+  ];
+
+  // Filter menu items based on permissions
+  const filteredMenuItems = menuItems.filter(item => {
+    const permission = item.path.replace('/', '').replace('-', '_');
+    return checkPermission(permission, 'view');
+  });
+
+  const filteredSettingsMenuItems = settingsMenuItems.filter(item => {
+    const permission = item.path.replace('/', '').replace('-', '_');
+    return checkPermission(permission, 'view');
+  });
+
+  const filteredSedekatAppMenuItems = sedekatAppMenuItems.filter(item => {
+    return checkPermission(item.permission, 'view');
+  });
+
+  const isSedekatAppRoute = location.pathname.startsWith('/sedekat-app');
 
   return (
-    <div className="min-h-screen bg-gray-50/50">
-      {/* Sidebar */}
-      <ModernSidebar isOpen={sidebarOpen} onClose={() => setSidebarOpen(false)} />
-
-      {/* Main content */}
-      <div className="lg:pl-64">
-        {/* Top navigation */}
-        <div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-          <Button
-            variant="ghost"
-            size="sm"
-            className="lg:hidden"
-            onClick={() => setSidebarOpen(true)}
-          >
-            <Menu className="h-6 w-6" />
-          </Button>
-
-          {/* Search bar */}
-          <div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-            <div className="relative flex flex-1 items-center">
-              <Search className="absolute left-3 h-4 w-4 text-gray-400" />
-              <Input
-                placeholder="Cari..."
-                className="pl-10 bg-gray-50 border-0 focus:bg-white"
-              />
+    <SidebarProvider>
+      <div className="min-h-screen flex w-full">
+        <Sidebar className="border-r">
+          <SidebarHeader className="border-b p-4">
+            <div className="flex items-center space-x-2">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <span className="text-white font-bold text-sm">STI</span>
+              </div>
+              <div>
+                <h2 className="font-semibold text-sm">Sistem Management</h2>
+                <p className="text-xs text-gray-500">PT STI</p>
+              </div>
             </div>
-          </div>
+          </SidebarHeader>
 
-          {/* Right side */}
-          <div className="flex items-center gap-x-4 lg:gap-x-6">
-            {/* Notifications */}
-            <Button variant="ghost" size="sm" className="relative">
-              <Bell className="h-5 w-5" />
-              <Badge className="absolute -top-1 -right-1 h-4 w-4 p-0 text-xs">
-                3
-              </Badge>
-            </Button>
+          <SidebarContent>
+            <ScrollArea className="h-[calc(100vh-8rem)]">
+              <div className="p-2 space-y-2">
+                {/* Main Menu */}
+                <div className="space-y-1">
+                  <SidebarMenu>
+                    {filteredMenuItems.map((item) => {
+                      const IconComponent = item.icon;
+                      const isActive = location.pathname === item.path;
+                      
+                      return (
+                        <SidebarMenuItem key={item.path}>
+                          <SidebarMenuButton 
+                            asChild
+                            className={cn(
+                              "w-full justify-start",
+                              isActive && "bg-blue-100 text-blue-700 border-r-2 border-blue-600"
+                            )}
+                          >
+                            <a href={item.path} className="flex items-center space-x-3 px-3 py-2">
+                              <IconComponent className="h-4 w-4" />
+                              <span className="text-sm">{item.label}</span>
+                            </a>
+                          </SidebarMenuButton>
+                        </SidebarMenuItem>
+                      );
+                    })}
+                  </SidebarMenu>
+                </div>
 
-            {/* User menu */}
+                <Separator />
+
+                {/* SEDEKAT App Section */}
+                {filteredSedekatAppMenuItems.length > 0 && (
+                  <div className="space-y-1">
+                    <Button
+                      variant="ghost"
+                      className="w-full justify-between text-sm font-medium text-gray-700 h-8"
+                      onClick={() => setSedekatAppExpanded(!sedekatAppExpanded)}
+                    >
+                      <span className="flex items-center space-x-2">
+                        <Store className="h-4 w-4" />
+                        <span>SEDEKAT App</span>
+                      </span>
+                      <ChevronRight className={cn("h-4 w-4 transition-transform", sedekatAppExpanded && "rotate-90")} />
+                    </Button>
+                    
+                    {(sedekatAppExpanded || isSedekatAppRoute) && (
+                      <SidebarMenu className="ml-4">
+                        {filteredSedekatAppMenuItems.map((item) => {
+                          const IconComponent = item.icon;
+                          const isActive = location.pathname === item.path;
+                          
+                          return (
+                            <SidebarMenuItem key={item.path}>
+                              <SidebarMenuButton 
+                                asChild
+                                className={cn(
+                                  "w-full justify-start text-sm",
+                                  isActive && "bg-blue-100 text-blue-700 border-r-2 border-blue-600"
+                                )}
+                              >
+                                <a href={item.path} className="flex items-center space-x-3 px-3 py-2">
+                                  <IconComponent className="h-4 w-4" />
+                                  <span>{item.label}</span>
+                                </a>
+                              </SidebarMenuButton>
+                            </SidebarMenuItem>
+                          );
+                        })}
+                      </SidebarMenu>
+                    )}
+                  </div>
+                )}
+
+                <Separator />
+
+                {/* Settings Menu */}
+                {filteredSettingsMenuItems.length > 0 && (
+                  <div className="space-y-1">
+                    <div className="px-3 py-2">
+                      <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+                        Pengaturan
+                      </h3>
+                    </div>
+                    <SidebarMenu>
+                      {filteredSettingsMenuItems.map((item) => {
+                        const IconComponent = item.icon;
+                        const isActive = location.pathname === item.path;
+                        
+                        return (
+                          <SidebarMenuItem key={item.path}>
+                            <SidebarMenuButton 
+                              asChild
+                              className={cn(
+                                "w-full justify-start",
+                                isActive && "bg-blue-100 text-blue-700 border-r-2 border-blue-600"
+                              )}
+                            >
+                              <a href={item.path} className="flex items-center space-x-3 px-3 py-2">
+                                <IconComponent className="h-4 w-4" />
+                                <span className="text-sm">{item.label}</span>
+                              </a>
+                            </SidebarMenuButton>
+                          </SidebarMenuItem>
+                        );
+                      })}
+                    </SidebarMenu>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
+          </SidebarContent>
+
+          <SidebarFooter className="border-t p-4">
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="sm" className="flex items-center gap-2">
-                  <div className="h-8 w-8 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 flex items-center justify-center">
-                    <User className="h-4 w-4 text-white" />
+                <Button variant="ghost" className="w-full justify-start h-auto p-2">
+                  <div className="flex items-center space-x-3">
+                    <Avatar className="h-8 w-8">
+                      <AvatarFallback className="bg-blue-100 text-blue-700">
+                        {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 text-left">
+                      <p className="text-sm font-medium">{user?.name || 'User'}</p>
+                      <div className="flex items-center space-x-2">
+                        <p className="text-xs text-gray-500">{user?.email}</p>
+                        {user?.is_super_admin && (
+                          <Badge variant="secondary" className="text-xs">Admin</Badge>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <span className="hidden sm:block text-sm font-medium">
-                    {user?.user_metadata?.full_name || user?.email || 'User'}
-                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
-                <DropdownMenuLabel>My Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
                 <DropdownMenuItem>
                   <User className="mr-2 h-4 w-4" />
-                  Profile
+                  <span>Profile</span>
                 </DropdownMenuItem>
                 <DropdownMenuItem>
                   <Settings className="mr-2 h-4 w-4" />
-                  Settings
+                  <span>Settings</span>
                 </DropdownMenuItem>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={signOut}>
+                <DropdownMenuItem onClick={handleLogout}>
                   <LogOut className="mr-2 h-4 w-4" />
-                  Logout
+                  <span>Logout</span>
                 </DropdownMenuItem>
               </DropdownMenuContent>
             </DropdownMenu>
-          </div>
-        </div>
+          </SidebarFooter>
+        </Sidebar>
 
-        {/* Page content */}
-        <main className="py-6 lg:py-8">
-          <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
+        <div className="flex-1 flex flex-col">
+          <header className="border-b bg-white">
+            <div className="flex h-16 items-center px-6">
+              <SidebarTrigger className="mr-4" />
+              <div className="flex-1" />
+            </div>
+          </header>
+
+          <main className="flex-1 overflow-y-auto bg-gray-50">
             {children}
-          </div>
-        </main>
+          </main>
+        </div>
       </div>
-    </div>
+    </SidebarProvider>
   );
 };
 
