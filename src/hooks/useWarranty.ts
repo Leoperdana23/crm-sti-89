@@ -4,6 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import type { WarrantySupplier, WarrantyProduct, WarrantySale, WarrantyClaim } from '@/types/warranty';
 
+// Define input types for mutations (excluding auto-generated fields)
+type WarrantyProductInput = Omit<WarrantyProduct, 'id' | 'created_at' | 'updated_at' | 'warranty_end_date' | 'supplier'>;
+type WarrantySaleInput = Omit<WarrantySale, 'id' | 'created_at' | 'updated_at' | 'customer_warranty_end_date' | 'warranty_product' | 'customer' | 'reseller'>;
+type WarrantyClaimInput = Omit<WarrantyClaim, 'id' | 'created_at' | 'updated_at' | 'warranty_sale'>;
+
 // Warranty Suppliers
 export const useWarrantySuppliers = () => {
   return useQuery({
@@ -100,7 +105,7 @@ export const useCreateWarrantyProduct = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (product: Omit<WarrantyProduct, 'id' | 'created_at' | 'updated_at' | 'warranty_end_date' | 'supplier'>) => {
+    mutationFn: async (product: WarrantyProductInput) => {
       const { data, error } = await supabase
         .from('warranty_products')
         .insert(product)
@@ -132,7 +137,7 @@ export const useCreateBulkWarrantyProducts = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (products: Omit<WarrantyProduct, 'id' | 'created_at' | 'updated_at' | 'warranty_end_date' | 'supplier'>[]) => {
+    mutationFn: async (products: WarrantyProductInput[]) => {
       const { data, error } = await supabase
         .from('warranty_products')
         .insert(products)
@@ -184,7 +189,7 @@ export const useCreateWarrantySale = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (sale: Omit<WarrantySale, 'id' | 'created_at' | 'updated_at' | 'customer_warranty_end_date' | 'warranty_product' | 'customer' | 'reseller'>) => {
+    mutationFn: async (sale: WarrantySaleInput) => {
       const { data, error } = await supabase
         .from('warranty_sales')
         .insert(sale)
@@ -239,7 +244,7 @@ export const useCreateWarrantyClaim = () => {
   const queryClient = useQueryClient();
   
   return useMutation({
-    mutationFn: async (claim: Omit<WarrantyClaim, 'id' | 'created_at' | 'updated_at' | 'warranty_sale'>) => {
+    mutationFn: async (claim: WarrantyClaimInput) => {
       const { data, error } = await supabase
         .from('warranty_claims')
         .insert(claim)
