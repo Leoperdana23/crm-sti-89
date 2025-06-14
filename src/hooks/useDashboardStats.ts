@@ -25,6 +25,23 @@ export interface DashboardStats {
     status: string;
     created_at: string;
   }>;
+  // Additional computed properties for compatibility
+  totalCustomers: number;
+  totalOrders: number;
+  totalRevenue: number;
+  conversionRate: number;
+  customersByStatus: {
+    prospek: number;
+    followUp: number;
+    deal: number;
+    tidakJadi: number;
+  };
+  recentActivities: Array<{
+    id: string;
+    message: string;
+    customer: string;
+    timestamp: string;
+  }>;
 }
 
 export const useDashboardStats = () => {
@@ -134,6 +151,37 @@ export const useDashboardStats = () => {
         .order('created_at', { ascending: false })
         .limit(10);
 
+      // Get customer stats by status
+      const { data: customerData } = await supabase
+        .from('customers')
+        .select('status');
+
+      const customersByStatus = customerData?.reduce((acc: any, customer) => {
+        const status = customer.status?.toLowerCase() || 'prospek';
+        acc[status] = (acc[status] || 0) + 1;
+        return acc;
+      }, {
+        prospek: 0,
+        followUp: 0,
+        deal: 0,
+        tidakJadi: 0
+      }) || { prospek: 0, followUp: 0, deal: 0, tidakJadi: 0 };
+
+      // Mock recent activities for now
+      const recentActivities = [
+        {
+          id: '1',
+          message: 'New customer registered',
+          customer: 'John Doe',
+          timestamp: new Date().toISOString()
+        }
+      ];
+
+      // Calculate conversion rate
+      const totalCustomersCount = total_customers || 0;
+      const dealsCount = customersByStatus.deal || 0;
+      const conversionRate = totalCustomersCount > 0 ? (dealsCount / totalCustomersCount) * 100 : 0;
+
       console.log('Dashboard stats fetched successfully');
 
       return {
@@ -147,7 +195,14 @@ export const useDashboardStats = () => {
         monthly_revenue,
         monthly_orders: monthly_orders || 0,
         top_products,
-        recent_orders: recent_orders || []
+        recent_orders: recent_orders || [],
+        // Computed properties for compatibility
+        totalCustomers: total_customers || 0,
+        totalOrders: total_orders || 0,
+        totalRevenue: total_revenue,
+        conversionRate,
+        customersByStatus,
+        recentActivities
       };
     },
     refetchInterval: 30000, // Refresh every 30 seconds

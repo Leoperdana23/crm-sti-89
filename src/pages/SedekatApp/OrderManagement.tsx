@@ -258,7 +258,7 @@ const OrderManagement = () => {
                     <div>
                       <div className="font-medium">{order.reseller?.name || 'Direct'}</div>
                       <div className="text-sm text-gray-500">
-                        {order.reseller?.branches?.name || '-'}
+                        {order.reseller?.branch_id ? `Branch: ${order.reseller.branch_id}` : '-'}
                       </div>
                     </div>
                   </TableCell>

@@ -15,8 +15,12 @@ interface OrderHistoryDialogProps {
 const OrderHistoryDialog = ({ isOpen, onClose, catalogToken }: OrderHistoryDialogProps) => {
   const { data: allOrders, isLoading, error } = useOrders();
 
-  // Filter orders by catalog token
-  const orders = allOrders?.filter(order => order.catalog_token === catalogToken) || [];
+  // Filter orders by catalog token and ensure order_items is always present
+  const orders = allOrders?.filter(order => order.catalog_token === catalogToken)
+    .map(order => ({
+      ...order,
+      order_items: order.order_items || []
+    })) || [];
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>

@@ -65,7 +65,10 @@ const Orders = () => {
       (order.reseller && order.reseller.branch_id === branchFilter);
     
     return matchesSearch && matchesStatus && matchesBranch;
-  }) || [];
+  })?.map(order => ({
+    ...order,
+    order_items: order.order_items || []
+  })) || [];
 
   if (isLoading) {
     return <OrdersLoadingState />;

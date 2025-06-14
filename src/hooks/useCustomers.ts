@@ -1,3 +1,4 @@
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -37,6 +38,7 @@ export interface Customer {
     id: string;
     name: string;
   };
+  interactions?: any[]; // Add this to match the expected type
 }
 
 export const useCustomers = () => {
@@ -66,7 +68,14 @@ export const useCustomers = () => {
       }
 
       console.log('Customers fetched successfully:', data?.length);
-      return data as Customer[];
+      
+      // Add empty interactions array to each customer for compatibility
+      const customersWithInteractions = data?.map(customer => ({
+        ...customer,
+        interactions: []
+      })) || [];
+
+      return customersWithInteractions as Customer[];
     },
   });
 
@@ -83,7 +92,7 @@ export const useCreateCustomer = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'branches' | 'sales'>) => {
+    mutationFn: async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'branches' | 'sales' | 'interactions'>) => {
       console.log('Creating customer:', customerData);
       
       const { data, error } = await supabase
