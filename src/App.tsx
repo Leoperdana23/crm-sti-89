@@ -50,7 +50,7 @@ function App() {
               <Route path="/auth" element={<Auth />} />
               <Route path="/sales-auth" element={<SalesAuth />} />
               <Route path="/reseller-app" element={<ResellerApp />} />
-              <Route path="/survei/:token" element={<PublicSurvey />} />
+              <Route path="/public-survey/:token" element={<PublicSurvey />} />
               
               <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
               <Route path="/orders" element={<ProtectedRoute><Layout><Orders /></Layout></ProtectedRoute>} />
