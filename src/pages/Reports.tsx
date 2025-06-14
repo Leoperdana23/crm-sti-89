@@ -41,22 +41,34 @@ const Reports = () => {
   const pendingOrders = orders?.filter(o => o.status === 'pending').length || 0;
   const totalRevenue = orders?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
 
-  // Calculate commission and points data
+  // Calculate commission from order items with product commission values
   const totalCommissionPaid = orders?.reduce((sum, order) => {
-    return sum + (order.commission_amount || 0);
+    if (order.status !== 'selesai' && order.status !== 'completed') return sum;
+    return sum + (order.order_items || []).reduce((orderSum, item) => {
+      const commission = item.product_commission_snapshot || item.products?.commission_value || 0;
+      return orderSum + (commission * item.quantity);
+    }, 0);
   }, 0) || 0;
 
   const totalPointsEarned = orders?.reduce((sum, order) => {
-    return sum + (order.order_items?.reduce((itemSum, item) => {
-      return itemSum + ((item.products?.points_value || 0) * item.quantity);
-    }, 0) || 0);
+    if (order.status !== 'selesai' && order.status !== 'completed') return sum;
+    return sum + (order.order_items || []).reduce((orderSum, item) => {
+      const points = item.product_points_snapshot || item.products?.points_value || 0;
+      return orderSum + (points * item.quantity);
+    }, 0);
   }, 0) || 0;
 
   // Reseller performance data
   const resellerPerformance = resellers?.map(reseller => {
-    const resellerOrders = orders?.filter(o => o.reseller_id === reseller.id) || [];
+    const resellerOrders = orders?.filter(o => o.reseller?.id === reseller.id) || [];
     const resellerRevenue = resellerOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
-    const resellerCommission = resellerOrders.reduce((sum, order) => sum + (order.commission_amount || 0), 0);
+    const resellerCommission = resellerOrders.reduce((sum, order) => {
+      if (order.status !== 'selesai' && order.status !== 'completed') return sum;
+      return sum + (order.order_items || []).reduce((orderSum, item) => {
+        const commission = item.product_commission_snapshot || item.products?.commission_value || 0;
+        return orderSum + (commission * item.quantity);
+      }, 0);
+    }, 0);
     
     return {
       name: reseller.name,

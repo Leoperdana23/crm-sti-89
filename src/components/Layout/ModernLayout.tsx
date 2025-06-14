@@ -45,14 +45,14 @@ interface ModernLayoutProps {
 }
 
 const ModernLayout: React.FC<ModernLayoutProps> = ({ children }) => {
-  const { user, logout } = useAuth();
-  const { checkPermission } = useUserPermissions();
+  const { user, signOut } = useAuth();
+  const { hasPermission } = useUserPermissions();
   const location = useLocation();
   const navigate = useNavigate();
   const [sedekatAppExpanded, setSedekatAppExpanded] = useState(false);
 
   const handleLogout = () => {
-    logout();
+    signOut();
     navigate('/auth');
   };
 
@@ -104,19 +104,23 @@ const ModernLayout: React.FC<ModernLayoutProps> = ({ children }) => {
   // Filter menu items based on permissions
   const filteredMenuItems = menuItems.filter(item => {
     const permission = item.path.replace('/', '').replace('-', '_');
-    return checkPermission(permission, 'view');
+    return hasPermission(permission, 'view');
   });
 
   const filteredSettingsMenuItems = settingsMenuItems.filter(item => {
     const permission = item.path.replace('/', '').replace('-', '_');
-    return checkPermission(permission, 'view');
+    return hasPermission(permission, 'view');
   });
 
   const filteredSedekatAppMenuItems = sedekatAppMenuItems.filter(item => {
-    return checkPermission(item.permission, 'view');
+    return hasPermission(item.permission, 'view');
   });
 
   const isSedekatAppRoute = location.pathname.startsWith('/sedekat-app');
+
+  // Get user name from user_metadata
+  const userName = user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'User';
+  const isAdmin = user?.user_metadata?.role === 'super_admin';
 
   return (
     <SidebarProvider>
@@ -255,14 +259,14 @@ const ModernLayout: React.FC<ModernLayoutProps> = ({ children }) => {
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-8 w-8">
                       <AvatarFallback className="bg-blue-100 text-blue-700">
-                        {user?.name?.split(' ').map(n => n[0]).join('').toUpperCase() || 'U'}
+                        {userName.split(' ').map(n => n[0]).join('').toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div className="flex-1 text-left">
-                      <p className="text-sm font-medium">{user?.name || 'User'}</p>
+                      <p className="text-sm font-medium">{userName}</p>
                       <div className="flex items-center space-x-2">
                         <p className="text-xs text-gray-500">{user?.email}</p>
-                        {user?.is_super_admin && (
+                        {isAdmin && (
                           <Badge variant="secondary" className="text-xs">Admin</Badge>
                         )}
                       </div>
