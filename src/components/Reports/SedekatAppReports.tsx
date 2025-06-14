@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
 import { 
   Users, 
   ShoppingCart, 
@@ -12,21 +13,31 @@ import {
   Store,
   Target,
   Star,
-  LogIn,
-  BarChart3,
-  PieChart
+  LogIn
 } from 'lucide-react';
 import { useResellers } from '@/hooks/useResellers';
 import { useOrders } from '@/hooks/useOrders';
 import { useResellerSessions } from '@/hooks/useResellerSessions';
-import DateRangeFilter from '@/components/Reports/DateRangeFilter';
+import DateRangeFilter from './DateRangeFilter';
 import { getDateRange, filterDataByDateRange } from '@/utils/dateFilters';
 
-const Statistics = () => {
-  const [selectedPeriod, setSelectedPeriod] = useState('this_month');
-  const [customStartDate, setCustomStartDate] = useState('');
-  const [customEndDate, setCustomEndDate] = useState('');
+interface SedekatAppReportsProps {
+  selectedPeriod: string;
+  onPeriodChange: (period: string) => void;
+  customStartDate: string;
+  customEndDate: string;
+  onCustomStartDateChange: (date: string) => void;
+  onCustomEndDateChange: (date: string) => void;
+}
 
+const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
+  selectedPeriod,
+  onPeriodChange,
+  customStartDate,
+  customEndDate,
+  onCustomStartDateChange,
+  onCustomEndDateChange
+}) => {
   const { data: resellers } = useResellers();
   const { data: orders } = useOrders();
   const { data: sessions } = useResellerSessions();
@@ -57,20 +68,6 @@ const Statistics = () => {
     }, 0);
   }, 0);
 
-  const totalRevenue = filteredOrders
-    .filter(order => order.catalog_token)
-    .reduce((sum, order) => sum + order.total_amount, 0);
-
-  const averageOrderValue = orderViaApp > 0 ? totalRevenue / orderViaApp : 0;
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
-
   // Data untuk chart tren bulanan
   const monthlyTrends = Array.from({ length: 6 }, (_, i) => {
     const date = new Date();
@@ -88,11 +85,11 @@ const Statistics = () => {
     };
   }).reverse();
 
-  // Top performers
-  const topResellers = resellers?.map(reseller => {
+  // Distribusi komisi per reseller
+  const resellerCommissions = resellers?.map(reseller => {
     const resellerOrders = filteredOrders.filter(order => {
-      // Simplified mapping - in real implementation, you'd map catalog_token to reseller
-      return order.catalog_token;
+      // Assuming we can map catalog_token to reseller somehow
+      return order.catalog_token; // Simplified for now
     });
     
     const commission = resellerOrders.reduce((sum, order) => {
@@ -107,22 +104,42 @@ const Statistics = () => {
       commission,
       orders: resellerOrders.length
     };
-  }).sort((a, b) => b.commission - a.commission).slice(0, 5) || [];
+  }) || [];
+
+  // Ranking reseller berdasarkan omset
+  const resellerRanking = [...resellerCommissions]
+    .sort((a, b) => b.commission - a.commission)
+    .slice(0, 10);
+
+  // Reseller paling aktif login
+  const activeResellers = resellers?.map(reseller => {
+    const loginCount = filteredSessions.filter(session => 
+      session.reseller_id === reseller.id
+    ).length;
+    
+    return {
+      ...reseller,
+      loginCount
+    };
+  }).sort((a, b) => b.loginCount - a.loginCount).slice(0, 10) || [];
+
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat('id-ID', {
+      style: 'currency',
+      currency: 'IDR',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
 
   return (
-    <div className="p-6 space-y-6">
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard Statistik SEDEKAT APP</h1>
-        <p className="text-gray-600">Analitik dan statistik lengkap aplikasi SEDEKAT</p>
-      </div>
-
+    <div className="space-y-6">
       <DateRangeFilter
         selectedPeriod={selectedPeriod}
-        onPeriodChange={setSelectedPeriod}
+        onPeriodChange={onPeriodChange}
         customStartDate={customStartDate}
         customEndDate={customEndDate}
-        onCustomStartDateChange={setCustomStartDate}
-        onCustomEndDateChange={setCustomEndDate}
+        onCustomStartDateChange={onCustomStartDateChange}
+        onCustomEndDateChange={onCustomEndDateChange}
       />
 
       {/* Statistik Utama */}
@@ -145,39 +162,14 @@ const Statistics = () => {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{orderViaApp}</div>
-            <p className="text-xs text-muted-foreground">Total order</p>
+            <p className="text-xs text-muted-foreground">Order melalui aplikasi</p>
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
-            <p className="text-xs text-muted-foreground">Revenue aplikasi</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg Order Value</CardTitle>
-            <Target className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(averageOrderValue)}</div>
-            <p className="text-xs text-muted-foreground">Rata-rata per order</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Statistik Tambahan */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Komisi</CardTitle>
-            <Award className="h-4 w-4 text-muted-foreground" />
+            <DollarSign className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{formatCurrency(totalCommission)}</div>
@@ -188,33 +180,11 @@ const Statistics = () => {
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Poin</CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
+            <Award className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold">{totalPoints.toLocaleString()}</div>
             <p className="text-xs text-muted-foreground">Poin diberikan</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Sessions</CardTitle>
-            <LogIn className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{filteredSessions.length}</div>
-            <p className="text-xs text-muted-foreground">Sesi login aktif</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Growth Rate</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">+15.2%</div>
-            <p className="text-xs text-muted-foreground">Pertumbuhan bulanan</p>
           </CardContent>
         </Card>
       </div>
@@ -222,22 +192,21 @@ const Statistics = () => {
       <Tabs defaultValue="trends" className="space-y-4">
         <TabsList>
           <TabsTrigger value="trends">Tren Bulanan</TabsTrigger>
-          <TabsTrigger value="performance">Top Performers</TabsTrigger>
-          <TabsTrigger value="analytics">Analytics</TabsTrigger>
+          <TabsTrigger value="commission">Distribusi Komisi</TabsTrigger>
+          <TabsTrigger value="performance">Performance Reseller</TabsTrigger>
+          <TabsTrigger value="ranking">Ranking Reseller</TabsTrigger>
+          <TabsTrigger value="active">Reseller Aktif</TabsTrigger>
         </TabsList>
 
         <TabsContent value="trends">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <BarChart3 className="h-5 w-5" />
-                Tren Bulanan Aplikasi
-              </CardTitle>
+              <CardTitle>Tren Bulanan Aplikasi</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
                 {monthlyTrends.map((trend, index) => (
-                  <div key={index} className="flex items-center justify-between p-4 border rounded-lg">
+                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
                     <div>
                       <p className="font-medium">{trend.month}</p>
                       <p className="text-sm text-gray-500">{trend.orders} order</p>
@@ -253,18 +222,73 @@ const Statistics = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="performance">
+        <TabsContent value="commission">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Star className="h-5 w-5" />
-                Top Performing Resellers
-              </CardTitle>
+              <CardTitle>Distribusi Komisi Reseller</CardTitle>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {topResellers.map((reseller, index) => (
-                  <div key={reseller.id} className="flex items-center justify-between p-4 border rounded-lg">
+                {resellerCommissions.slice(0, 10).map((reseller, index) => (
+                  <div key={reseller.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div>
+                      <p className="font-medium">{reseller.name}</p>
+                      <p className="text-sm text-gray-500">{reseller.phone}</p>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{formatCurrency(reseller.commission)}</p>
+                      <p className="text-sm text-gray-500">{reseller.orders} order</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="performance">
+          <Card>
+            <CardHeader>
+              <CardTitle>Performance Reseller</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {resellerCommissions.slice(0, 10).map((reseller, index) => (
+                  <div key={reseller.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                        <Store className="h-4 w-4 text-blue-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{reseller.name}</p>
+                        <p className="text-sm text-gray-500">{reseller.phone}</p>
+                      </div>
+                    </div>
+                    <div className="flex items-center space-x-4">
+                      <div className="text-right">
+                        <p className="text-sm font-medium">{reseller.orders} order</p>
+                        <p className="text-xs text-gray-500">Total order</p>
+                      </div>
+                      <Badge variant={reseller.commission > 1000000 ? "default" : "secondary"}>
+                        {reseller.commission > 1000000 ? "Top Performer" : "Active"}
+                      </Badge>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="ranking">
+          <Card>
+            <CardHeader>
+              <CardTitle>Ranking Reseller (Berdasarkan Omset)</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {resellerRanking.map((reseller, index) => (
+                  <div key={reseller.id} className="flex items-center justify-between p-3 border rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
                         <span className="text-sm font-bold text-yellow-600">#{index + 1}</span>
@@ -285,61 +309,37 @@ const Statistics = () => {
           </Card>
         </TabsContent>
 
-        <TabsContent value="analytics">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <PieChart className="h-5 w-5" />
-                  Distribusi Order
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span>Order via App</span>
-                    <span className="font-medium">{orderViaApp}</span>
+        <TabsContent value="active">
+          <Card>
+            <CardHeader>
+              <CardTitle>Reseller Paling Aktif Login</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {activeResellers.map((reseller, index) => (
+                  <div key={reseller.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    <div className="flex items-center space-x-3">
+                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                        <LogIn className="h-4 w-4 text-green-600" />
+                      </div>
+                      <div>
+                        <p className="font-medium">{reseller.name}</p>
+                        <p className="text-sm text-gray-500">{reseller.phone}</p>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-medium">{reseller.loginCount} kali</p>
+                      <p className="text-sm text-gray-500">Login aplikasi</p>
+                    </div>
                   </div>
-                  <div className="flex justify-between items-center">
-                    <span>Order Manual</span>
-                    <span className="font-medium">{(orders?.length || 0) - orderViaApp}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Conversion Rate</span>
-                    <span className="font-medium">
-                      {orders?.length ? ((orderViaApp / orders.length) * 100).toFixed(1) : 0}%
-                    </span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader>
-                <CardTitle>Engagement Metrics</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  <div className="flex justify-between items-center">
-                    <span>Daily Active Users</span>
-                    <span className="font-medium">{Math.floor(filteredSessions.length / 30)}</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Session Duration</span>
-                    <span className="font-medium">24.5 min</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span>Retention Rate</span>
-                    <span className="font-medium">68.2%</span>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
         </TabsContent>
       </Tabs>
     </div>
   );
 };
 
-export default Statistics;
+export default SedekatAppReports;

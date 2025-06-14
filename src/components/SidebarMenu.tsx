@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Home, 
@@ -143,6 +142,12 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
       icon: HelpCircle,
       label: 'Kontak & Bantuan',
       permission: 'contact_help'
+    },
+    {
+      to: '/sedekat-app/statistics',
+      icon: BarChart3,
+      label: 'Dashboard Statistik',
+      permission: 'statistics'
     }
   ];
 
