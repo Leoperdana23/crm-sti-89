@@ -10,17 +10,19 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Settings, Palette, Bell, Globe } from 'lucide-react';
 import { useAppSettings, useUpdateAppSettings } from '@/hooks/useAppSettings';
 import { useContactSettings, useUpdateContactSettings } from '@/hooks/useContactSettings';
+import { useToast } from '@/hooks/use-toast';
 
 const AppSettings = () => {
-  const { data: appSettings } = useAppSettings();
-  const { data: contactSettings } = useContactSettings();
+  const { data: appSettings, isLoading: appLoading } = useAppSettings();
+  const { data: contactSettings, isLoading: contactLoading } = useContactSettings();
   const updateSettings = useUpdateAppSettings();
   const updateContactSettings = useUpdateContactSettings();
-  const [isLoading, setIsLoading] = useState(false);
+  const { toast } = useToast();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states for each tab
   const [generalForm, setGeneralForm] = useState({
-    siteName: '',
+    siteName: 'SEDEKAT App',
     description: '',
     allowRegistration: true,
     autoModeration: true
@@ -30,14 +32,14 @@ const AppSettings = () => {
     primaryColor: '#16a34a',
     secondaryColor: '#059669',
     bannerUrl: '',
-    welcomeText: ''
+    welcomeText: 'Selamat datang di aplikasi SEDEKAT'
   });
 
   const [notificationForm, setNotificationForm] = useState({
     push: true,
     email: false,
     whatsapp: true,
-    autoReplyMessage: ''
+    autoReplyMessage: 'Terima kasih telah menghubungi kami. Kami akan segera merespons pesan Anda.'
   });
 
   const [contactForm, setContactForm] = useState({
@@ -49,11 +51,18 @@ const AppSettings = () => {
   // Update form states when data is loaded
   useEffect(() => {
     if (appSettings) {
+      console.log('Loading app settings data:', appSettings);
+      
+      // Update general form
       setGeneralForm(prev => ({
         ...prev,
-        siteName: appSettings.catalog?.siteName || 'SEDEKAT App'
+        siteName: appSettings.catalog?.siteName || 'SEDEKAT App',
+        description: appSettings.catalog?.description || '',
+        allowRegistration: appSettings.allowRegistration !== undefined ? appSettings.allowRegistration : true,
+        autoModeration: appSettings.autoModeration !== undefined ? appSettings.autoModeration : true
       }));
 
+      // Update appearance form
       setAppearanceForm({
         primaryColor: appSettings.catalog?.primaryColor || '#16a34a',
         secondaryColor: appSettings.catalog?.secondaryColor || '#059669',
@@ -61,17 +70,19 @@ const AppSettings = () => {
         welcomeText: appSettings.catalog?.welcomeText || 'Selamat datang di aplikasi SEDEKAT'
       });
 
+      // Update notification form
       setNotificationForm({
-        push: appSettings.notifications?.push || false,
-        email: appSettings.notifications?.email || false,
-        whatsapp: appSettings.notifications?.whatsapp || false,
-        autoReplyMessage: appSettings.auto_reply?.message || ''
+        push: appSettings.notifications?.push !== undefined ? appSettings.notifications.push : true,
+        email: appSettings.notifications?.email !== undefined ? appSettings.notifications.email : false,
+        whatsapp: appSettings.notifications?.whatsapp !== undefined ? appSettings.notifications.whatsapp : true,
+        autoReplyMessage: appSettings.auto_reply?.message || 'Terima kasih telah menghubungi kami. Kami akan segera merespons pesan Anda.'
       });
     }
   }, [appSettings]);
 
   useEffect(() => {
     if (contactSettings) {
+      console.log('Loading contact settings data:', contactSettings);
       setContactForm({
         whatsappNumber: contactSettings.whatsapp_number || '',
         phoneNumber: contactSettings.phone_number || '',
@@ -81,24 +92,41 @@ const AppSettings = () => {
   }, [contactSettings]);
 
   const handleGeneralSubmit = async () => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
+      console.log('Submitting general settings:', generalForm);
+      
       await updateSettings.mutateAsync({
         catalog: {
           ...appSettings?.catalog,
-          siteName: generalForm.siteName
-        }
+          siteName: generalForm.siteName,
+          description: generalForm.description
+        },
+        allowRegistration: generalForm.allowRegistration,
+        autoModeration: generalForm.autoModeration
+      });
+
+      toast({
+        title: "Berhasil",
+        description: "Pengaturan umum berhasil disimpan",
       });
     } catch (error) {
       console.error('Error updating general settings:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan pengaturan umum",
+        variant: "destructive",
+      });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleAppearanceSubmit = async () => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
+      console.log('Submitting appearance settings:', appearanceForm);
+      
       await updateSettings.mutateAsync({
         catalog: {
           ...appSettings?.catalog,
@@ -108,16 +136,28 @@ const AppSettings = () => {
           welcomeText: appearanceForm.welcomeText
         }
       });
+
+      toast({
+        title: "Berhasil",
+        description: "Pengaturan tampilan berhasil disimpan",
+      });
     } catch (error) {
       console.error('Error updating appearance settings:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan pengaturan tampilan",
+        variant: "destructive",
+      });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleNotificationSubmit = async () => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
+      console.log('Submitting notification settings:', notificationForm);
+      
       await updateSettings.mutateAsync({
         notifications: {
           push: notificationForm.push,
@@ -129,27 +169,60 @@ const AppSettings = () => {
           message: notificationForm.autoReplyMessage
         }
       });
+
+      toast({
+        title: "Berhasil",
+        description: "Pengaturan notifikasi berhasil disimpan",
+      });
     } catch (error) {
       console.error('Error updating notification settings:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan pengaturan notifikasi",
+        variant: "destructive",
+      });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
 
   const handleContactSubmit = async () => {
-    setIsLoading(true);
+    setIsSubmitting(true);
     try {
+      console.log('Submitting contact settings:', contactForm);
+      
       await updateContactSettings.mutateAsync({
         whatsapp_number: contactForm.whatsappNumber,
         phone_number: contactForm.phoneNumber,
         email: contactForm.email
       });
+
+      toast({
+        title: "Berhasil",
+        description: "Pengaturan kontak berhasil disimpan",
+      });
     } catch (error) {
       console.error('Error updating contact settings:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menyimpan pengaturan kontak",
+        variant: "destructive",
+      });
     } finally {
-      setIsLoading(false);
+      setIsSubmitting(false);
     }
   };
+
+  if (appLoading || contactLoading) {
+    return (
+      <div className="p-6 space-y-6">
+        <div>
+          <h1 className="text-2xl font-bold">Pengaturan Aplikasi</h1>
+          <p className="text-gray-600">Memuat pengaturan...</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -214,8 +287,11 @@ const AppSettings = () => {
                 />
                 <Label>Moderasi produk otomatis</Label>
               </div>
-              <Button onClick={handleGeneralSubmit} disabled={isLoading}>
-                {isLoading ? 'Menyimpan...' : 'Simpan Pengaturan Umum'}
+              <Button 
+                onClick={handleGeneralSubmit} 
+                disabled={isSubmitting || updateSettings.isPending}
+              >
+                {isSubmitting || updateSettings.isPending ? 'Menyimpan...' : 'Simpan Pengaturan Umum'}
               </Button>
             </CardContent>
           </Card>
@@ -259,8 +335,11 @@ const AppSettings = () => {
                   placeholder="Pesan yang ditampilkan di halaman utama"
                 />
               </div>
-              <Button onClick={handleAppearanceSubmit} disabled={isLoading}>
-                {isLoading ? 'Menyimpan...' : 'Simpan Pengaturan Tampilan'}
+              <Button 
+                onClick={handleAppearanceSubmit} 
+                disabled={isSubmitting || updateSettings.isPending}
+              >
+                {isSubmitting || updateSettings.isPending ? 'Menyimpan...' : 'Simpan Pengaturan Tampilan'}
               </Button>
             </CardContent>
           </Card>
@@ -301,8 +380,11 @@ const AppSettings = () => {
                   placeholder="Template pesan balasan otomatis"
                 />
               </div>
-              <Button onClick={handleNotificationSubmit} disabled={isLoading}>
-                {isLoading ? 'Menyimpan...' : 'Simpan Pengaturan Notifikasi'}
+              <Button 
+                onClick={handleNotificationSubmit} 
+                disabled={isSubmitting || updateSettings.isPending}
+              >
+                {isSubmitting || updateSettings.isPending ? 'Menyimpan...' : 'Simpan Pengaturan Notifikasi'}
               </Button>
             </CardContent>
           </Card>
@@ -339,8 +421,11 @@ const AppSettings = () => {
                   placeholder="support@sedekat.com"
                 />
               </div>
-              <Button onClick={handleContactSubmit} disabled={isLoading}>
-                {isLoading ? 'Menyimpan...' : 'Simpan Pengaturan Kontak'}
+              <Button 
+                onClick={handleContactSubmit} 
+                disabled={isSubmitting || updateContactSettings.isPending}
+              >
+                {isSubmitting || updateContactSettings.isPending ? 'Menyimpan...' : 'Simpan Pengaturan Kontak'}
               </Button>
             </CardContent>
           </Card>
