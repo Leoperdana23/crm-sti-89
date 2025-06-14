@@ -20,6 +20,16 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
   const pendingOrders = orders.filter(order => order.status === 'pending').length;
   const completedOrders = orders.filter(order => order.status === 'selesai').length;
   const totalCommission = orders.reduce((sum, order) => sum + order.commission_amount, 0);
+  
+  // Calculate total quantity and average order
+  const totalQuantity = orders.reduce((sum, order) => {
+    if (order.order_items) {
+      return sum + order.order_items.reduce((itemSum, item) => itemSum + item.quantity, 0);
+    }
+    return sum;
+  }, 0);
+  
+  const averageOrder = totalOrders > 0 ? Math.round(totalCommission / totalOrders) : 0;
 
   const siteName = appSettings?.catalog?.siteName || 'SEDEKAT App';
   const welcomeText = appSettings?.catalog?.welcomeText || 'Selamat datang di katalog produk kami';
@@ -62,8 +72,8 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
               <div className="text-sm text-gray-600">Total Poin</div>
             </div>
             <div className="text-center">
-              <div className="text-2xl font-bold text-blue-600">{reseller.commission_rate}%</div>
-              <div className="text-sm text-gray-600">Rate Komisi</div>
+              <div className="text-2xl font-bold text-blue-600">Rp {totalCommission.toLocaleString()}</div>
+              <div className="text-sm text-gray-600">Total Komisi</div>
             </div>
           </div>
         </CardContent>
@@ -75,8 +85,8 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Pesanan</p>
-                <p className="text-2xl font-bold">{totalOrders}</p>
+                <p className="text-sm text-gray-600">Total Qty Pesanan</p>
+                <p className="text-2xl font-bold">{totalQuantity}</p>
               </div>
               <Package className="h-8 w-8 text-blue-500" />
             </div>
@@ -87,8 +97,8 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
           <CardContent className="p-4">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm text-gray-600">Total Komisi</p>
-                <p className="text-2xl font-bold">Rp {totalCommission.toLocaleString()}</p>
+                <p className="text-sm text-gray-600">Rata-rata Order</p>
+                <p className="text-2xl font-bold">Rp {averageOrder.toLocaleString()}</p>
               </div>
               <TrendingUp className="h-8 w-8 text-green-500" />
             </div>
