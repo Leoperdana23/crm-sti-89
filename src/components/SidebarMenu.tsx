@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   Home, 
@@ -136,12 +137,6 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
       icon: Settings,
       label: 'Pengaturan Aplikasi',
       permission: 'app_settings'
-    },
-    {
-      to: '/sedekat-app/statistics',
-      icon: PieChart,
-      label: 'Dashboard Statistik',
-      permission: 'statistics'
     },
     {
       to: '/sedekat-app/contact-help',
