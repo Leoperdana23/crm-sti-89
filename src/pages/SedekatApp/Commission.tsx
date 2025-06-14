@@ -25,6 +25,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogTrigger,
+  DialogDescription,
 } from '@/components/ui/dialog';
 import { 
   Gift, 
@@ -32,12 +33,12 @@ import {
   Award, 
   Download,
   Search,
-  Calendar,
-  ShoppingBag
+  AlertCircle
 } from 'lucide-react';
 import { useResellers } from '@/hooks/useResellers';
 import { useOrders } from '@/hooks/useOrders';
 import { useRewardCatalog, useRewardRedemptions, useCreateRedemption, useApproveRedemption } from '@/hooks/useRewards';
+import { useToast } from '@/hooks/use-toast';
 
 const Commission = () => {
   const { data: resellers, isLoading } = useResellers();
@@ -46,11 +47,12 @@ const Commission = () => {
   const { data: redemptions } = useRewardRedemptions();
   const createRedemption = useCreateRedemption();
   const approveRedemption = useApproveRedemption();
+  const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [selectedReseller, setSelectedReseller] = useState<any>(null);
-  const [selectedReward, setSelectedReward] = useState<any>(null);
+  const [isRedemptionDialogOpen, setIsRedemptionDialogOpen] = useState(false);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -96,6 +98,25 @@ const Commission = () => {
     }, 0);
   };
 
+  // Calculate redeemed amounts for each reseller
+  const getRedeemedAmounts = (resellerId: string) => {
+    if (!redemptions) return { redeemedCommission: 0, redeemedPoints: 0 };
+    
+    const approvedRedemptions = redemptions.filter(
+      (r: any) => r.reseller_id === resellerId && r.status === 'approved'
+    );
+
+    const redeemedCommission = approvedRedemptions
+      .filter((r: any) => r.reward_type === 'commission')
+      .reduce((sum: number, r: any) => sum + r.amount_redeemed, 0);
+
+    const redeemedPoints = approvedRedemptions
+      .filter((r: any) => r.reward_type === 'points')
+      .reduce((sum: number, r: any) => sum + r.amount_redeemed, 0);
+
+    return { redeemedCommission, redeemedPoints };
+  };
+
   const filteredResellers = resellers?.filter(reseller => 
     reseller.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
@@ -107,19 +128,49 @@ const Commission = () => {
     totalRedemptions: redemptions?.length || 0
   };
 
-  const handleRedeemReward = async () => {
-    if (!selectedReseller || !selectedReward) return;
+  const handleRedeemReward = async (reward: any) => {
+    if (!selectedReseller) return;
 
-    await createRedemption.mutateAsync({
-      reseller_id: selectedReseller.id,
-      reward_id: selectedReward.id,
-      reward_type: selectedReward.reward_type,
-      amount_redeemed: selectedReward.cost,
-      reward_description: selectedReward.name
-    });
+    const earnedCommission = calculateResellerCommission(selectedReseller.id);
+    const earnedPoints = calculateResellerPoints(selectedReseller.id);
+    const { redeemedCommission, redeemedPoints } = getRedeemedAmounts(selectedReseller.id);
+    
+    const availableCommission = earnedCommission - redeemedCommission;
+    const availablePoints = earnedPoints - redeemedPoints;
 
-    setSelectedReseller(null);
-    setSelectedReward(null);
+    // Validate if reseller has enough balance
+    if (reward.reward_type === 'commission' && availableCommission < reward.cost) {
+      toast({
+        title: 'Error',
+        description: 'Komisi tidak mencukupi untuk penukaran ini',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    if (reward.reward_type === 'points' && availablePoints < reward.cost) {
+      toast({
+        title: 'Error',
+        description: 'Poin tidak mencukupi untuk penukaran ini',
+        variant: 'destructive',
+      });
+      return;
+    }
+
+    try {
+      await createRedemption.mutateAsync({
+        reseller_id: selectedReseller.id,
+        reward_id: reward.id,
+        reward_type: reward.reward_type,
+        amount_redeemed: reward.cost,
+        reward_description: reward.name
+      });
+
+      setIsRedemptionDialogOpen(false);
+      setSelectedReseller(null);
+    } catch (error) {
+      console.error('Failed to create redemption:', error);
+    }
   };
 
   if (isLoading) {
@@ -241,8 +292,11 @@ const Commission = () => {
               <TableRow>
                 <TableHead>Reseller</TableHead>
                 <TableHead>Cabang</TableHead>
-                <TableHead>Total Komisi</TableHead>
-                <TableHead>Total Poin</TableHead>
+                <TableHead>Komisi Diperoleh</TableHead>
+                <TableHead>Komisi Ditukar</TableHead>
+                <TableHead>Sisa Komisi</TableHead>
+                <TableHead>Poin Diperoleh</TableHead>
+                <TableHead>Poin Ditukar</TableHead>
                 <TableHead>Sisa Poin</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Aksi</TableHead>
@@ -252,6 +306,9 @@ const Commission = () => {
               {filteredResellers?.map((reseller) => {
                 const earnedCommission = calculateResellerCommission(reseller.id);
                 const earnedPoints = calculateResellerPoints(reseller.id);
+                const { redeemedCommission, redeemedPoints } = getRedeemedAmounts(reseller.id);
+                const availableCommission = earnedCommission - redeemedCommission;
+                const availablePoints = earnedPoints - redeemedPoints;
                 
                 return (
                   <TableRow key={reseller.id}>
@@ -263,62 +320,109 @@ const Commission = () => {
                     </TableCell>
                     <TableCell>{reseller.branches?.name || '-'}</TableCell>
                     <TableCell>{formatCurrency(earnedCommission)}</TableCell>
+                    <TableCell>{formatCurrency(redeemedCommission)}</TableCell>
+                    <TableCell className="font-semibold text-green-600">
+                      {formatCurrency(availableCommission)}
+                    </TableCell>
                     <TableCell>{earnedPoints}</TableCell>
-                    <TableCell>{reseller.total_points || 0}</TableCell>
+                    <TableCell>{redeemedPoints}</TableCell>
+                    <TableCell className="font-semibold text-blue-600">
+                      {availablePoints}
+                    </TableCell>
                     <TableCell>
                       <Badge variant={reseller.is_active ? 'default' : 'secondary'}>
                         {reseller.is_active ? 'Aktif' : 'Nonaktif'}
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <Dialog>
+                      <Dialog 
+                        open={isRedemptionDialogOpen && selectedReseller?.id === reseller.id} 
+                        onOpenChange={(open) => {
+                          setIsRedemptionDialogOpen(open);
+                          if (!open) setSelectedReseller(null);
+                        }}
+                      >
                         <DialogTrigger asChild>
                           <Button 
                             size="sm" 
                             variant="outline"
-                            onClick={() => setSelectedReseller(reseller)}
+                            onClick={() => {
+                              setSelectedReseller(reseller);
+                              setIsRedemptionDialogOpen(true);
+                            }}
                           >
                             <Gift className="h-4 w-4 mr-1" />
                             Tukar Hadiah
                           </Button>
                         </DialogTrigger>
-                        <DialogContent>
+                        <DialogContent className="max-w-2xl">
                           <DialogHeader>
                             <DialogTitle>Tukar Hadiah untuk {reseller.name}</DialogTitle>
+                            <DialogDescription>
+                              Pilih hadiah dari katalog yang tersedia
+                            </DialogDescription>
                           </DialogHeader>
                           <div className="space-y-4">
-                            <div>
-                              <p className="text-sm text-gray-600">Sisa Poin: {reseller.total_points || 0}</p>
-                              <p className="text-sm text-gray-600">Komisi Tersedia: {formatCurrency(earnedCommission)}</p>
-                            </div>
-                            <div className="grid grid-cols-1 gap-3">
-                              {rewardCatalog?.map((reward) => (
-                                <div key={reward.id} className="border rounded-lg p-3">
-                                  <div className="flex justify-between items-center">
-                                    <div>
-                                      <h4 className="font-medium">{reward.name}</h4>
-                                      <p className="text-sm text-gray-600">{reward.description}</p>
-                                      <p className="text-sm font-medium text-blue-600">
-                                        {reward.reward_type === 'points' ? `${reward.cost} Poin` : formatCurrency(reward.cost)}
-                                      </p>
-                                    </div>
-                                    <Button
-                                      size="sm"
-                                      disabled={
-                                        reward.reward_type === 'points' 
-                                          ? (reseller.total_points || 0) < reward.cost
-                                          : earnedCommission < reward.cost
-                                      }
-                                      onClick={() => {
-                                        setSelectedReward(reward);
-                                        handleRedeemReward();
-                                      }}
-                                    >
-                                      Tukar
-                                    </Button>
-                                  </div>
+                            <div className="bg-blue-50 p-4 rounded-lg">
+                              <div className="grid grid-cols-2 gap-4">
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600">Sisa Komisi:</p>
+                                  <p className="text-lg font-bold text-green-600">
+                                    {formatCurrency(availableCommission)}
+                                  </p>
                                 </div>
-                              ))}
+                                <div>
+                                  <p className="text-sm font-medium text-gray-600">Sisa Poin:</p>
+                                  <p className="text-lg font-bold text-blue-600">
+                                    {availablePoints}
+                                  </p>
+                                </div>
+                              </div>
+                            </div>
+                            
+                            <div className="max-h-96 overflow-y-auto space-y-3">
+                              {rewardCatalog?.length === 0 ? (
+                                <div className="text-center py-8">
+                                  <AlertCircle className="h-12 w-12 text-gray-300 mx-auto mb-4" />
+                                  <p className="text-gray-500">Belum ada hadiah yang tersedia</p>
+                                </div>
+                              ) : (
+                                rewardCatalog?.map((reward) => {
+                                  const canRedeem = reward.reward_type === 'points' 
+                                    ? availablePoints >= reward.cost
+                                    : availableCommission >= reward.cost;
+                                  
+                                  return (
+                                    <div key={reward.id} className="border rounded-lg p-4">
+                                      <div className="flex justify-between items-start">
+                                        <div className="flex-1">
+                                          <h4 className="font-medium">{reward.name}</h4>
+                                          <p className="text-sm text-gray-600 mt-1">{reward.description}</p>
+                                          <div className="flex items-center gap-2 mt-2">
+                                            <Badge variant={reward.reward_type === 'points' ? 'secondary' : 'default'}>
+                                              {reward.reward_type === 'points' ? 'Poin' : 'Komisi'}
+                                            </Badge>
+                                            <p className="text-sm font-medium text-blue-600">
+                                              {reward.reward_type === 'points' 
+                                                ? `${reward.cost} Poin` 
+                                                : formatCurrency(reward.cost)
+                                              }
+                                            </p>
+                                          </div>
+                                        </div>
+                                        <Button
+                                          size="sm"
+                                          disabled={!canRedeem || createRedemption.isPending}
+                                          onClick={() => handleRedeemReward(reward)}
+                                          className="ml-4"
+                                        >
+                                          {canRedeem ? 'Tukar' : 'Tidak Cukup'}
+                                        </Button>
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              )}
                             </div>
                           </div>
                         </DialogContent>

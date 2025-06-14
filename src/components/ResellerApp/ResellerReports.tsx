@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { useResellerStats } from '@/hooks/useResellerApp';
 import { useResellerOrders } from '@/hooks/useResellerOrders';
+import { useRewardRedemptions } from '@/hooks/useRewards';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -15,6 +16,7 @@ interface ResellerReportsProps {
 const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
   const { data: stats, isLoading: statsLoading } = useResellerStats(reseller.id);
   const { data: orders, isLoading: ordersLoading } = useResellerOrders(reseller.id);
+  const { data: allRedemptions } = useRewardRedemptions();
   const [selectedPeriod, setSelectedPeriod] = useState('all');
 
   const formatCurrency = (amount: number) => {
@@ -54,9 +56,19 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
     }, 0);
   }, 0);
 
-  // Mock data for exchanged amounts (in real app, this would come from database)
-  const exchangedCommission = 0; // Amount of commission exchanged for rewards
-  const exchangedPoints = 0; // Amount of points exchanged for rewards
+  // Get redemption data for this reseller
+  const resellerRedemptions = allRedemptions?.filter(
+    (redemption: any) => redemption.reseller_id === reseller.id && redemption.status === 'approved'
+  ) || [];
+
+  // Calculate exchanged amounts from approved redemptions
+  const exchangedCommission = resellerRedemptions
+    .filter((r: any) => r.reward_type === 'commission')
+    .reduce((sum: number, r: any) => sum + r.amount_redeemed, 0);
+
+  const exchangedPoints = resellerRedemptions
+    .filter((r: any) => r.reward_type === 'points')
+    .reduce((sum: number, r: any) => sum + r.amount_redeemed, 0);
 
   // Calculate remaining balances
   const remainingCommission = totalCommissionEarned - exchangedCommission;
@@ -212,6 +224,14 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-600">Total Komisi Diperoleh:</p>
+              <p className="text-lg font-bold text-green-600">{formatCurrency(totalCommissionEarned)}</p>
+            </div>
+            <div className="space-y-2">
+              <p className="text-sm font-medium text-gray-600">Total Poin Diperoleh:</p>
+              <p className="text-lg font-bold text-blue-600">{totalPointsEarned} poin</p>
+            </div>
+            <div className="space-y-2">
               <p className="text-sm font-medium text-gray-600">Komisi Ditukar:</p>
               <p className="text-lg font-bold text-red-600">{formatCurrency(exchangedCommission)}</p>
             </div>
@@ -322,6 +342,40 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
           )}
         </CardContent>
       </Card>
+
+      {/* Redemption History */}
+      {resellerRedemptions.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Riwayat Penukaran Hadiah</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {resellerRedemptions.map((redemption: any) => (
+                <div key={redemption.id} className="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                  <div>
+                    <p className="font-medium text-sm">{redemption.reward_description}</p>
+                    <p className="text-xs text-gray-500">
+                      {formatDate(redemption.created_at)}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="font-semibold text-red-600 text-sm">
+                      -{redemption.reward_type === 'points' 
+                        ? `${redemption.amount_redeemed} Poin`
+                        : formatCurrency(redemption.amount_redeemed)
+                      }
+                    </p>
+                    <div className="text-xs text-green-600 bg-green-100 px-2 py-1 rounded">
+                      Disetujui
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {filteredOrders.length === 0 && (
         <div className="text-center py-8 text-gray-500">
