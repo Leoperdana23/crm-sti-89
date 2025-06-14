@@ -49,7 +49,8 @@ export const useSurveys = () => {
         service_technician: 0,
         service_sales: 0,
         usage_clarity: 0,
-        overall: 0
+        overall: 0,
+        priceApprovalRate: 0
       };
     }
 
@@ -58,12 +59,14 @@ export const useSurveys = () => {
       acc.service_technician += survey.service_technician;
       acc.service_sales += survey.service_sales;
       acc.usage_clarity += survey.usage_clarity;
+      acc.priceApprovals += survey.price_approval ? 1 : 0;
       return acc;
     }, {
       product_quality: 0,
       service_technician: 0,
       service_sales: 0,
-      usage_clarity: 0
+      usage_clarity: 0,
+      priceApprovals: 0
     });
 
     const count = data.length;
@@ -72,7 +75,8 @@ export const useSurveys = () => {
       service_technician: totals.service_technician / count,
       service_sales: totals.service_sales / count,
       usage_clarity: totals.usage_clarity / count,
-      overall: (totals.product_quality + totals.service_technician + totals.service_sales + totals.usage_clarity) / (count * 4)
+      overall: (totals.product_quality + totals.service_technician + totals.service_sales + totals.usage_clarity) / (count * 4),
+      priceApprovalRate: (totals.priceApprovals / count) * 100
     };
 
     return averages;

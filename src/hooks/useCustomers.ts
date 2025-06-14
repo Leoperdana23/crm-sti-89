@@ -3,6 +3,15 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 
+export interface Interaction {
+  id: string;
+  customer_id: string;
+  type: 'call' | 'whatsapp' | 'email' | 'meeting';
+  notes: string;
+  date: string;
+  follow_up_date?: string;
+}
+
 export interface Customer {
   id: string;
   name: string;
@@ -24,12 +33,13 @@ export interface Customer {
   work_start_date?: string;
   work_completed_date?: string;
   work_notes?: string;
-  assigned_employees?: string;
+  assigned_employees?: string[];
   estimated_days?: number;
   payment_terms?: number;
   credit_limit?: number;
   created_at: string;
   updated_at: string;
+  interactions: Interaction[];
 }
 
 export const useCustomers = () => {
@@ -42,7 +52,10 @@ export const useCustomers = () => {
       console.log('Fetching customers data...');
       const { data, error } = await supabase
         .from('customers')
-        .select('*')
+        .select(`
+          *,
+          interactions (*)
+        `)
         .order('created_at', { ascending: false });
 
       if (error) {
@@ -51,16 +64,33 @@ export const useCustomers = () => {
       }
 
       console.log('Customers fetched successfully:', data?.length);
-      return data as Customer[];
+      
+      // Transform assigned_employees from string to array if needed
+      const transformedData = data?.map(customer => ({
+        ...customer,
+        assigned_employees: customer.assigned_employees 
+          ? (typeof customer.assigned_employees === 'string' 
+              ? customer.assigned_employees.split(',').map(e => e.trim()).filter(e => e)
+              : customer.assigned_employees)
+          : [],
+        interactions: customer.interactions || []
+      }));
+      
+      return transformedData as Customer[];
     },
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 
-  const addCustomer = async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
+  const addCustomer = async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'interactions'>) => {
+    const dataToInsert = {
+      ...customerData,
+      assigned_employees: customerData.assigned_employees?.join(',') || null
+    };
+    
     const { data, error } = await supabase
       .from('customers')
-      .insert([customerData])
+      .insert([dataToInsert])
       .select()
       .single();
 
@@ -76,9 +106,16 @@ export const useCustomers = () => {
   };
 
   const updateCustomer = async ({ id, ...updateData }: Partial<Customer> & { id: string }) => {
+    const { interactions, ...customerData } = updateData;
+    
+    const dataToUpdate = {
+      ...customerData,
+      assigned_employees: customerData.assigned_employees?.join(',') || null
+    };
+    
     const { data, error } = await supabase
       .from('customers')
-      .update(updateData)
+      .update(dataToUpdate)
       .eq('id', id)
       .select()
       .single();

@@ -41,10 +41,10 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
   onCustomStartDateChange,
   onCustomEndDateChange
 }) => {
-  const { data: customers, isLoading: customersLoading, error: customersError } = useCustomers();
-  const { data: branches, isLoading: branchesLoading, error: branchesError } = useBranches();
-  const { data: sales, isLoading: salesLoading, error: salesError } = useSales();
-  const { data: surveys, isLoading: surveysLoading, error: surveysError } = useSurveys();
+  const { customers, loading: customersLoading, error: customersError } = useCustomers();
+  const { branches, loading: branchesLoading, error: branchesError } = useBranches();
+  const { sales, loading: salesLoading, error: salesError } = useSales();
+  const { surveys, loading: surveysLoading, error: surveysError } = useSurveys();
 
   const { startDate, endDate } = getDateRange(selectedPeriod, customStartDate, customEndDate);
 
@@ -110,9 +110,9 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
     );
   }
 
-  // Filter data berdasarkan periode
-  const filteredCustomers = filterDataByDateRange(customers || [], 'created_at', startDate, endDate);
-  const filteredSurveys = filterDataByDateRange(surveys || [], 'created_at', startDate, endDate);
+  // Filter data berdasarkan periode dengan proper typing
+  const filteredCustomers = customers ? filterDataByDateRange(customers, 'created_at', startDate, endDate) : [];
+  const filteredSurveys = surveys ? filterDataByDateRange(surveys, 'created_at', startDate, endDate) : [];
 
   // Statistik utama
   const totalCustomers = filteredCustomers.length;
