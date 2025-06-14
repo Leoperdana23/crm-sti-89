@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { TrendingUp, Package, Clock, Star, ExternalLink } from 'lucide-react';
 import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { useAppSettings } from '@/hooks/useAppSettings';
+import { useResellerBalance } from '@/hooks/useResellerApp';
 
 interface ResellerDashboardProps {
   reseller: ResellerSession;
@@ -15,6 +16,7 @@ interface ResellerDashboardProps {
 const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabChange }) => {
   const { data: orders = [] } = useResellerOrders(reseller.id);
   const { data: appSettings } = useAppSettings();
+  const { data: balance } = useResellerBalance(reseller.id);
 
   const totalOrders = orders.length;
   const pendingOrders = orders.filter(order => order.status === 'pending').length;
@@ -29,7 +31,9 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
       return sum;
     }, 0);
   
-  const totalCommission = orders.reduce((sum, order) => sum + order.commission_amount, 0);
+  // Use calculated commission from balance hook instead of order sum
+  const totalCommission = balance?.remainingCommission || 0;
+  const totalPoints = balance?.remainingPoints || 0;
   
   // Calculate total quantity and average order
   const totalQuantity = orders.reduce((sum, order) => {
@@ -39,7 +43,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
     return sum;
   }, 0);
   
-  const averageOrder = totalOrders > 0 ? Math.round(totalCommission / totalOrders) : 0;
+  const averageOrder = totalOrders > 0 ? Math.round((balance?.totalCommission || 0) / totalOrders) : 0;
 
   const siteName = appSettings?.catalog?.siteName || 'SEDEKAT App';
   const welcomeText = appSettings?.catalog?.welcomeText || 'Jadikan belanjamu banyak untung';
@@ -82,12 +86,22 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
         <CardContent>
           <div className="grid grid-cols-2 gap-4">
             <div className="text-center">
-              <div className="text-2xl font-bold text-green-600">{reseller.total_points}</div>
-              <div className="text-sm text-gray-600">Total Poin</div>
+              <div className="text-2xl font-bold text-green-600">{totalPoints}</div>
+              <div className="text-sm text-gray-600">Sisa Poin</div>
+              {balance && balance.redeemedPoints > 0 && (
+                <div className="text-xs text-gray-500">
+                  Sudah ditukar: {balance.redeemedPoints}
+                </div>
+              )}
             </div>
             <div className="text-center">
               <div className="text-2xl font-bold text-blue-600">Rp {totalCommission.toLocaleString()}</div>
-              <div className="text-sm text-gray-600">Total Komisi</div>
+              <div className="text-sm text-gray-600">Sisa Komisi</div>
+              {balance && balance.redeemedCommission > 0 && (
+                <div className="text-xs text-gray-500">
+                  Sudah ditukar: Rp {balance.redeemedCommission.toLocaleString()}
+                </div>
+              )}
             </div>
           </div>
         </CardContent>
