@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell, LineChart, Line } from 'recharts';
 import { Card, CardHeader, CardContent, CardTitle } from '@/components/ui/card';
@@ -89,11 +88,19 @@ const Reports = () => {
              orderDate.getFullYear() === date.getFullYear();
     }) || [];
 
+    const monthCommission = monthOrders.reduce((sum, order) => {
+      if (order.status !== 'selesai' && order.status !== 'completed') return sum;
+      return sum + (order.order_items || []).reduce((orderSum, item) => {
+        const commission = item.product_commission_snapshot || item.products?.commission_value || 0;
+        return orderSum + (commission * item.quantity);
+      }, 0);
+    }, 0);
+
     return {
       month: date.toLocaleDateString('id-ID', { month: 'short' }),
       orders: monthOrders.length,
       revenue: monthOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0),
-      commission: monthOrders.reduce((sum, order) => sum + (order.commission_amount || 0), 0)
+      commission: monthCommission
     };
   });
 
