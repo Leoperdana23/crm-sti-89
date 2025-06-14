@@ -36,13 +36,13 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useResellers } from '@/hooks/useResellers';
-import { useOrders } from '@/hooks/useOrders';
 import { useRewardCatalog, useRewardRedemptions, useCreateRedemption, useApproveRedemption } from '@/hooks/useRewards';
 import { useToast } from '@/hooks/use-toast';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 const Commission = () => {
   const { data: resellers, isLoading } = useResellers();
-  const { data: orders } = useOrders();
   const { data: rewardCatalog } = useRewardCatalog();
   const { data: redemptions } = useRewardRedemptions();
   const createRedemption = useCreateRedemption();
@@ -54,6 +54,41 @@ const Commission = () => {
   const [selectedReseller, setSelectedReseller] = useState<any>(null);
   const [isRedemptionDialogOpen, setIsRedemptionDialogOpen] = useState(false);
 
+  // Fetch reseller order history data
+  const { data: resellerOrderHistory } = useQuery({
+    queryKey: ['reseller-order-history'],
+    queryFn: async () => {
+      console.log('Fetching reseller order history...');
+      
+      const { data, error } = await supabase
+        .from('reseller_order_history')
+        .select(`
+          *,
+          resellers (
+            id,
+            name,
+            phone,
+            total_points,
+            is_active,
+            branches (
+              name
+            )
+          )
+        `)
+        .eq('order_status', 'selesai')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching reseller order history:', error);
+        throw error;
+      }
+
+      console.log('Reseller order history fetched:', data);
+      return data || [];
+    },
+    refetchInterval: 5000,
+  });
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -62,56 +97,44 @@ const Commission = () => {
     }).format(amount);
   };
 
-  // Simplified commission calculation - directly use reseller total_points from database
-  const calculateResellerCommission = (resellerId: string) => {
-    if (!orders) return 0;
+  // Calculate commission and points data from reseller order history
+  const calculateResellerData = () => {
+    if (!resellerOrderHistory || !resellers) return [];
+
+    console.log('Calculating reseller data from order history...');
     
-    console.log(`=== Calculating commission for reseller ${resellerId} ===`);
-    
-    // Get completed orders for this reseller
-    const completedOrders = orders.filter(order => {
-      const hasReseller = order.reseller?.id === resellerId;
-      const isCompleted = order.status === 'completed' || order.status === 'selesai';
-      
-      if (hasReseller && isCompleted) {
-        console.log(`✓ Found completed order ${order.id} for reseller`);
-      }
-      
-      return hasReseller && isCompleted;
+    const resellerMap = new Map();
+
+    // Initialize all resellers
+    resellers.forEach(reseller => {
+      resellerMap.set(reseller.id, {
+        id: reseller.id,
+        name: reseller.name,
+        phone: reseller.phone,
+        branch: reseller.branches?.name || '-',
+        isActive: reseller.is_active,
+        totalCommission: 0,
+        totalPoints: 0,
+        totalOrders: 0
+      });
     });
 
-    console.log(`Found ${completedOrders.length} completed orders`);
+    // Aggregate data from order history
+    resellerOrderHistory.forEach(order => {
+      if (order.reseller_id && resellerMap.has(order.reseller_id)) {
+        const resellerData = resellerMap.get(order.reseller_id);
+        resellerData.totalCommission += order.commission_earned || 0;
+        resellerData.totalPoints += order.points_earned || 0;
+        resellerData.totalOrders += 1;
+      }
+    });
 
-    const totalCommission = completedOrders.reduce((total, order) => {
-      const orderCommission = (order.order_items || []).reduce((itemTotal, item) => {
-        // Use snapshot value if available, otherwise use current product value
-        const commissionPerItem = item.product_commission_snapshot !== undefined 
-          ? item.product_commission_snapshot 
-          : (item.products?.commission_value || 0);
-        
-        const itemCommission = commissionPerItem * item.quantity;
-        console.log(`Item ${item.product_name}: ${commissionPerItem} x ${item.quantity} = ${itemCommission}`);
-        return itemTotal + itemCommission;
-      }, 0);
-      
-      console.log(`Order ${order.id} commission: ${orderCommission}`);
-      return total + orderCommission;
-    }, 0);
-
-    console.log(`Final commission for reseller ${resellerId}: ${totalCommission}`);
-    return totalCommission;
+    const result = Array.from(resellerMap.values());
+    console.log('Calculated reseller data:', result);
+    return result;
   };
 
-  // Simplified points calculation - use reseller's total_points directly
-  const calculateResellerPoints = (resellerId: string) => {
-    const reseller = resellers?.find(r => r.id === resellerId);
-    const totalPoints = reseller?.total_points || 0;
-    
-    console.log(`=== Points for reseller ${resellerId}: ${totalPoints} (from reseller.total_points) ===`);
-    return totalPoints;
-  };
-
-  // Calculate redeemed amounts for each reseller
+  // Get redeemed amounts for each reseller
   const getRedeemedAmounts = (resellerId: string) => {
     if (!redemptions) return { redeemedCommission: 0, redeemedPoints: 0 };
     
@@ -130,26 +153,29 @@ const Commission = () => {
     return { redeemedCommission, redeemedPoints };
   };
 
-  const filteredResellers = resellers?.filter(reseller => 
-    reseller.name.toLowerCase().includes(searchTerm.toLowerCase())
+  const resellerData = calculateResellerData();
+  
+  const filteredData = resellerData.filter(data => 
+    data.name.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const totalStats = {
-    totalCommission: resellers?.reduce((sum, r) => sum + calculateResellerCommission(r.id), 0) || 0,
-    totalPoints: resellers?.reduce((sum, r) => sum + calculateResellerPoints(r.id), 0) || 0,
-    activeResellers: resellers?.filter(r => r.is_active).length || 0,
+    totalCommission: resellerData.reduce((sum, r) => sum + r.totalCommission, 0),
+    totalPoints: resellerData.reduce((sum, r) => sum + r.totalPoints, 0),
+    activeResellers: resellerData.filter(r => r.isActive).length,
     totalRedemptions: redemptions?.length || 0
   };
 
   const handleRedeemReward = async (reward: any) => {
     if (!selectedReseller) return;
 
-    const earnedCommission = calculateResellerCommission(selectedReseller.id);
-    const earnedPoints = calculateResellerPoints(selectedReseller.id);
+    const resellerInfo = resellerData.find(r => r.id === selectedReseller.id);
+    if (!resellerInfo) return;
+
     const { redeemedCommission, redeemedPoints } = getRedeemedAmounts(selectedReseller.id);
     
-    const availableCommission = earnedCommission - redeemedCommission;
-    const availablePoints = earnedPoints - redeemedPoints;
+    const availableCommission = resellerInfo.totalCommission - redeemedCommission;
+    const availablePoints = resellerInfo.totalPoints - redeemedPoints;
 
     // Validate if reseller has enough balance
     if (reward.reward_type === 'commission' && availableCommission < reward.cost) {
@@ -199,10 +225,10 @@ const Commission = () => {
   }
 
   console.log('=== COMMISSION PAGE SUMMARY ===');
-  console.log('Total orders:', orders?.length);
+  console.log('Total reseller order history:', resellerOrderHistory?.length);
   console.log('Total resellers:', resellers?.length);
-  console.log('Completed orders:', orders?.filter(o => o.status === 'completed' || o.status === 'selesai').length);
-  console.log('Orders with reseller:', orders?.filter(o => o.reseller).length);
+  console.log('Calculated total commission:', totalStats.totalCommission);
+  console.log('Calculated total points:', totalStats.totalPoints);
 
   return (
     <div className="p-6 space-y-6">
@@ -311,6 +337,7 @@ const Commission = () => {
               <TableRow>
                 <TableHead>Reseller</TableHead>
                 <TableHead>Cabang</TableHead>
+                <TableHead>Total Order</TableHead>
                 <TableHead>Komisi Diperoleh</TableHead>
                 <TableHead>Komisi Ditukar</TableHead>
                 <TableHead>Sisa Komisi</TableHead>
@@ -322,40 +349,39 @@ const Commission = () => {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {filteredResellers?.map((reseller) => {
-                const earnedCommission = calculateResellerCommission(reseller.id);
-                const earnedPoints = calculateResellerPoints(reseller.id);
-                const { redeemedCommission, redeemedPoints } = getRedeemedAmounts(reseller.id);
-                const availableCommission = earnedCommission - redeemedCommission;
-                const availablePoints = earnedPoints - redeemedPoints;
+              {filteredData?.map((resellerInfo) => {
+                const { redeemedCommission, redeemedPoints } = getRedeemedAmounts(resellerInfo.id);
+                const availableCommission = resellerInfo.totalCommission - redeemedCommission;
+                const availablePoints = resellerInfo.totalPoints - redeemedPoints;
                 
                 return (
-                  <TableRow key={reseller.id}>
+                  <TableRow key={resellerInfo.id}>
                     <TableCell>
                       <div>
-                        <div className="font-medium">{reseller.name}</div>
-                        <div className="text-sm text-gray-500">{reseller.phone}</div>
+                        <div className="font-medium">{resellerInfo.name}</div>
+                        <div className="text-sm text-gray-500">{resellerInfo.phone}</div>
                       </div>
                     </TableCell>
-                    <TableCell>{reseller.branches?.name || '-'}</TableCell>
-                    <TableCell>{formatCurrency(earnedCommission)}</TableCell>
+                    <TableCell>{resellerInfo.branch}</TableCell>
+                    <TableCell>{resellerInfo.totalOrders}</TableCell>
+                    <TableCell>{formatCurrency(resellerInfo.totalCommission)}</TableCell>
                     <TableCell>{formatCurrency(redeemedCommission)}</TableCell>
                     <TableCell className="font-semibold text-green-600">
                       {formatCurrency(availableCommission)}
                     </TableCell>
-                    <TableCell>{earnedPoints}</TableCell>
+                    <TableCell>{resellerInfo.totalPoints}</TableCell>
                     <TableCell>{redeemedPoints}</TableCell>
                     <TableCell className="font-semibold text-blue-600">
                       {availablePoints}
                     </TableCell>
                     <TableCell>
-                      <Badge variant={reseller.is_active ? 'default' : 'secondary'}>
-                        {reseller.is_active ? 'Aktif' : 'Nonaktif'}
+                      <Badge variant={resellerInfo.isActive ? 'default' : 'secondary'}>
+                        {resellerInfo.isActive ? 'Aktif' : 'Nonaktif'}
                       </Badge>
                     </TableCell>
                     <TableCell>
                       <Dialog 
-                        open={isRedemptionDialogOpen && selectedReseller?.id === reseller.id} 
+                        open={isRedemptionDialogOpen && selectedReseller?.id === resellerInfo.id} 
                         onOpenChange={(open) => {
                           setIsRedemptionDialogOpen(open);
                           if (!open) setSelectedReseller(null);
@@ -366,7 +392,7 @@ const Commission = () => {
                             size="sm" 
                             variant="outline"
                             onClick={() => {
-                              setSelectedReseller(reseller);
+                              setSelectedReseller(resellerInfo);
                               setIsRedemptionDialogOpen(true);
                             }}
                           >
@@ -376,7 +402,7 @@ const Commission = () => {
                         </DialogTrigger>
                         <DialogContent className="max-w-2xl">
                           <DialogHeader>
-                            <DialogTitle>Tukar Hadiah untuk {reseller.name}</DialogTitle>
+                            <DialogTitle>Tukar Hadiah untuk {resellerInfo.name}</DialogTitle>
                             <DialogDescription>
                               Pilih hadiah dari katalog yang tersedia
                             </DialogDescription>
