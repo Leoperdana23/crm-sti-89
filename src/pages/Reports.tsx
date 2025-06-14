@@ -303,7 +303,7 @@ const Reports = () => {
     // Calculate general metrics
     const totalCustomers = customers?.length || 0;
     const totalDeals = customers?.filter(c => c.deal_date).length || 0;
-    const totalFollowUps = customers?.filter(c => c.status === 'follow_up').length || 0;
+    const totalFollowUps = customers?.filter(c => c.status === 'Follow-up').length || 0;
     const conversionRate = totalCustomers > 0 ? ((totalDeals / totalCustomers) * 100).toFixed(1) : '0';
     
     // Monthly trend data
@@ -561,8 +561,7 @@ const Reports = () => {
               {/* Detailed Survey Results */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Detail Hasil Survei Per Pel
-</CardTitle>
+                  <CardTitle>Detail Hasil Survei Per Pelanggan</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-3 max-h-96 overflow-y-auto">
