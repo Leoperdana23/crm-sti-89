@@ -165,7 +165,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
               {orders.slice(0, 3).map((order) => (
                 <div key={order.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
                   <div>
-                    <p className="font-medium text-sm">Pesanan #{order.order_id}</p>
+                    <p className="font-medium text-sm">Pesanan #{order.id.slice(-8)}</p>
                     <p className="text-xs text-gray-600">
                       {new Date(order.created_at).toLocaleDateString('id-ID')}
                     </p>
