@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -33,24 +32,89 @@ import {
   Award, 
   Download,
   Search,
-  AlertCircle
+  AlertCircle,
+  RefreshCw
 } from 'lucide-react';
 import { useRewardCatalog, useRewardRedemptions, useCreateRedemption, useApproveRedemption } from '@/hooks/useRewards';
-import { useResellerCommissionStats } from '@/hooks/useResellerOrderHistory';
+import { useResellerCommissionStats, useTriggerOrderSync } from '@/hooks/useResellerOrderHistory';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 const Commission = () => {
-  const { data: commissionStats, isLoading } = useResellerCommissionStats();
+  const { data: commissionStats, isLoading, refetch: refetchStats } = useResellerCommissionStats();
   const { data: rewardCatalog } = useRewardCatalog();
   const { data: redemptions } = useRewardRedemptions();
   const createRedemption = useCreateRedemption();
   const approveRedemption = useApproveRedemption();
+  const triggerSync = useTriggerOrderSync();
   const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
   const [dateFilter, setDateFilter] = useState('all');
   const [selectedReseller, setSelectedReseller] = useState<any>(null);
   const [isRedemptionDialogOpen, setIsRedemptionDialogOpen] = useState(false);
+  const [isManualSyncing, setIsManualSyncing] = useState(false);
+
+  // Set up real-time subscription for order history updates
+  useEffect(() => {
+    console.log('=== SETTING UP COMMISSION REAL-TIME SUBSCRIPTION ===');
+    
+    const channel = supabase
+      .channel('commission-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'reseller_order_history'
+        },
+        (payload) => {
+          console.log('✓ Commission data updated via real-time:', payload.eventType);
+          refetchStats();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('✓ Orders updated, refreshing commission stats:', payload.eventType);
+          // Delay to allow trigger to process
+          setTimeout(() => refetchStats(), 1000);
+        }
+      )
+      .subscribe();
+
+    return () => {
+      console.log('Cleaning up commission real-time subscription');
+      supabase.removeChannel(channel);
+    };
+  }, [refetchStats]);
+
+  const handleManualSync = async () => {
+    setIsManualSyncing(true);
+    try {
+      console.log('Starting manual sync from Commission page...');
+      await triggerSync();
+      await refetchStats();
+      toast({
+        title: 'Sukses',
+        description: 'Data berhasil disinkronisasi',
+      });
+    } catch (error) {
+      console.error('Error in manual sync:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal melakukan sinkronisasi data',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsManualSyncing(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -151,6 +215,7 @@ const Commission = () => {
   console.log('=== COMMISSION PAGE WITH HISTORY DATA ===');
   console.log('Commission stats from history:', commissionStats?.length);
   console.log('Total commission calculated:', totalStats.totalCommission);
+  console.log('Sample commission stats:', commissionStats?.slice(0, 2));
 
   return (
     <div className="p-6 space-y-6">
@@ -160,6 +225,14 @@ const Commission = () => {
           <p className="text-gray-600">Kelola komisi dan sistem poin reseller (Data dari histori order)</p>
         </div>
         <div className="flex gap-2">
+          <Button 
+            variant="outline"
+            onClick={handleManualSync}
+            disabled={isManualSyncing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isManualSyncing ? 'animate-spin' : ''}`} />
+            {isManualSyncing ? 'Sinkron...' : 'Sinkron Data'}
+          </Button>
           <Button variant="outline">
             <Download className="h-4 w-4 mr-2" />
             Export Excel
@@ -218,6 +291,31 @@ const Commission = () => {
           </CardContent>
         </Card>
       </div>
+
+      {/* Show data status */}
+      {commissionStats && commissionStats.length === 0 && (
+        <Card className="border-yellow-200 bg-yellow-50">
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <AlertCircle className="h-8 w-8 text-yellow-600" />
+              <div>
+                <p className="text-sm font-medium text-yellow-800">Tidak ada data komisi ditemukan</p>
+                <p className="text-xs text-yellow-600">Coba lakukan sinkronisasi data atau pastikan ada order dari reseller</p>
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  className="mt-2"
+                  onClick={handleManualSync}
+                  disabled={isManualSyncing}
+                >
+                  <RefreshCw className={`h-4 w-4 mr-2 ${isManualSyncing ? 'animate-spin' : ''}`} />
+                  Sinkronisasi Sekarang
+                </Button>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Filters */}
       <Card>

@@ -1,12 +1,12 @@
-
 import React, { useState, useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
-import { useResellerOrderHistory } from '@/hooks/useResellerOrderHistory';
+import { useResellerOrderHistory, useTriggerOrderSync } from '@/hooks/useResellerOrderHistory';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Package, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Package, Clock, CheckCircle, XCircle, RefreshCw } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 
 interface ResellerOrdersProps {
@@ -15,10 +15,14 @@ interface ResellerOrdersProps {
 
 const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
   const { data: orderHistory, isLoading: loading, refetch } = useResellerOrderHistory(reseller.id);
+  const triggerSync = useTriggerOrderSync();
   const [activeTab, setActiveTab] = useState('all');
+  const [isManualSyncing, setIsManualSyncing] = useState(false);
 
   // Set up real-time subscription for order updates
   useEffect(() => {
+    console.log('=== SETTING UP REAL-TIME SUBSCRIPTION ===');
+    
     const channel = supabase
       .channel('reseller-order-history-changes')
       .on(
@@ -30,16 +34,43 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
           filter: `reseller_id=eq.${reseller.id}`
         },
         (payload) => {
-          console.log('Reseller order history updated:', payload);
+          console.log('✓ Reseller order history updated via real-time:', payload);
           refetch();
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders'
+        },
+        (payload) => {
+          console.log('✓ Orders table updated via real-time:', payload);
+          // Refetch after a short delay to allow trigger to process
+          setTimeout(() => refetch(), 1000);
         }
       )
       .subscribe();
 
     return () => {
+      console.log('Cleaning up real-time subscription');
       supabase.removeChannel(channel);
     };
   }, [refetch, reseller.id]);
+
+  const handleManualSync = async () => {
+    setIsManualSyncing(true);
+    try {
+      await triggerSync();
+      await refetch();
+      console.log('✓ Manual sync and refetch completed');
+    } catch (error) {
+      console.error('Error in manual sync:', error);
+    } finally {
+      setIsManualSyncing(false);
+    }
+  };
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -200,7 +231,18 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
 
   return (
     <div className="p-4 space-y-4">
-      <h2 className="text-xl font-bold">Riwayat Order (Dari Histori)</h2>
+      <div className="flex justify-between items-center">
+        <h2 className="text-xl font-bold">Riwayat Order (Dari Histori)</h2>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={handleManualSync}
+          disabled={isManualSyncing}
+        >
+          <RefreshCw className={`h-4 w-4 mr-2 ${isManualSyncing ? 'animate-spin' : ''}`} />
+          {isManualSyncing ? 'Sinkron...' : 'Refresh'}
+        </Button>
+      </div>
 
       <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
         <TabsList className="grid w-full grid-cols-4">
@@ -231,6 +273,15 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
         <div className="text-center py-8 text-gray-500">
           <Package className="h-12 w-12 mx-auto mb-4 text-gray-300" />
           <p>Belum ada order</p>
+          <Button 
+            variant="outline" 
+            className="mt-4"
+            onClick={handleManualSync}
+            disabled={isManualSyncing}
+          >
+            <RefreshCw className={`h-4 w-4 mr-2 ${isManualSyncing ? 'animate-spin' : ''}`} />
+            Coba Sinkronisasi Ulang
+          </Button>
         </div>
       )}
     </div>
