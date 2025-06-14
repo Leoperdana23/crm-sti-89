@@ -20,6 +20,8 @@ import { useOrders } from '@/hooks/useOrders';
 import { useResellerSessions } from '@/hooks/useResellerSessions';
 import DateRangeFilter from './DateRangeFilter';
 import { getDateRange, filterDataByDateRange } from '@/utils/dateFilters';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface SedekatAppReportsProps {
   selectedPeriod: string;
@@ -42,30 +44,66 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
   const { data: orders } = useOrders();
   const { data: sessions } = useResellerSessions();
 
+  // Fetch reseller orders with proper joins
+  const { data: resellerOrders } = useQuery({
+    queryKey: ['reseller-orders-for-reports'],
+    queryFn: async () => {
+      console.log('Fetching reseller orders for reports...');
+      
+      const { data, error } = await supabase
+        .from('reseller_orders')
+        .select(`
+          *,
+          resellers (
+            id,
+            name,
+            phone,
+            email
+          ),
+          orders (
+            *,
+            order_items (
+              *,
+              product_commission_snapshot,
+              product_points_snapshot
+            )
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching reseller orders:', error);
+        throw error;
+      }
+
+      console.log('Reseller orders fetched successfully:', data?.length);
+      return data || [];
+    },
+    refetchInterval: 30000,
+  });
+
   const { startDate, endDate } = getDateRange(selectedPeriod, customStartDate, customEndDate);
 
   // Filter data berdasarkan periode
   const filteredOrders = filterDataByDateRange(orders || [], 'created_at', startDate, endDate);
   const filteredSessions = filterDataByDateRange(sessions || [], 'created_at', startDate, endDate);
+  const filteredResellerOrders = filterDataByDateRange(resellerOrders || [], 'created_at', startDate, endDate);
 
   // Statistik utama
   const totalResellers = resellers?.filter(r => r.is_active)?.length || 0;
   const orderViaApp = filteredOrders.filter(order => order.catalog_token).length;
   
-  const totalCommission = filteredOrders.reduce((sum, order) => {
-    if (!order.catalog_token) return sum;
-    const orderItems = order.order_items || [];
-    return sum + orderItems.reduce((itemSum, item) => {
-      return itemSum + (item.product_commission_snapshot || 0) * item.quantity;
-    }, 0);
+  // Hitung total komisi dan poin dari reseller_orders yang sudah difilter
+  const totalCommission = filteredResellerOrders.reduce((sum, resellerOrder) => {
+    return sum + (resellerOrder.commission_amount || 0);
   }, 0);
 
-  const totalPoints = filteredOrders.reduce((sum, order) => {
-    if (!order.catalog_token) return sum;
-    const orderItems = order.order_items || [];
-    return sum + orderItems.reduce((itemSum, item) => {
-      return itemSum + (item.product_points_snapshot || 0) * item.quantity;
+  const totalPoints = filteredResellerOrders.reduce((sum, resellerOrder) => {
+    if (!resellerOrder.orders?.order_items) return sum;
+    const orderPoints = resellerOrder.orders.order_items.reduce((itemSum: number, item: any) => {
+      return itemSum + ((item.product_points_snapshot || 0) * item.quantity);
     }, 0);
+    return sum + orderPoints;
   }, 0);
 
   // Data untuk chart tren bulanan
@@ -74,39 +112,41 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
     date.setMonth(date.getMonth() - i);
     const monthKey = date.toISOString().substring(0, 7);
     
-    const monthOrders = filteredOrders.filter(order => 
-      order.created_at.startsWith(monthKey) && order.catalog_token
+    const monthResellerOrders = filteredResellerOrders.filter(resellerOrder => 
+      resellerOrder.created_at.startsWith(monthKey)
     );
+    
+    const monthRevenue = monthResellerOrders.reduce((sum, resellerOrder) => {
+      return sum + (resellerOrder.orders?.total_amount || 0);
+    }, 0);
     
     return {
       month: date.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }),
-      orders: monthOrders.length,
-      revenue: monthOrders.reduce((sum, order) => sum + order.total_amount, 0)
+      orders: monthResellerOrders.length,
+      revenue: monthRevenue
     };
   }).reverse();
 
-  // Distribusi komisi per reseller
+  // Distribusi komisi per reseller berdasarkan data reseller_orders
   const resellerCommissions = resellers?.map(reseller => {
-    const resellerOrders = filteredOrders.filter(order => {
-      // Assuming we can map catalog_token to reseller somehow
-      return order.catalog_token; // Simplified for now
-    });
+    const resellerOrdersData = filteredResellerOrders.filter(ro => 
+      ro.reseller_id === reseller.id
+    );
     
-    const commission = resellerOrders.reduce((sum, order) => {
-      const orderItems = order.order_items || [];
-      return sum + orderItems.reduce((itemSum, item) => {
-        return itemSum + (item.product_commission_snapshot || 0) * item.quantity;
-      }, 0);
+    const commission = resellerOrdersData.reduce((sum, ro) => {
+      return sum + (ro.commission_amount || 0);
     }, 0);
+
+    const orders = resellerOrdersData.length;
 
     return {
       ...reseller,
       commission,
-      orders: resellerOrders.length
+      orders
     };
-  }) || [];
+  }).filter(r => r.commission > 0 || r.orders > 0) || [];
 
-  // Ranking reseller berdasarkan omset
+  // Ranking reseller berdasarkan komisi
   const resellerRanking = [...resellerCommissions]
     .sort((a, b) => b.commission - a.commission)
     .slice(0, 10);
@@ -161,7 +201,7 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
             <ShoppingCart className="h-4 w-4 text-muted-foreground" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{orderViaApp}</div>
+            <div className="text-2xl font-bold">{filteredResellerOrders.length}</div>
             <p className="text-xs text-muted-foreground">Order melalui aplikasi</p>
           </CardContent>
         </Card>
@@ -228,20 +268,27 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
               <CardTitle>Distribusi Komisi Reseller</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {resellerCommissions.slice(0, 10).map((reseller, index) => (
-                  <div key={reseller.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">{reseller.name}</p>
-                      <p className="text-sm text-gray-500">{reseller.phone}</p>
+              {resellerCommissions.length > 0 ? (
+                <div className="space-y-3">
+                  {resellerCommissions.slice(0, 10).map((reseller) => (
+                    <div key={reseller.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{reseller.name}</p>
+                        <p className="text-sm text-gray-500">{reseller.phone}</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">{formatCurrency(reseller.commission)}</p>
+                        <p className="text-sm text-gray-500">{reseller.orders} order</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">{formatCurrency(reseller.commission)}</p>
-                      <p className="text-sm text-gray-500">{reseller.orders} order</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <DollarSign className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Tidak ada data komisi untuk periode yang dipilih</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -252,30 +299,37 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
               <CardTitle>Performance Reseller</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {resellerCommissions.slice(0, 10).map((reseller, index) => (
-                  <div key={reseller.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Store className="h-4 w-4 text-blue-600" />
+              {resellerCommissions.length > 0 ? (
+                <div className="space-y-3">
+                  {resellerCommissions.slice(0, 10).map((reseller) => (
+                    <div key={reseller.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Store className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{reseller.name}</p>
+                          <p className="text-sm text-gray-500">{reseller.phone}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{reseller.name}</p>
-                        <p className="text-sm text-gray-500">{reseller.phone}</p>
+                      <div className="flex items-center space-x-4">
+                        <div className="text-right">
+                          <p className="text-sm font-medium">{reseller.orders} order</p>
+                          <p className="text-xs text-gray-500">Total order</p>
+                        </div>
+                        <Badge variant={reseller.commission > 1000000 ? "default" : "secondary"}>
+                          {reseller.commission > 1000000 ? "Top Performer" : "Active"}
+                        </Badge>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-4">
-                      <div className="text-right">
-                        <p className="text-sm font-medium">{reseller.orders} order</p>
-                        <p className="text-xs text-gray-500">Total order</p>
-                      </div>
-                      <Badge variant={reseller.commission > 1000000 ? "default" : "secondary"}>
-                        {reseller.commission > 1000000 ? "Top Performer" : "Active"}
-                      </Badge>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Store className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Tidak ada data performance untuk periode yang dipilih</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -283,28 +337,35 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
         <TabsContent value="ranking">
           <Card>
             <CardHeader>
-              <CardTitle>Ranking Reseller (Berdasarkan Omset)</CardTitle>
+              <CardTitle>Ranking Reseller (Berdasarkan Komisi)</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {resellerRanking.map((reseller, index) => (
-                  <div key={reseller.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
-                        <span className="text-sm font-bold text-yellow-600">#{index + 1}</span>
+              {resellerRanking.length > 0 ? (
+                <div className="space-y-3">
+                  {resellerRanking.map((reseller, index) => (
+                    <div key={reseller.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-yellow-100 rounded-full flex items-center justify-center">
+                          <span className="text-sm font-bold text-yellow-600">#{index + 1}</span>
+                        </div>
+                        <div>
+                          <p className="font-medium">{reseller.name}</p>
+                          <p className="text-sm text-gray-500">{reseller.phone}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{reseller.name}</p>
-                        <p className="text-sm text-gray-500">{reseller.phone}</p>
+                      <div className="text-right">
+                        <p className="font-medium">{formatCurrency(reseller.commission)}</p>
+                        <p className="text-sm text-gray-500">{reseller.orders} order</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">{formatCurrency(reseller.commission)}</p>
-                      <p className="text-sm text-gray-500">{reseller.orders} order</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Award className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Tidak ada data ranking untuk periode yang dipilih</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -315,25 +376,32 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
               <CardTitle>Reseller Paling Aktif Login</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {activeResellers.map((reseller, index) => (
-                  <div key={reseller.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <LogIn className="h-4 w-4 text-green-600" />
+              {activeResellers.length > 0 ? (
+                <div className="space-y-3">
+                  {activeResellers.map((reseller) => (
+                    <div key={reseller.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <LogIn className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{reseller.name}</p>
+                          <p className="text-sm text-gray-500">{reseller.phone}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{reseller.name}</p>
-                        <p className="text-sm text-gray-500">{reseller.phone}</p>
+                      <div className="text-right">
+                        <p className="font-medium">{reseller.loginCount} kali</p>
+                        <p className="text-sm text-gray-500">Login aplikasi</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">{reseller.loginCount} kali</p>
-                      <p className="text-sm text-gray-500">Login aplikasi</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <LogIn className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Tidak ada data login untuk periode yang dipilih</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
