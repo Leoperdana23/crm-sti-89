@@ -135,6 +135,59 @@ export const useUpdateOrderStatus = () => {
         throw error;
       }
 
+      // If status is completed/selesai, update reseller points and commission
+      if (status === 'selesai' || status === 'completed') {
+        console.log('Order completed, updating reseller points and commission...');
+        
+        // Get order details with reseller info
+        const { data: orderData } = await supabase
+          .from('orders')
+          .select(`
+            *,
+            order_items (
+              *,
+              product_commission_snapshot,
+              product_points_snapshot
+            )
+          `)
+          .eq('id', orderId)
+          .single();
+
+        if (orderData?.catalog_token) {
+          // Get reseller from catalog token
+          const { data: catalogData } = await supabase
+            .from('catalog_tokens')
+            .select('reseller_id')
+            .eq('token', orderData.catalog_token)
+            .single();
+
+          if (catalogData?.reseller_id) {
+            // Calculate total points from snapshot values
+            const totalPoints = orderData.order_items?.reduce((sum: number, item: any) => {
+              return sum + ((item.product_points_snapshot || 0) * item.quantity);
+            }, 0) || 0;
+
+            // Update reseller total points
+            if (totalPoints > 0) {
+              const { data: currentReseller } = await supabase
+                .from('resellers')
+                .select('total_points')
+                .eq('id', catalogData.reseller_id)
+                .single();
+
+              const newTotalPoints = (currentReseller?.total_points || 0) + totalPoints;
+
+              await supabase
+                .from('resellers')
+                .update({ total_points: newTotalPoints })
+                .eq('id', catalogData.reseller_id);
+
+              console.log('Updated reseller points:', totalPoints, 'New total:', newTotalPoints);
+            }
+          }
+        }
+      }
+
       console.log('Order status updated successfully');
       return data;
     },
@@ -142,6 +195,8 @@ export const useUpdateOrderStatus = () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
       queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       queryClient.invalidateQueries({ queryKey: ['reseller-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['resellers'] });
+      queryClient.invalidateQueries({ queryKey: ['reward-redemptions'] });
       toast({
         title: 'Sukses',
         description: 'Status pesanan berhasil diperbarui',

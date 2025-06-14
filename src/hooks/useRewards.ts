@@ -1,4 +1,3 @@
-
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -236,6 +235,139 @@ export const useApproveRedemption = () => {
       toast({
         title: 'Error',
         description: 'Gagal memperbarui status penukaran hadiah',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useCreateReward = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (rewardData: {
+      name: string;
+      description?: string;
+      reward_type: 'commission' | 'points';
+      cost: number;
+      image_url?: string;
+      is_active?: boolean;
+    }) => {
+      console.log('Creating reward:', rewardData);
+
+      const { data, error } = await supabase
+        .from('reward_catalog')
+        .insert(rewardData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating reward:', error);
+        throw error;
+      }
+
+      console.log('Reward created successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reward-catalog'] });
+      toast({
+        title: 'Sukses',
+        description: 'Hadiah berhasil ditambahkan',
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error creating reward:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal menambahkan hadiah',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useUpdateReward = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & Partial<{
+      name: string;
+      description?: string;
+      reward_type: 'commission' | 'points';
+      cost: number;
+      image_url?: string;
+      is_active: boolean;
+    }>) => {
+      console.log('Updating reward:', id, updates);
+
+      const { data, error } = await supabase
+        .from('reward_catalog')
+        .update(updates)
+        .eq('id', id)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error updating reward:', error);
+        throw error;
+      }
+
+      console.log('Reward updated successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reward-catalog'] });
+      toast({
+        title: 'Sukses',
+        description: 'Hadiah berhasil diperbarui',
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error updating reward:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal memperbarui hadiah',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useDeleteReward = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Deleting reward:', id);
+
+      const { error } = await supabase
+        .from('reward_catalog')
+        .update({ is_active: false })
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting reward:', error);
+        throw error;
+      }
+
+      console.log('Reward deleted successfully');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['reward-catalog'] });
+      toast({
+        title: 'Sukses',
+        description: 'Hadiah berhasil dihapus',
+      });
+    },
+    onError: (error: any) => {
+      console.error('Error deleting reward:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal menghapus hadiah',
         variant: 'destructive',
       });
     },
