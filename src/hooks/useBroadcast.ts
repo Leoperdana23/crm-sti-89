@@ -43,7 +43,7 @@ export const useCreateBroadcast = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (broadcastData: Omit<BroadcastMessage, 'id' | 'created_at' | 'updated_at' | 'sent_at'>) => {
+    mutationFn: async (broadcastData: Omit<BroadcastMessage, 'id' | 'created_at' | 'updated_at' | 'sent_at' | 'status'>) => {
       console.log('Creating broadcast message:', broadcastData);
       
       const { data, error } = await supabase

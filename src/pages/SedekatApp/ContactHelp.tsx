@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -223,7 +222,12 @@ const ContactHelp = () => {
     }
 
     try {
-      await createBroadcast.mutateAsync(broadcastForm);
+      await createBroadcast.mutateAsync({
+        title: broadcastForm.title,
+        message: broadcastForm.message,
+        target_audience: broadcastForm.target_audience,
+        channels: broadcastForm.channels
+      });
       setBroadcastForm({
         title: '',
         message: '',
