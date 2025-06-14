@@ -1,45 +1,51 @@
 
 export const getDateRange = (period: string, customStartDate?: string, customEndDate?: string) => {
-  const now = new Date();
+  const today = new Date();
   let startDate: Date;
-  let endDate: Date = new Date(now);
+  let endDate: Date = new Date(today);
 
   switch (period) {
     case 'today':
-      startDate = new Date(now);
+      startDate = new Date(today);
       startDate.setHours(0, 0, 0, 0);
       endDate.setHours(23, 59, 59, 999);
       break;
     
     case 'this_week':
-      const startOfWeek = new Date(now);
-      startOfWeek.setDate(now.getDate() - now.getDay());
-      startOfWeek.setHours(0, 0, 0, 0);
-      startDate = startOfWeek;
+      startDate = new Date(today);
+      startDate.setDate(today.getDate() - today.getDay());
+      startDate.setHours(0, 0, 0, 0);
+      endDate.setHours(23, 59, 59, 999);
       break;
     
     case 'this_month':
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      endDate.setHours(23, 59, 59, 999);
       break;
     
     case 'last_month':
-      startDate = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      endDate = new Date(now.getFullYear(), now.getMonth(), 0);
+      startDate = new Date(today.getFullYear(), today.getMonth() - 1, 1);
+      endDate = new Date(today.getFullYear(), today.getMonth(), 0);
       endDate.setHours(23, 59, 59, 999);
       break;
     
     case 'this_quarter':
-      const quarterStart = Math.floor(now.getMonth() / 3) * 3;
-      startDate = new Date(now.getFullYear(), quarterStart, 1);
+      const currentQuarter = Math.floor(today.getMonth() / 3);
+      startDate = new Date(today.getFullYear(), currentQuarter * 3, 1);
+      endDate = new Date(today.getFullYear(), (currentQuarter + 1) * 3, 0);
+      endDate.setHours(23, 59, 59, 999);
       break;
     
     case 'this_year':
-      startDate = new Date(now.getFullYear(), 0, 1);
+      startDate = new Date(today.getFullYear(), 0, 1);
+      endDate = new Date(today.getFullYear(), 11, 31);
+      endDate.setHours(23, 59, 59, 999);
       break;
     
     case 'last_year':
-      startDate = new Date(now.getFullYear() - 1, 0, 1);
-      endDate = new Date(now.getFullYear() - 1, 11, 31);
+      startDate = new Date(today.getFullYear() - 1, 0, 1);
+      endDate = new Date(today.getFullYear() - 1, 11, 31);
       endDate.setHours(23, 59, 59, 999);
       break;
     
@@ -49,21 +55,43 @@ export const getDateRange = (period: string, customStartDate?: string, customEnd
         endDate = new Date(customEndDate);
         endDate.setHours(23, 59, 59, 999);
       } else {
-        // Default to this month if custom dates not provided
-        startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+        // Default to this month if custom dates are not provided
+        startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+        endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+        endDate.setHours(23, 59, 59, 999);
       }
       break;
     
     default:
-      startDate = new Date(now.getFullYear(), now.getMonth(), 1);
+      startDate = new Date(today.getFullYear(), today.getMonth(), 1);
+      endDate = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+      endDate.setHours(23, 59, 59, 999);
   }
 
-  return { startDate, endDate };
+  return {
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString()
+  };
 };
 
-export const filterDataByDateRange = (data: any[], dateField: string, startDate: Date, endDate: Date) => {
+export const filterDataByDateRange = <T extends Record<string, any>>(
+  data: T[],
+  dateField: keyof T,
+  startDate: string,
+  endDate: string
+): T[] => {
+  if (!data || !Array.isArray(data)) {
+    return [];
+  }
+
   return data.filter(item => {
-    const itemDate = new Date(item[dateField]);
-    return itemDate >= startDate && itemDate <= endDate;
+    const itemDate = item[dateField];
+    if (!itemDate) return false;
+    
+    const date = new Date(itemDate as string);
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+    
+    return date >= start && date <= end;
   });
 };

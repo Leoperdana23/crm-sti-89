@@ -1,148 +1,39 @@
 
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Sales } from '@/types/sales';
-import { useToast } from '@/hooks/use-toast';
+
+export interface Sales {
+  id: string;
+  name: string;
+  code: string;
+  email?: string;
+  phone?: string;
+  branch_id?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export const useSales = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const query = useQuery({
+  return useQuery({
     queryKey: ['sales'],
     queryFn: async () => {
-      try {
-        console.log('Fetching sales from database...');
-        
-        const { data, error } = await supabase
-          .from('sales')
-          .select('*')
-          .order('created_at', { ascending: false });
+      console.log('Fetching sales data...');
+      const { data, error } = await supabase
+        .from('sales')
+        .select('*')
+        .eq('is_active', true)
+        .order('name', { ascending: true });
 
-        if (error) {
-          console.error('Error fetching sales:', error);
-          throw error;
-        }
-
-        console.log('Sales fetched successfully:', data?.length || 0, 'records');
-        return data as Sales[] || [];
-      } catch (error) {
+      if (error) {
         console.error('Error fetching sales:', error);
         throw error;
       }
+
+      console.log('Sales fetched successfully:', data?.length);
+      return data as Sales[];
     },
-  });
-
-  return {
-    sales: query.data || [],
-    loading: query.isLoading,
-    error: query.error,
-    ...query
-  };
-};
-
-export const useCreateSales = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (salesData: Omit<Sales, 'id' | 'created_at' | 'updated_at'>) => {
-      const { data, error } = await supabase
-        .from('sales')
-        .insert(salesData)
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sales'] });
-      toast({
-        title: 'Sukses',
-        description: 'Sales berhasil ditambahkan',
-      });
-    },
-    onError: (error) => {
-      console.error('Error adding sales:', error);
-      toast({
-        title: 'Error',
-        description: 'Gagal menambahkan sales',
-        variant: 'destructive',
-      });
-    },
-  });
-};
-
-export const useUpdateSales = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & Partial<Sales>) => {
-      const { data, error } = await supabase
-        .from('sales')
-        .update(updates)
-        .eq('id', id)
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sales'] });
-      toast({
-        title: 'Sukses',
-        description: 'Sales berhasil diperbarui',
-      });
-    },
-    onError: (error) => {
-      console.error('Error updating sales:', error);
-      toast({
-        title: 'Error',
-        description: 'Gagal memperbarui sales',
-        variant: 'destructive',
-      });
-    },
-  });
-};
-
-export const useDeleteSales = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('sales')
-        .delete()
-        .eq('id', id);
-
-      if (error) {
-        throw error;
-      }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['sales'] });
-      toast({
-        title: 'Sukses',
-        description: 'Sales berhasil dihapus',
-      });
-    },
-    onError: (error) => {
-      console.error('Error deleting sales:', error);
-      toast({
-        title: 'Error',
-        description: 'Gagal menghapus sales',
-        variant: 'destructive',
-      });
-    },
+    staleTime: 5 * 60 * 1000, // 5 minutes
+    refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 };

@@ -3,6 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { 
   Users, 
   Handshake, 
@@ -13,7 +14,8 @@ import {
   MessageSquare,
   Star,
   Target,
-  Calendar
+  Calendar,
+  AlertCircle
 } from 'lucide-react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useBranches } from '@/hooks/useBranches';
@@ -39,12 +41,74 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
   onCustomStartDateChange,
   onCustomEndDateChange
 }) => {
-  const { data: customers } = useCustomers();
-  const { data: branches } = useBranches();
-  const { data: sales } = useSales();
-  const { data: surveys } = useSurveys();
+  const { data: customers, isLoading: customersLoading, error: customersError } = useCustomers();
+  const { data: branches, isLoading: branchesLoading, error: branchesError } = useBranches();
+  const { data: sales, isLoading: salesLoading, error: salesError } = useSales();
+  const { data: surveys, isLoading: surveysLoading, error: surveysError } = useSurveys();
 
   const { startDate, endDate } = getDateRange(selectedPeriod, customStartDate, customEndDate);
+
+  console.log('GeneralReports - Data status:', {
+    customers: customers?.length || 0,
+    branches: branches?.length || 0,
+    sales: sales?.length || 0,
+    surveys: surveys?.length || 0,
+    selectedPeriod,
+    dateRange: { startDate, endDate }
+  });
+
+  // Handle loading state
+  if (customersLoading || branchesLoading || salesLoading || surveysLoading) {
+    return (
+      <div className="space-y-6">
+        <DateRangeFilter
+          selectedPeriod={selectedPeriod}
+          onPeriodChange={onPeriodChange}
+          customStartDate={customStartDate}
+          customEndDate={customEndDate}
+          onCustomStartDateChange={onCustomStartDateChange}
+          onCustomEndDateChange={onCustomEndDateChange}
+        />
+        
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {[1, 2, 3, 4].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-6">
+                <Skeleton className="h-4 w-1/2 mb-2" />
+                <Skeleton className="h-8 w-3/4 mb-2" />
+                <Skeleton className="h-3 w-1/3" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Handle error state
+  if (customersError || branchesError || salesError || surveysError) {
+    return (
+      <div className="space-y-6">
+        <DateRangeFilter
+          selectedPeriod={selectedPeriod}
+          onPeriodChange={onPeriodChange}
+          customStartDate={customStartDate}
+          customEndDate={customEndDate}
+          onCustomStartDateChange={onCustomStartDateChange}
+          onCustomEndDateChange={onCustomEndDateChange}
+        />
+        
+        <Card>
+          <CardContent className="p-6">
+            <div className="flex items-center justify-center space-x-2 text-red-600">
+              <AlertCircle className="h-5 w-5" />
+              <span>Error memuat data laporan. Silakan refresh halaman.</span>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
 
   // Filter data berdasarkan periode
   const filteredCustomers = filterDataByDateRange(customers || [], 'created_at', startDate, endDate);
@@ -103,7 +167,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
   };
 
   // Performance cabang
-  const branchPerformance = branches?.map(branch => {
+  const branchPerformance = (branches || []).map(branch => {
     const branchCustomers = filteredCustomers.filter(c => c.branch_id === branch.id);
     const branchDeals = branchCustomers.filter(c => c.status === 'deal');
     const branchRate = branchCustomers.length > 0 ? (branchDeals.length / branchCustomers.length) * 100 : 0;
@@ -114,10 +178,10 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
       deals: branchDeals.length,
       conversionRate: branchRate
     };
-  }).sort((a, b) => b.deals - a.deals) || [];
+  }).sort((a, b) => b.deals - a.deals);
 
   // Performance sales
-  const salesPerformance = sales?.map(sale => {
+  const salesPerformance = (sales || []).map(sale => {
     const saleCustomers = filteredCustomers.filter(c => c.sales_id === sale.id);
     const saleDeals = saleCustomers.filter(c => c.status === 'deal');
     const saleRate = saleCustomers.length > 0 ? (saleDeals.length / saleCustomers.length) * 100 : 0;
@@ -128,7 +192,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
       deals: saleDeals.length,
       conversionRate: saleRate
     };
-  }).sort((a, b) => b.deals - a.deals) || [];
+  }).sort((a, b) => b.deals - a.deals);
 
   // Detail hasil survei
   const surveyDetails = filteredSurveys.map(survey => {
@@ -227,22 +291,29 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
               <CardTitle>Tren Bulanan Pelanggan & Deal</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {monthlyTrends.map((trend, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">{trend.month}</p>
-                      <p className="text-sm text-gray-500">{trend.customers} pelanggan</p>
+              {monthlyTrends.length > 0 ? (
+                <div className="space-y-4">
+                  {monthlyTrends.map((trend, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{trend.month}</p>
+                        <p className="text-sm text-gray-500">{trend.customers} pelanggan</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">{trend.deals} deal</p>
+                        <p className="text-sm text-gray-500">
+                          {trend.customers > 0 ? ((trend.deals / trend.customers) * 100).toFixed(1) : 0}% konversi
+                        </p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">{trend.deals} deal</p>
-                      <p className="text-sm text-gray-500">
-                        {trend.customers > 0 ? ((trend.deals / trend.customers) * 100).toFixed(1) : 0}% konversi
-                      </p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Calendar className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Tidak ada data untuk periode yang dipilih</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -253,20 +324,27 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
               <CardTitle>Tren Conversion Rate</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {conversionTrends.map((trend, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div>
-                      <p className="font-medium">{trend.month}</p>
-                      <p className="text-sm text-gray-500">{trend.customers} pelanggan</p>
+              {conversionTrends.length > 0 ? (
+                <div className="space-y-4">
+                  {conversionTrends.map((trend, index) => (
+                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div>
+                        <p className="font-medium">{trend.month}</p>
+                        <p className="text-sm text-gray-500">{trend.customers} pelanggan</p>
+                      </div>
+                      <div className="text-right">
+                        <p className="font-medium">{trend.rate.toFixed(1)}%</p>
+                        <p className="text-sm text-gray-500">{trend.deals} deal</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">{trend.rate.toFixed(1)}%</p>
-                      <p className="text-sm text-gray-500">{trend.deals} deal</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <TrendingUp className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Tidak ada data konversi untuk periode yang dipilih</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -300,25 +378,32 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
               <CardTitle>Performance Cabang</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {branchPerformance.map((branch, index) => (
-                  <div key={branch.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
-                        <Building className="h-4 w-4 text-blue-600" />
+              {branchPerformance.length > 0 ? (
+                <div className="space-y-3">
+                  {branchPerformance.map((branch) => (
+                    <div key={branch.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center">
+                          <Building className="h-4 w-4 text-blue-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{branch.name}</p>
+                          <p className="text-sm text-gray-500">{branch.code}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{branch.name}</p>
-                        <p className="text-sm text-gray-500">{branch.code}</p>
+                      <div className="text-right">
+                        <p className="font-medium">{branch.deals} deal</p>
+                        <p className="text-sm text-gray-500">{branch.conversionRate.toFixed(1)}% konversi</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">{branch.deals} deal</p>
-                      <p className="text-sm text-gray-500">{branch.conversionRate.toFixed(1)}% konversi</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <Building className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Tidak ada data cabang tersedia</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -329,25 +414,32 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
               <CardTitle>Performance Sales</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-3">
-                {salesPerformance.map((sale, index) => (
-                  <div key={sale.id} className="flex items-center justify-between p-3 border rounded-lg">
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
-                        <UserCheck className="h-4 w-4 text-green-600" />
+              {salesPerformance.length > 0 ? (
+                <div className="space-y-3">
+                  {salesPerformance.map((sale) => (
+                    <div key={sale.id} className="flex items-center justify-between p-3 border rounded-lg">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-green-100 rounded-full flex items-center justify-center">
+                          <UserCheck className="h-4 w-4 text-green-600" />
+                        </div>
+                        <div>
+                          <p className="font-medium">{sale.name}</p>
+                          <p className="text-sm text-gray-500">{sale.code}</p>
+                        </div>
                       </div>
-                      <div>
-                        <p className="font-medium">{sale.name}</p>
-                        <p className="text-sm text-gray-500">{sale.code}</p>
+                      <div className="text-right">
+                        <p className="font-medium">{sale.deals} deal</p>
+                        <p className="text-sm text-gray-500">{sale.conversionRate.toFixed(1)}% konversi</p>
                       </div>
                     </div>
-                    <div className="text-right">
-                      <p className="font-medium">{sale.deals} deal</p>
-                      <p className="text-sm text-gray-500">{sale.conversionRate.toFixed(1)}% konversi</p>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <UserCheck className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Tidak ada data sales tersedia</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
@@ -358,64 +450,71 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
               <CardTitle>Detail Hasil Survei Per Pelanggan</CardTitle>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
-                {surveyDetails.map((survey) => (
-                  <div key={survey.id} className="p-4 border rounded-lg space-y-3">
-                    <div className="flex items-center justify-between">
-                      <div>
-                        <p className="font-medium">{survey.customer?.name}</p>
-                        <p className="text-sm text-gray-500">{survey.customer?.phone}</p>
+              {surveyDetails.length > 0 ? (
+                <div className="space-y-4">
+                  {surveyDetails.map((survey) => (
+                    <div key={survey.id} className="p-4 border rounded-lg space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="font-medium">{survey.customer?.name || 'Pelanggan tidak ditemukan'}</p>
+                          <p className="text-sm text-gray-500">{survey.customer?.phone || '-'}</p>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Star className="h-4 w-4 text-yellow-500 fill-current" />
+                          <span className="font-medium">{survey.avgRating.toFixed(1)}</span>
+                        </div>
                       </div>
-                      <div className="flex items-center space-x-2">
-                        <Star className="h-4 w-4 text-yellow-500 fill-current" />
-                        <span className="font-medium">{survey.avgRating.toFixed(1)}</span>
+                      
+                      <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
+                        <div>
+                          <p className="text-gray-500">Kualitas Produk</p>
+                          <p className="font-medium">{survey.product_quality}/5</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Teknisi</p>
+                          <p className="font-medium">{survey.service_technician}/5</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Sales</p>
+                          <p className="font-medium">{survey.service_sales}/5</p>
+                        </div>
+                        <div>
+                          <p className="text-gray-500">Kejelasan</p>
+                          <p className="font-medium">{survey.usage_clarity}/5</p>
+                        </div>
+                      </div>
+
+                      {survey.testimonial && (
+                        <div>
+                          <p className="text-gray-500 text-sm">Testimoni:</p>
+                          <p className="text-sm italic">"{survey.testimonial}"</p>
+                        </div>
+                      )}
+
+                      {survey.suggestions && (
+                        <div>
+                          <p className="text-gray-500 text-sm">Saran:</p>
+                          <p className="text-sm">{survey.suggestions}</p>
+                        </div>
+                      )}
+
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-gray-500">
+                          Persetujuan Harga: {survey.price_approval ? 'Ya' : 'Tidak'}
+                        </span>
+                        <span className="text-gray-500">
+                          {new Date(survey.deal_date).toLocaleDateString('id-ID')}
+                        </span>
                       </div>
                     </div>
-                    
-                    <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                      <div>
-                        <p className="text-gray-500">Kualitas Produk</p>
-                        <p className="font-medium">{survey.product_quality}/5</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">Teknisi</p>
-                        <p className="font-medium">{survey.service_technician}/5</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">Sales</p>
-                        <p className="font-medium">{survey.service_sales}/5</p>
-                      </div>
-                      <div>
-                        <p className="text-gray-500">Kejelasan</p>
-                        <p className="font-medium">{survey.usage_clarity}/5</p>
-                      </div>
-                    </div>
-
-                    {survey.testimonial && (
-                      <div>
-                        <p className="text-gray-500 text-sm">Testimoni:</p>
-                        <p className="text-sm italic">"{survey.testimonial}"</p>
-                      </div>
-                    )}
-
-                    {survey.suggestions && (
-                      <div>
-                        <p className="text-gray-500 text-sm">Saran:</p>
-                        <p className="text-sm">{survey.suggestions}</p>
-                      </div>
-                    )}
-
-                    <div className="flex items-center justify-between text-sm">
-                      <span className="text-gray-500">
-                        Persetujuan Harga: {survey.price_approval ? 'Ya' : 'Tidak'}
-                      </span>
-                      <span className="text-gray-500">
-                        {new Date(survey.deal_date).toLocaleDateString('id-ID')}
-                      </span>
-                    </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  <MessageSquare className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                  <p>Tidak ada data survei untuk periode yang dipilih</p>
+                </div>
+              )}
             </CardContent>
           </Card>
         </TabsContent>
