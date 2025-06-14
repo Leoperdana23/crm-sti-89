@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -79,7 +78,15 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
 
       if (categoriesError) throw categoriesError;
 
-      setProducts(productsData || []);
+      // Transform products data to match Product type
+      const transformedProducts = productsData?.map(product => ({
+        ...product,
+        product_categories: product.product_categories ? {
+          name: product.product_categories.name
+        } : undefined
+      })) || [];
+
+      setProducts(transformedProducts);
       setCategories(categoriesData || []);
     } catch (error) {
       console.error('Error fetching data:', error);

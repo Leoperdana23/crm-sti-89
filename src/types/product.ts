@@ -29,7 +29,7 @@ export interface Product {
     name: string;
   };
   product_categories?: {
-    id: string;
+    id?: string;
     name: string;
   };
 }
