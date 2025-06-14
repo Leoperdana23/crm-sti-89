@@ -72,8 +72,8 @@ export const useResellerAuth = () => {
         throw new Error(error.message || 'Authentication failed');
       }
 
-      // Type cast the response to our interface
-      const authResult = data as AuthResponse;
+      // Type cast the response to our interface with proper type safety
+      const authResult = data as unknown as AuthResponse;
 
       if (!authResult.success) {
         throw new Error(authResult.message || 'Authentication failed');
