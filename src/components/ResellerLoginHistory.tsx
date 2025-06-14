@@ -20,32 +20,30 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { 
-  Dialog,
-  DialogContent,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import { 
   History, 
   Search,
-  Filter,
   Download,
   Phone,
   Clock,
   User,
-  Calendar
+  Calendar,
+  RefreshCw
 } from 'lucide-react';
 import { useResellerLoginHistory } from '@/hooks/useResellerLoginHistory';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 
 const ResellerLoginHistory = () => {
-  const { data: loginHistory, isLoading } = useResellerLoginHistory();
+  const { data: loginHistory, isLoading, refetch } = useResellerLoginHistory();
   
   const [searchTerm, setSearchTerm] = useState('');
   const [methodFilter, setMethodFilter] = useState('all');
   const [dateFilter, setDateFilter] = useState('all');
+
+  const handleRefresh = () => {
+    console.log('Refreshing reseller login history...');
+    refetch();
+  };
 
   const filteredHistory = loginHistory?.filter(record => {
     const matchesSearch = 
@@ -94,6 +92,32 @@ const ResellerLoginHistory = () => {
     }
   };
 
+  const exportData = () => {
+    if (!filteredHistory || filteredHistory.length === 0) return;
+    
+    const csvContent = [
+      ['Reseller', 'Telepon', 'Email', 'Waktu Login', 'Metode', 'Status', 'IP Address', 'Durasi'],
+      ...filteredHistory.map(record => [
+        record.resellers?.name || 'N/A',
+        record.resellers?.phone || 'N/A',
+        record.resellers?.email || '',
+        format(new Date(record.login_time), 'dd/MM/yyyy HH:mm'),
+        record.login_method === 'password' ? 'Password' : 'PIN',
+        record.logout_time ? 'Selesai' : 'Aktif',
+        record.ip_address || 'N/A',
+        calculateSessionDuration(record.login_time, record.logout_time)
+      ])
+    ].map(row => row.join(',')).join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `reseller_login_history_${new Date().toISOString().split('T')[0]}.csv`;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   if (isLoading) {
     return (
       <div className="p-6">
@@ -106,12 +130,17 @@ const ResellerLoginHistory = () => {
     );
   }
 
+  // Calculate real-time stats from filtered data
   const stats = {
     total: loginHistory?.length || 0,
     today: loginHistory?.filter(r => 
       new Date(r.login_time).toDateString() === new Date().toDateString()
     ).length || 0,
     active: loginHistory?.filter(r => !r.logout_time).length || 0,
+    thisWeek: loginHistory?.filter(r => {
+      const weekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+      return new Date(r.login_time) >= weekAgo;
+    }).length || 0,
   };
 
   return (
@@ -119,18 +148,22 @@ const ResellerLoginHistory = () => {
       <div className="flex justify-between items-center">
         <div>
           <h1 className="text-2xl font-bold">Riwayat Login Reseller</h1>
-          <p className="text-gray-600">Pantau aktivitas login reseller</p>
+          <p className="text-gray-600">Pantau aktivitas login reseller secara real-time</p>
         </div>
         <div className="flex gap-2">
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleRefresh}>
+            <RefreshCw className="h-4 w-4 mr-2" />
+            Refresh
+          </Button>
+          <Button variant="outline" onClick={exportData}>
             <Download className="h-4 w-4 mr-2" />
             Export
           </Button>
         </div>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+      {/* Real-time Stats Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
         <Card>
           <CardContent className="p-4">
             <div className="flex items-center space-x-3">
@@ -160,6 +193,17 @@ const ResellerLoginHistory = () => {
               <div>
                 <p className="text-sm text-gray-600">Sesi Aktif</p>
                 <p className="text-2xl font-bold">{stats.active}</p>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center space-x-3">
+              <Clock className="h-8 w-8 text-purple-500" />
+              <div>
+                <p className="text-sm text-gray-600">Login Minggu Ini</p>
+                <p className="text-2xl font-bold">{stats.thisWeek}</p>
               </div>
             </div>
           </CardContent>
@@ -209,7 +253,7 @@ const ResellerLoginHistory = () => {
       {/* Login History Table */}
       <Card>
         <CardHeader>
-          <CardTitle>Riwayat Login</CardTitle>
+          <CardTitle>Riwayat Login (Real-time)</CardTitle>
         </CardHeader>
         <CardContent>
           <Table>

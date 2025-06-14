@@ -25,7 +25,7 @@ export const useResellerLoginHistory = () => {
   return useQuery({
     queryKey: ['reseller-login-history'],
     queryFn: async () => {
-      console.log('Fetching reseller login history...');
+      console.log('Fetching real-time reseller login history...');
       const { data, error } = await supabase
         .from('reseller_login_history')
         .select(`
@@ -43,9 +43,11 @@ export const useResellerLoginHistory = () => {
         throw error;
       }
 
-      console.log('Reseller login history fetched successfully:', data);
+      console.log('Reseller login history fetched successfully:', data?.length, 'records');
       return data as ResellerLoginHistory[];
     },
+    refetchInterval: 30000, // Refresh every 30 seconds
+    staleTime: 10000, // Consider data stale after 10 seconds
   });
 };
 
@@ -70,5 +72,6 @@ export const useResellerLoginHistoryByReseller = (resellerId: string) => {
       return data as ResellerLoginHistory[];
     },
     enabled: !!resellerId,
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
 };
