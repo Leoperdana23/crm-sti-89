@@ -39,6 +39,36 @@ export type Database = {
         }
         Relationships: []
       }
+      app_settings: {
+        Row: {
+          auto_reply: Json | null
+          catalog: Json | null
+          created_at: string
+          id: string
+          notifications: Json | null
+          operating_hours: Json | null
+          updated_at: string
+        }
+        Insert: {
+          auto_reply?: Json | null
+          catalog?: Json | null
+          created_at?: string
+          id?: string
+          notifications?: Json | null
+          operating_hours?: Json | null
+          updated_at?: string
+        }
+        Update: {
+          auto_reply?: Json | null
+          catalog?: Json | null
+          created_at?: string
+          id?: string
+          notifications?: Json | null
+          operating_hours?: Json | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       app_users: {
         Row: {
           auth_user_id: string | null

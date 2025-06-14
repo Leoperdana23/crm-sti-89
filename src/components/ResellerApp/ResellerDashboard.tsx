@@ -1,9 +1,11 @@
+
 import React from 'react';
 import { ResellerSession } from '@/types/resellerApp';
-import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Skeleton } from '@/components/ui/skeleton';
-import { TrendingUp, ShoppingBag, Award, DollarSign, Package, ShoppingCart } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { TrendingUp, Package, Clock, Star, ExternalLink } from 'lucide-react';
+import { useResellerOrders } from '@/hooks/useResellerOrders';
+import { useAppSettings } from '@/hooks/useAppSettings';
 
 interface ResellerDashboardProps {
   reseller: ResellerSession;
@@ -11,128 +13,109 @@ interface ResellerDashboardProps {
 }
 
 const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabChange }) => {
-  const { data: orders, isLoading: loading } = useResellerOrders(reseller.id);
+  const { data: orders = [] } = useResellerOrders(reseller.id);
+  const { data: appSettings } = useAppSettings();
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+  const totalOrders = orders.length;
+  const pendingOrders = orders.filter(order => order.status === 'pending').length;
+  const completedOrders = orders.filter(order => order.status === 'selesai').length;
+  const totalCommission = orders.reduce((sum, order) => sum + order.commission_amount, 0);
 
-  // Filter only completed orders
-  const completedOrders = (orders || []).filter(order => 
-    order.status === 'selesai' || order.status === 'completed'
-  );
-
-  // Calculate total commission from completed orders using snapshot values
-  const totalCommission = completedOrders.reduce((total, order) => {
-    return total + (order.order_items || []).reduce((orderTotal, item) => {
-      const snapshotCommission = item.product_commission_snapshot || 0;
-      return orderTotal + (snapshotCommission * item.quantity);
-    }, 0);
-  }, 0);
-
-  // Calculate total points from completed orders using snapshot values
-  const totalPoints = completedOrders.reduce((total, order) => {
-    return total + (order.order_items || []).reduce((orderTotal, item) => {
-      const snapshotPoints = item.product_points_snapshot || 0;
-      return orderTotal + (snapshotPoints * item.quantity);
-    }, 0);
-  }, 0);
-
-  // Calculate current month stats
-  const currentMonth = new Date().getMonth();
-  const currentYear = new Date().getFullYear();
-  const currentMonthOrders = completedOrders.filter(order => {
-    const orderDate = new Date(order.created_at);
-    return orderDate.getMonth() === currentMonth && orderDate.getFullYear() === currentYear;
-  });
+  const siteName = appSettings?.catalog?.siteName || 'SEDEKAT App';
+  const welcomeText = appSettings?.catalog?.welcomeText || 'Selamat datang di katalog produk kami';
+  const bannerUrl = appSettings?.catalog?.bannerUrl || '';
 
   return (
     <div className="p-4 space-y-6">
-      {/* Welcome Section */}
-      <div className="bg-gradient-to-r from-green-500 to-emerald-600 rounded-lg p-6 text-white">
-        <h2 className="text-xl font-bold mb-2">Selamat datang, {reseller.name}!</h2>
-        <p className="text-green-100">
-          Kelola Order, RAB Project anda lebih mudah dan Sedekat ini.
-        </p>
-      </div>
+      {/* Banner Section */}
+      {bannerUrl ? (
+        <div className="relative">
+          <img 
+            src={bannerUrl} 
+            alt="Banner Promo" 
+            className="w-full h-32 object-cover rounded-lg"
+          />
+          <div className="absolute inset-0 bg-black bg-opacity-30 rounded-lg flex items-center justify-center">
+            <h2 className="text-white text-lg font-bold text-center px-4">
+              Promo Spesial Hari Ini!
+            </h2>
+          </div>
+        </div>
+      ) : (
+        <Card>
+          <CardContent className="p-6 text-center">
+            <h2 className="text-xl font-bold text-gray-800 mb-2">{siteName}</h2>
+            <p className="text-gray-600">{welcomeText}</p>
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Stats Cards */}
+      {/* Welcome Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Selamat Datang, {reseller.name}!</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="text-center">
+              <div className="text-2xl font-bold text-green-600">{reseller.total_points}</div>
+              <div className="text-sm text-gray-600">Total Poin</div>
+            </div>
+            <div className="text-center">
+              <div className="text-2xl font-bold text-blue-600">{reseller.commission_rate}%</div>
+              <div className="text-sm text-gray-600">Rate Komisi</div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Stats Grid */}
       <div className="grid grid-cols-2 gap-4">
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-              <ShoppingBag className="h-4 w-4 mr-2 text-blue-500" />
-              Total Order
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold text-blue-600">
-                {(orders || []).length}
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Pesanan</p>
+                <p className="text-2xl font-bold">{totalOrders}</p>
               </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-              <DollarSign className="h-4 w-4 mr-2 text-green-500" />
-              Total Komisi
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-20" />
-            ) : (
-              <div className="text-lg font-bold text-green-600">
-                {formatCurrency(totalCommission)}
-              </div>
-            )}
-            <p className="text-xs text-gray-500 mt-1">
-              Dari order selesai
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-              <TrendingUp className="h-4 w-4 mr-2 text-orange-500" />
-              Order Bulan Ini
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold text-orange-600">
-                {currentMonthOrders.length}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-              <Award className="h-4 w-4 mr-2 text-purple-500" />
-              Total Poin
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold text-purple-600">
-              {totalPoints}
+              <Package className="h-8 w-8 text-blue-500" />
             </div>
-            <p className="text-xs text-gray-500 mt-1">
-              Dari order selesai
-            </p>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Total Komisi</p>
+                <p className="text-2xl font-bold">Rp {totalCommission.toLocaleString()}</p>
+              </div>
+              <TrendingUp className="h-8 w-8 text-green-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Menunggu</p>
+                <p className="text-2xl font-bold">{pendingOrders}</p>
+              </div>
+              <Clock className="h-8 w-8 text-orange-500" />
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm text-gray-600">Selesai</p>
+                <p className="text-2xl font-bold">{completedOrders}</p>
+              </div>
+              <Star className="h-8 w-8 text-yellow-500" />
+            </div>
           </CardContent>
         </Card>
       </div>
@@ -142,37 +125,67 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
         <CardHeader>
           <CardTitle className="text-lg">Aksi Cepat</CardTitle>
         </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-2 gap-3">
-            <button 
-              onClick={() => onTabChange('catalog')}
-              className="p-4 bg-blue-50 rounded-lg text-center text-blue-700 hover:bg-blue-100"
-            >
-              <Package className="h-6 w-6 mx-auto mb-2" />
-              <div className="text-sm font-medium">Lihat Katalog</div>
-            </button>
-            <button 
-              onClick={() => onTabChange('orders')}
-              className="p-4 bg-green-50 rounded-lg text-center text-green-700 hover:bg-green-100"
-            >
-              <ShoppingCart className="h-6 w-6 mx-auto mb-2" />
-              <div className="text-sm font-medium">Riwayat Order</div>
-            </button>
-          </div>
+        <CardContent className="space-y-3">
+          <Button 
+            className="w-full justify-start"
+            onClick={() => onTabChange('catalog')}
+          >
+            <Package className="h-4 w-4 mr-2" />
+            Lihat Katalog Produk
+          </Button>
+          
+          <Button 
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => onTabChange('orders')}
+          >
+            <Clock className="h-4 w-4 mr-2" />
+            Cek Status Pesanan
+          </Button>
+
+          <Button 
+            variant="outline"
+            className="w-full justify-start"
+            onClick={() => onTabChange('reports')}
+          >
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Lihat Laporan
+          </Button>
         </CardContent>
       </Card>
 
-      {/* Info Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">INFORMASI</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-sm text-gray-500">
-            Informasi dapat di update di halaman admin secara manual. Informasi terintegrasi.
-          </p>
-        </CardContent>
-      </Card>
+      {/* Recent Orders */}
+      {orders.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg">Pesanan Terbaru</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-3">
+              {orders.slice(0, 3).map((order) => (
+                <div key={order.id} className="flex justify-between items-center p-3 bg-gray-50 rounded">
+                  <div>
+                    <p className="font-medium text-sm">Pesanan #{order.order_id}</p>
+                    <p className="text-xs text-gray-600">
+                      {new Date(order.created_at).toLocaleDateString('id-ID')}
+                    </p>
+                  </div>
+                  <div className="text-right">
+                    <p className="text-sm font-medium">Rp {order.commission_amount.toLocaleString()}</p>
+                    <span className={`text-xs px-2 py-1 rounded ${
+                      order.status === 'selesai' ? 'bg-green-100 text-green-800' :
+                      order.status === 'proses' ? 'bg-blue-100 text-blue-800' :
+                      'bg-gray-100 text-gray-800'
+                    }`}>
+                      {order.status}
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 };

@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -20,22 +20,17 @@ import {
   Image,
   Save
 } from 'lucide-react';
+import { useAppSettings, useUpdateAppSettings } from '@/hooks/useAppSettings';
 
 const AppSettings = () => {
+  const { data: appSettings, isLoading } = useAppSettings();
+  const updateAppSettings = useUpdateAppSettings();
+  
   const [settings, setSettings] = useState({
     notifications: {
       whatsapp: true,
       email: false,
       push: true
-    },
-    operatingHours: {
-      start: '08:00',
-      end: '17:00',
-      timezone: 'Asia/Jakarta'
-    },
-    autoReply: {
-      enabled: true,
-      message: 'Terima kasih telah menghubungi kami. Kami akan segera merespons pesan Anda.'
     },
     catalog: {
       siteName: 'SEDEKAT App',
@@ -43,13 +38,48 @@ const AppSettings = () => {
       bannerUrl: '',
       primaryColor: '#16a34a',
       secondaryColor: '#059669'
+    },
+    operating_hours: {
+      start: '08:00',
+      end: '17:00',
+      timezone: 'Asia/Jakarta'
+    },
+    auto_reply: {
+      enabled: true,
+      message: 'Terima kasih telah menghubungi kami. Kami akan segera merespons pesan Anda.'
     }
   });
 
-  const handleSave = () => {
-    console.log('Saving settings:', settings);
-    // Implement save logic here
+  // Load settings from database
+  useEffect(() => {
+    if (appSettings) {
+      setSettings({
+        notifications: appSettings.notifications,
+        catalog: appSettings.catalog,
+        operating_hours: appSettings.operating_hours,
+        auto_reply: appSettings.auto_reply
+      });
+    }
+  }, [appSettings]);
+
+  const handleSave = async () => {
+    try {
+      await updateAppSettings.mutateAsync(settings);
+    } catch (error) {
+      console.error('Failed to save app settings:', error);
+    }
   };
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="animate-pulse space-y-4">
+          <div className="h-8 bg-gray-200 rounded w-1/4"></div>
+          <div className="h-40 bg-gray-200 rounded"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6 space-y-6">
@@ -58,9 +88,9 @@ const AppSettings = () => {
           <h1 className="text-2xl font-bold">Pengaturan Aplikasi</h1>
           <p className="text-gray-600">Konfigurasi pengaturan SEDEKAT App</p>
         </div>
-        <Button onClick={handleSave}>
+        <Button onClick={handleSave} disabled={updateAppSettings.isPending}>
           <Save className="h-4 w-4 mr-2" />
-          Simpan Pengaturan
+          {updateAppSettings.isPending ? 'Menyimpan...' : 'Simpan Pengaturan'}
         </Button>
       </div>
 
@@ -243,11 +273,11 @@ const AppSettings = () => {
                   <Label>Jam Buka</Label>
                   <Input
                     type="time"
-                    value={settings.operatingHours.start}
+                    value={settings.operating_hours.start}
                     onChange={(e) =>
                       setSettings(prev => ({
                         ...prev,
-                        operatingHours: { ...prev.operatingHours, start: e.target.value }
+                        operating_hours: { ...prev.operating_hours, start: e.target.value }
                       }))
                     }
                   />
@@ -256,11 +286,11 @@ const AppSettings = () => {
                   <Label>Jam Tutup</Label>
                   <Input
                     type="time"
-                    value={settings.operatingHours.end}
+                    value={settings.operating_hours.end}
                     onChange={(e) =>
                       setSettings(prev => ({
                         ...prev,
-                        operatingHours: { ...prev.operatingHours, end: e.target.value }
+                        operating_hours: { ...prev.operating_hours, end: e.target.value }
                       }))
                     }
                   />
@@ -271,11 +301,11 @@ const AppSettings = () => {
                 <Label>Zona Waktu</Label>
                 <select
                   className="w-full px-3 py-2 border rounded-md"
-                  value={settings.operatingHours.timezone}
+                  value={settings.operating_hours.timezone}
                   onChange={(e) =>
                     setSettings(prev => ({
                       ...prev,
-                      operatingHours: { ...prev.operatingHours, timezone: e.target.value }
+                      operating_hours: { ...prev.operating_hours, timezone: e.target.value }
                     }))
                   }
                 >
@@ -305,11 +335,11 @@ const AppSettings = () => {
                   </p>
                 </div>
                 <Switch
-                  checked={settings.autoReply.enabled}
+                  checked={settings.auto_reply.enabled}
                   onCheckedChange={(checked) =>
                     setSettings(prev => ({
                       ...prev,
-                      autoReply: { ...prev.autoReply, enabled: checked }
+                      auto_reply: { ...prev.auto_reply, enabled: checked }
                     }))
                   }
                 />
@@ -319,11 +349,11 @@ const AppSettings = () => {
                 <Label>Pesan Auto Reply</Label>
                 <Textarea
                   rows={4}
-                  value={settings.autoReply.message}
+                  value={settings.auto_reply.message}
                   onChange={(e) =>
                     setSettings(prev => ({
                       ...prev,
-                      autoReply: { ...prev.autoReply, message: e.target.value }
+                      auto_reply: { ...prev.auto_reply, message: e.target.value }
                     }))
                   }
                 />

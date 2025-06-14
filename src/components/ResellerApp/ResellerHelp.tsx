@@ -19,8 +19,9 @@ const ResellerHelp: React.FC<ResellerHelpProps> = ({ reseller }) => {
 
   const handleWhatsAppContact = () => {
     const adminPhone = contactSettings?.whatsapp_number || '6281234567890';
+    const cleanPhone = adminPhone.replace(/\D/g, '');
     const message = encodeURIComponent(`Halo Admin, saya ${reseller.name} (${reseller.phone}) membutuhkan bantuan dengan aplikasi reseller.`);
-    window.open(`https://wa.me/${adminPhone}?text=${message}`, '_blank');
+    window.open(`https://wa.me/${cleanPhone}?text=${message}`, '_blank');
   };
 
   const handleEmailContact = () => {
