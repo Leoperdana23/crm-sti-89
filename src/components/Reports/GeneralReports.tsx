@@ -116,8 +116,8 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
 
   // Statistik utama
   const totalCustomers = filteredCustomers.length;
-  const totalDeals = filteredCustomers.filter(c => c.status === 'deal').length;
-  const totalFollowUps = filteredCustomers.filter(c => c.status === 'follow_up').length;
+  const totalDeals = filteredCustomers.filter(c => c.status === 'Deal').length;
+  const totalFollowUps = filteredCustomers.filter(c => c.status === 'Follow-up').length;
   const conversionRate = totalCustomers > 0 ? (totalDeals / totalCustomers) * 100 : 0;
 
   // Tren conversion rate
@@ -129,7 +129,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
     const monthCustomers = filteredCustomers.filter(customer => 
       customer.created_at.startsWith(monthKey)
     );
-    const monthDeals = monthCustomers.filter(c => c.status === 'deal');
+    const monthDeals = monthCustomers.filter(c => c.status === 'Deal');
     const rate = monthCustomers.length > 0 ? (monthDeals.length / monthCustomers.length) * 100 : 0;
     
     return {
@@ -149,7 +149,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
     const monthCustomers = filteredCustomers.filter(customer => 
       customer.created_at.startsWith(monthKey)
     );
-    const monthDeals = monthCustomers.filter(c => c.status === 'deal');
+    const monthDeals = monthCustomers.filter(c => c.status === 'Deal');
     
     return {
       month: date.toLocaleDateString('id-ID', { month: 'short', year: 'numeric' }),
@@ -160,16 +160,16 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
 
   // Status pelanggan
   const customerStatusCounts = {
-    prospect: filteredCustomers.filter(c => c.status === 'prospect').length,
-    follow_up: filteredCustomers.filter(c => c.status === 'follow_up').length,
-    deal: filteredCustomers.filter(c => c.status === 'deal').length,
-    cancelled: filteredCustomers.filter(c => c.status === 'cancelled').length
+    prospect: filteredCustomers.filter(c => c.status === 'Prospek').length,
+    follow_up: filteredCustomers.filter(c => c.status === 'Follow-up').length,
+    deal: filteredCustomers.filter(c => c.status === 'Deal').length,
+    cancelled: filteredCustomers.filter(c => c.status === 'Tidak Jadi').length
   };
 
   // Performance cabang
   const branchPerformance = (branches || []).map(branch => {
     const branchCustomers = filteredCustomers.filter(c => c.branch_id === branch.id);
-    const branchDeals = branchCustomers.filter(c => c.status === 'deal');
+    const branchDeals = branchCustomers.filter(c => c.status === 'Deal');
     const branchRate = branchCustomers.length > 0 ? (branchDeals.length / branchCustomers.length) * 100 : 0;
     
     return {
@@ -183,7 +183,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
   // Performance sales
   const salesPerformance = (sales || []).map(sale => {
     const saleCustomers = filteredCustomers.filter(c => c.sales_id === sale.id);
-    const saleDeals = saleCustomers.filter(c => c.status === 'deal');
+    const saleDeals = saleCustomers.filter(c => c.status === 'Deal');
     const saleRate = saleCustomers.length > 0 ? (saleDeals.length / saleCustomers.length) * 100 : 0;
     
     return {
