@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Settings, Palette, Bell, Shield, Globe } from 'lucide-react';
+import { Settings, Palette, Bell, Globe } from 'lucide-react';
 import { useAppSettings, useUpdateAppSettings } from '@/hooks/useAppSettings';
 import { useContactSettings, useUpdateContactSettings } from '@/hooks/useContactSettings';
 
@@ -18,21 +18,132 @@ const AppSettings = () => {
   const updateContactSettings = useUpdateContactSettings();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleAppSettingsUpdate = async (settings: any) => {
+  // Form states for each tab
+  const [generalForm, setGeneralForm] = useState({
+    siteName: '',
+    description: '',
+    allowRegistration: true,
+    autoModeration: true
+  });
+
+  const [appearanceForm, setAppearanceForm] = useState({
+    primaryColor: '#16a34a',
+    secondaryColor: '#059669',
+    bannerUrl: '',
+    welcomeText: ''
+  });
+
+  const [notificationForm, setNotificationForm] = useState({
+    push: true,
+    email: false,
+    whatsapp: true,
+    autoReplyMessage: ''
+  });
+
+  const [contactForm, setContactForm] = useState({
+    whatsappNumber: '',
+    phoneNumber: '',
+    email: ''
+  });
+
+  // Update form states when data is loaded
+  useEffect(() => {
+    if (appSettings) {
+      setGeneralForm(prev => ({
+        ...prev,
+        siteName: appSettings.catalog?.siteName || 'SEDEKAT App'
+      }));
+
+      setAppearanceForm({
+        primaryColor: appSettings.catalog?.primaryColor || '#16a34a',
+        secondaryColor: appSettings.catalog?.secondaryColor || '#059669',
+        bannerUrl: appSettings.catalog?.bannerUrl || '',
+        welcomeText: appSettings.catalog?.welcomeText || 'Selamat datang di aplikasi SEDEKAT'
+      });
+
+      setNotificationForm({
+        push: appSettings.notifications?.push || false,
+        email: appSettings.notifications?.email || false,
+        whatsapp: appSettings.notifications?.whatsapp || false,
+        autoReplyMessage: appSettings.auto_reply?.message || ''
+      });
+    }
+  }, [appSettings]);
+
+  useEffect(() => {
+    if (contactSettings) {
+      setContactForm({
+        whatsappNumber: contactSettings.whatsapp_number || '',
+        phoneNumber: contactSettings.phone_number || '',
+        email: contactSettings.email || ''
+      });
+    }
+  }, [contactSettings]);
+
+  const handleGeneralSubmit = async () => {
     setIsLoading(true);
     try {
-      await updateSettings.mutateAsync(settings);
+      await updateSettings.mutateAsync({
+        catalog: {
+          ...appSettings?.catalog,
+          siteName: generalForm.siteName
+        }
+      });
     } catch (error) {
-      console.error('Error updating app settings:', error);
+      console.error('Error updating general settings:', error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleContactSettingsUpdate = async (settings: any) => {
+  const handleAppearanceSubmit = async () => {
     setIsLoading(true);
     try {
-      await updateContactSettings.mutateAsync(settings);
+      await updateSettings.mutateAsync({
+        catalog: {
+          ...appSettings?.catalog,
+          primaryColor: appearanceForm.primaryColor,
+          secondaryColor: appearanceForm.secondaryColor,
+          bannerUrl: appearanceForm.bannerUrl,
+          welcomeText: appearanceForm.welcomeText
+        }
+      });
+    } catch (error) {
+      console.error('Error updating appearance settings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleNotificationSubmit = async () => {
+    setIsLoading(true);
+    try {
+      await updateSettings.mutateAsync({
+        notifications: {
+          push: notificationForm.push,
+          email: notificationForm.email,
+          whatsapp: notificationForm.whatsapp
+        },
+        auto_reply: {
+          enabled: true,
+          message: notificationForm.autoReplyMessage
+        }
+      });
+    } catch (error) {
+      console.error('Error updating notification settings:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleContactSubmit = async () => {
+    setIsLoading(true);
+    try {
+      await updateContactSettings.mutateAsync({
+        whatsapp_number: contactForm.whatsappNumber,
+        phone_number: contactForm.phoneNumber,
+        email: contactForm.email
+      });
     } catch (error) {
       console.error('Error updating contact settings:', error);
     } finally {
@@ -76,25 +187,36 @@ const AppSettings = () => {
               <div className="space-y-2">
                 <Label>Nama Aplikasi</Label>
                 <Input 
-                  defaultValue={appSettings?.catalog?.siteName || 'SEDEKAT App'} 
+                  value={generalForm.siteName}
+                  onChange={(e) => setGeneralForm(prev => ({ ...prev, siteName: e.target.value }))}
                   placeholder="Nama aplikasi"
                 />
               </div>
               <div className="space-y-2">
                 <Label>Deskripsi</Label>
                 <Textarea 
-                  defaultValue="Aplikasi marketplace untuk reseller"
+                  value={generalForm.description}
+                  onChange={(e) => setGeneralForm(prev => ({ ...prev, description: e.target.value }))}
                   placeholder="Deskripsi aplikasi"
                 />
               </div>
               <div className="flex items-center space-x-2">
-                <Switch defaultChecked />
+                <Switch 
+                  checked={generalForm.allowRegistration}
+                  onCheckedChange={(checked) => setGeneralForm(prev => ({ ...prev, allowRegistration: checked }))}
+                />
                 <Label>Aktifkan registrasi reseller baru</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Switch defaultChecked />
+                <Switch 
+                  checked={generalForm.autoModeration}
+                  onCheckedChange={(checked) => setGeneralForm(prev => ({ ...prev, autoModeration: checked }))}
+                />
                 <Label>Moderasi produk otomatis</Label>
               </div>
+              <Button onClick={handleGeneralSubmit} disabled={isLoading}>
+                {isLoading ? 'Menyimpan...' : 'Simpan Pengaturan Umum'}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -109,30 +231,37 @@ const AppSettings = () => {
                 <Label>Warna Primer</Label>
                 <Input 
                   type="color" 
-                  defaultValue={appSettings?.catalog?.primaryColor || '#16a34a'}
+                  value={appearanceForm.primaryColor}
+                  onChange={(e) => setAppearanceForm(prev => ({ ...prev, primaryColor: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
                 <Label>Warna Sekunder</Label>
                 <Input 
                   type="color" 
-                  defaultValue={appSettings?.catalog?.secondaryColor || '#059669'}
+                  value={appearanceForm.secondaryColor}
+                  onChange={(e) => setAppearanceForm(prev => ({ ...prev, secondaryColor: e.target.value }))}
                 />
               </div>
               <div className="space-y-2">
                 <Label>URL Logo</Label>
                 <Input 
-                  defaultValue={appSettings?.catalog?.bannerUrl || ''}
+                  value={appearanceForm.bannerUrl}
+                  onChange={(e) => setAppearanceForm(prev => ({ ...prev, bannerUrl: e.target.value }))}
                   placeholder="https://example.com/logo.png"
                 />
               </div>
               <div className="space-y-2">
                 <Label>Pesan Selamat Datang</Label>
                 <Textarea 
-                  defaultValue={appSettings?.catalog?.welcomeText || 'Selamat datang di aplikasi SEDEKAT'}
+                  value={appearanceForm.welcomeText}
+                  onChange={(e) => setAppearanceForm(prev => ({ ...prev, welcomeText: e.target.value }))}
                   placeholder="Pesan yang ditampilkan di halaman utama"
                 />
               </div>
+              <Button onClick={handleAppearanceSubmit} disabled={isLoading}>
+                {isLoading ? 'Menyimpan...' : 'Simpan Pengaturan Tampilan'}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -144,24 +273,37 @@ const AppSettings = () => {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-2">
-                <Switch defaultChecked={appSettings?.notifications?.push} />
+                <Switch 
+                  checked={notificationForm.push}
+                  onCheckedChange={(checked) => setNotificationForm(prev => ({ ...prev, push: checked }))}
+                />
                 <Label>Push Notification</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Switch defaultChecked={appSettings?.notifications?.email} />
+                <Switch 
+                  checked={notificationForm.email}
+                  onCheckedChange={(checked) => setNotificationForm(prev => ({ ...prev, email: checked }))}
+                />
                 <Label>Email Notification</Label>
               </div>
               <div className="flex items-center space-x-2">
-                <Switch defaultChecked={appSettings?.notifications?.whatsapp} />
+                <Switch 
+                  checked={notificationForm.whatsapp}
+                  onCheckedChange={(checked) => setNotificationForm(prev => ({ ...prev, whatsapp: checked }))}
+                />
                 <Label>WhatsApp Notification</Label>
               </div>
               <div className="space-y-2">
                 <Label>Template Pesan Otomatis</Label>
                 <Textarea 
-                  defaultValue={appSettings?.auto_reply?.message || 'Terima kasih telah menghubungi kami'}
+                  value={notificationForm.autoReplyMessage}
+                  onChange={(e) => setNotificationForm(prev => ({ ...prev, autoReplyMessage: e.target.value }))}
                   placeholder="Template pesan balasan otomatis"
                 />
               </div>
+              <Button onClick={handleNotificationSubmit} disabled={isLoading}>
+                {isLoading ? 'Menyimpan...' : 'Simpan Pengaturan Notifikasi'}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
@@ -175,14 +317,16 @@ const AppSettings = () => {
               <div className="space-y-2">
                 <Label>Nomor WhatsApp</Label>
                 <Input 
-                  defaultValue={contactSettings?.whatsapp_number || ''}
+                  value={contactForm.whatsappNumber}
+                  onChange={(e) => setContactForm(prev => ({ ...prev, whatsappNumber: e.target.value }))}
                   placeholder="+62812345678"
                 />
               </div>
               <div className="space-y-2">
                 <Label>Nomor Telepon</Label>
                 <Input 
-                  defaultValue={contactSettings?.phone_number || ''}
+                  value={contactForm.phoneNumber}
+                  onChange={(e) => setContactForm(prev => ({ ...prev, phoneNumber: e.target.value }))}
                   placeholder="+62212345678"
                 />
               </div>
@@ -190,20 +334,18 @@ const AppSettings = () => {
                 <Label>Email</Label>
                 <Input 
                   type="email"
-                  defaultValue={contactSettings?.email || ''}
+                  value={contactForm.email}
+                  onChange={(e) => setContactForm(prev => ({ ...prev, email: e.target.value }))}
                   placeholder="support@sedekat.com"
                 />
               </div>
+              <Button onClick={handleContactSubmit} disabled={isLoading}>
+                {isLoading ? 'Menyimpan...' : 'Simpan Pengaturan Kontak'}
+              </Button>
             </CardContent>
           </Card>
         </TabsContent>
       </Tabs>
-
-      <div className="flex justify-end">
-        <Button onClick={() => handleAppSettingsUpdate({})} disabled={isLoading}>
-          {isLoading ? 'Menyimpan...' : 'Simpan Perubahan'}
-        </Button>
-      </div>
     </div>
   );
 };
