@@ -85,24 +85,27 @@ export const useCreateRedemption = () => {
 
       if (error) throw error;
 
-      // Update reseller points/commission using RPC function or direct update
+      // Update reseller points if it's a points redemption
       if (redemption.reward_type === 'points') {
-        const { error: updateError } = await supabase.rpc('update_reseller_points', {
-          reseller_id: redemption.reseller_id,
-          points_to_deduct: redemption.amount_redeemed
-        });
+        // First get current points
+        const { data: resellerData, error: fetchError } = await supabase
+          .from('resellers')
+          .select('total_points')
+          .eq('id', redemption.reseller_id)
+          .single();
 
-        if (updateError) {
-          // Fallback to direct update if RPC doesn't exist
-          const { error: directUpdateError } = await supabase
-            .from('resellers')
-            .update({
-              total_points: 0 // This would need proper calculation
-            })
-            .eq('id', redemption.reseller_id);
-          
-          if (directUpdateError) throw directUpdateError;
-        }
+        if (fetchError) throw fetchError;
+
+        const currentPoints = resellerData?.total_points || 0;
+        const newPoints = Math.max(0, currentPoints - redemption.amount_redeemed);
+
+        // Update with new points value
+        const { error: updateError } = await supabase
+          .from('resellers')
+          .update({ total_points: newPoints })
+          .eq('id', redemption.reseller_id);
+        
+        if (updateError) throw updateError;
       }
 
       return data;
