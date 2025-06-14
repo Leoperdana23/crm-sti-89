@@ -19,12 +19,17 @@ const Reports = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('month');
   const [selectedBranch, setSelectedBranch] = useState('all');
 
+  // Add fallback for branches to prevent undefined errors
+  const safeBranches = branches || [];
+  const safeCustomers = customers || [];
+  const safeSales = sales || [];
+
   // Calculate statistics
-  const totalCustomers = customers.length;
-  const dealCustomers = customers.filter(c => c.status === 'Deal').length;
-  const prospekCustomers = customers.filter(c => c.status === 'Prospek').length;
-  const followUpCustomers = customers.filter(c => c.status === 'Follow-up').length;
-  const tidakJadiCustomers = customers.filter(c => c.status === 'Tidak Jadi').length;
+  const totalCustomers = safeCustomers.length;
+  const dealCustomers = safeCustomers.filter(c => c.status === 'Deal').length;
+  const prospekCustomers = safeCustomers.filter(c => c.status === 'Prospek').length;
+  const followUpCustomers = safeCustomers.filter(c => c.status === 'Follow-up').length;
+  const tidakJadiCustomers = safeCustomers.filter(c => c.status === 'Tidak Jadi').length;
 
   // Calculate conversion rate
   const conversionRate = totalCustomers > 0 ? ((dealCustomers / totalCustomers) * 100).toFixed(1) : '0';
@@ -50,7 +55,7 @@ const Reports = () => {
   // Branch performance data
   const branchStats = getStatsByBranch();
   const branchData = Object.entries(branchStats).map(([branchId, stats]: [string, any]) => {
-    const branch = branches.find(b => b.id === branchId);
+    const branch = safeBranches.find(b => b.id === branchId);
     return {
       name: branch?.name || 'Tidak Diketahui',
       total: stats.total || 0,
@@ -62,8 +67,8 @@ const Reports = () => {
   });
 
   // Sales performance data
-  const salesData = sales.map(salesPerson => {
-    const salesCustomers = customers.filter(c => c.sales_id === salesPerson.id);
+  const salesData = safeSales.map(salesPerson => {
+    const salesCustomers = safeCustomers.filter(c => c.sales_id === salesPerson.id);
     const salesDeals = salesCustomers.filter(c => c.status === 'Deal');
     return {
       name: salesPerson.name,
@@ -77,12 +82,12 @@ const Reports = () => {
     // Simple CSV export functionality
     const csvData = [
       ['Nama', 'Status', 'Tanggal Dibuat', 'Cabang', 'Sales'],
-      ...customers.map(customer => [
+      ...safeCustomers.map(customer => [
         customer.name,
         customer.status,
         new Date(customer.created_at).toLocaleDateString('id-ID'),
-        branches.find(b => b.id === customer.branch_id)?.name || '',
-        sales.find(s => s.id === customer.sales_id)?.name || ''
+        safeBranches.find(b => b.id === customer.branch_id)?.name || '',
+        safeSales.find(s => s.id === customer.sales_id)?.name || ''
       ])
     ];
     
@@ -134,7 +139,7 @@ const Reports = () => {
               </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">Semua Cabang</SelectItem>
-                {branches.map((branch) => (
+                {safeBranches.map((branch) => (
                   <SelectItem key={branch.id} value={branch.id}>
                     {branch.name}
                   </SelectItem>
