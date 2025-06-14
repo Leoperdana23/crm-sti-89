@@ -1,8 +1,38 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Product, CreateProductData, UpdateProductData } from '@/types/product';
 import { useToast } from '@/hooks/use-toast';
+
+export interface Product {
+  id: string;
+  name: string;
+  description?: string;
+  category_id?: string;
+  price: number;
+  reseller_price?: number;
+  commission_value: number;
+  points_value: number;
+  unit: string;
+  is_active: boolean;
+  image_url?: string;
+  stock_quantity: number;
+  min_stock_level: number;
+  created_at: string;
+  updated_at: string;
+  category?: {
+    id: string;
+    name: string;
+  };
+}
+
+export interface ProductCategory {
+  id: string;
+  name: string;
+  description?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
 
 export const useProducts = () => {
   return useQuery({
@@ -15,22 +45,46 @@ export const useProducts = () => {
         .select(`
           *,
           product_categories (
-            name
-          ),
-          suppliers (
+            id,
             name
           )
         `)
         .eq('is_active', true)
-        .order('sort_order', { ascending: true });
+        .order('created_at', { ascending: false });
 
       if (error) {
         console.error('Error fetching products:', error);
         throw error;
       }
 
-      console.log('Products fetched successfully:', data);
-      return data as Product[];
+      console.log('Products fetched successfully:', data?.length);
+      return data?.map(product => ({
+        ...product,
+        category: product.product_categories
+      })) as Product[];
+    },
+  });
+};
+
+export const useProductCategories = () => {
+  return useQuery({
+    queryKey: ['product-categories'],
+    queryFn: async () => {
+      console.log('Fetching product categories...');
+      
+      const { data, error } = await supabase
+        .from('product_categories')
+        .select('*')
+        .eq('is_active', true)
+        .order('name');
+
+      if (error) {
+        console.error('Error fetching categories:', error);
+        throw error;
+      }
+
+      console.log('Categories fetched successfully:', data?.length);
+      return data as ProductCategory[];
     },
   });
 };
@@ -40,61 +94,36 @@ export const useCreateProduct = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (productData: CreateProductData) => {
-      console.log('Creating product with data:', productData);
-      
-      const insertData = {
-        name: productData.name?.trim(),
-        description: productData.description?.trim() || null,
-        category_id: productData.category_id || null,
-        supplier_id: productData.supplier_id || null,
-        price: Number(productData.price) || 0,
-        cost_price: productData.cost_price ? Number(productData.cost_price) : null,
-        reseller_price: productData.reseller_price ? Number(productData.reseller_price) : null,
-        points_value: Number(productData.points_value) || 0,
-        commission_value: Number(productData.commission_value) || 0,
-        unit: productData.unit?.trim() || 'unit',
-        image_url: productData.image_url?.trim() || null,
-        stock_quantity: Number(productData.stock_quantity) || 0,
-        min_stock_level: Number(productData.min_stock_level) || 0,
-        barcode: productData.barcode?.trim() || null,
-        weight: productData.weight ? Number(productData.weight) : null,
-        dimensions: productData.dimensions?.trim() || null,
-        warranty_period: productData.warranty_period ? Number(productData.warranty_period) : null,
-        tags: productData.tags || null,
-        featured: Boolean(productData.featured),
-        sort_order: Number(productData.sort_order) || 0,
-        is_active: true
-      };
-
-      console.log('Insert data:', insertData);
+    mutationFn: async (productData: Omit<Product, 'id' | 'created_at' | 'updated_at' | 'category'>) => {
+      console.log('Creating product:', productData);
       
       const { data, error } = await supabase
         .from('products')
-        .insert([insertData])
+        .insert(productData)
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error('Error creating product:', error);
         throw error;
       }
 
-      console.log('Product created successfully:', data);
+      console.log('Product created successfully');
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: 'Sukses',
-        description: 'Produk berhasil ditambahkan',
+        description: 'Produk berhasil dibuat',
       });
     },
-    onError: (error: any) => {
-      console.error('Error in useCreateProduct:', error);
+    onError: (error) => {
+      console.error('Error creating product:', error);
       toast({
         title: 'Error',
-        description: error?.message || 'Gagal menambahkan produk',
+        description: 'Gagal membuat produk',
         variant: 'destructive',
       });
     },
@@ -106,64 +135,40 @@ export const useUpdateProduct = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: UpdateProductData) => {
-      console.log('Updating product with ID:', id);
-      console.log('Update data:', updates);
-      
-      const cleanUpdates: any = {};
-      
-      Object.entries(updates).forEach(([key, value]) => {
-        if (value !== undefined) {
-          if (key === 'category_id' || key === 'supplier_id') {
-            cleanUpdates[key] = value || null;
-          } else if (key === 'description') {
-            cleanUpdates[key] = value ? String(value).trim() : null;
-          } else if (key === 'name' || key === 'unit' || key === 'barcode' || key === 'dimensions') {
-            cleanUpdates[key] = value ? String(value).trim() : value;
-          } else if (['price', 'cost_price', 'reseller_price', 'points_value', 'commission_value', 'stock_quantity', 'min_stock_level', 'weight', 'warranty_period', 'sort_order'].includes(key)) {
-            cleanUpdates[key] = value ? Number(value) : (key === 'price' ? 0 : value);
-          } else if (key === 'featured') {
-            cleanUpdates[key] = Boolean(value);
-          } else {
-            cleanUpdates[key] = value;
-          }
-        }
-      });
-      
-      console.log('Clean updates to apply:', cleanUpdates);
+    mutationFn: async ({ id, ...productData }: Partial<Product> & { id: string }) => {
+      console.log('Updating product:', id, productData);
       
       const { data, error } = await supabase
         .from('products')
-        .update(cleanUpdates)
+        .update({
+          ...productData,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
-        .eq('is_active', true)
         .select()
-        .maybeSingle();
+        .single();
 
       if (error) {
         console.error('Error updating product:', error);
         throw error;
       }
 
-      if (!data) {
-        throw new Error('Produk tidak ditemukan atau sudah tidak aktif');
-      }
-
-      console.log('Product updated successfully:', data);
+      console.log('Product updated successfully');
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: 'Sukses',
         description: 'Produk berhasil diperbarui',
       });
     },
-    onError: (error: any) => {
-      console.error('Error in useUpdateProduct:', error);
+    onError: (error) => {
+      console.error('Error updating product:', error);
       toast({
         title: 'Error',
-        description: error?.message || 'Gagal memperbarui produk',
+        description: 'Gagal memperbarui produk',
         variant: 'destructive',
       });
     },
@@ -175,13 +180,18 @@ export const useDeleteProduct = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (id: string) => {
-      console.log('Deleting product:', id);
+    mutationFn: async (productId: string) => {
+      console.log('Deleting product (soft delete):', productId);
       
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from('products')
-        .update({ is_active: false })
-        .eq('id', id);
+        .update({ 
+          is_active: false,
+          updated_at: new Date().toISOString()
+        })
+        .eq('id', productId)
+        .select()
+        .single();
 
       if (error) {
         console.error('Error deleting product:', error);
@@ -189,19 +199,61 @@ export const useDeleteProduct = () => {
       }
 
       console.log('Product deleted successfully');
+      return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['products'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: 'Sukses',
         description: 'Produk berhasil dihapus',
       });
     },
-    onError: (error: any) => {
-      console.error('Error in useDeleteProduct:', error);
+    onError: (error) => {
+      console.error('Error deleting product:', error);
       toast({
         title: 'Error',
-        description: error?.message || 'Gagal menghapus produk',
+        description: 'Gagal menghapus produk',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useCreateCategory = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (categoryData: Omit<ProductCategory, 'id' | 'created_at' | 'updated_at'>) => {
+      console.log('Creating category:', categoryData);
+      
+      const { data, error } = await supabase
+        .from('product_categories')
+        .insert(categoryData)
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error creating category:', error);
+        throw error;
+      }
+
+      console.log('Category created successfully');
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['product-categories'] });
+      toast({
+        title: 'Sukses',
+        description: 'Kategori berhasil dibuat',
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating category:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal membuat kategori',
         variant: 'destructive',
       });
     },

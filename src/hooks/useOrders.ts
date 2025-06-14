@@ -1,134 +1,101 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Order, OrderItem, CreateOrderData, CreateOrderItemData } from '@/types/order';
 import { useToast } from '@/hooks/use-toast';
+
+export interface Order {
+  id: string;
+  customer_name: string;
+  customer_phone: string;
+  catalog_token: string;
+  status: string;
+  total_amount: number;
+  notes?: string;
+  delivery_method: string;
+  expedisi?: string;
+  shipping_address?: string;
+  created_at: string;
+  updated_at: string;
+  order_items?: OrderItem[];
+  reseller?: {
+    id: string;
+    name: string;
+    phone: string;
+  };
+}
+
+export interface OrderItem {
+  id: string;
+  order_id: string;
+  product_id: string;
+  product_name: string;
+  product_price: number;
+  quantity: number;
+  subtotal: number;
+  points_earned: number;
+}
 
 export const useOrders = () => {
   return useQuery({
     queryKey: ['orders'],
     queryFn: async () => {
-      try {
-        console.log('Fetching orders from database...');
-        
-        const { data, error } = await supabase
-          .from('orders')
-          .select(`
-            *,
-            order_items (*)
-          `)
-          .order('created_at', { ascending: false });
+      console.log('Fetching orders...');
+      
+      const { data, error } = await supabase
+        .from('orders')
+        .select(`
+          *,
+          order_items (
+            id,
+            product_id,
+            product_name,
+            product_price,
+            quantity,
+            subtotal,
+            points_earned
+          )
+        `)
+        .order('created_at', { ascending: false });
 
-        if (error) {
-          console.error('Error fetching orders:', error);
-          throw error;
-        }
-
-        console.log('Orders fetched successfully:', data?.length || 0, 'records');
-
-        if (!data) {
-          return [];
-        }
-
-        // If we have orders, fetch reseller data for orders that have catalog_tokens
-        if (data.length > 0) {
-          const uniqueTokens = [...new Set(data
-            .map(order => order.catalog_token)
-            .filter(token => token)
-          )];
-          
-          if (uniqueTokens.length > 0) {
-            const { data: catalogTokens } = await supabase
-              .from('catalog_tokens')
-              .select(`
-                token,
-                reseller_id,
-                resellers!inner (
-                  id,
-                  name,
-                  branch_id,
-                  branches (
-                    id,
-                    name
-                  )
-                )
-              `)
-              .in('token', uniqueTokens);
-
-            // Map reseller data to orders
-            const ordersWithResellers = data.map(order => {
-              const tokenData = catalogTokens?.find(token => token.token === order.catalog_token);
-              return {
-                ...order,
-                reseller: tokenData?.resellers || null
-              };
-            });
-
-            return ordersWithResellers as (Order & { order_items: OrderItem[] })[];
-          }
-        }
-
-        return data as (Order & { order_items: OrderItem[] })[];
-      } catch (error) {
+      if (error) {
         console.error('Error fetching orders:', error);
         throw error;
       }
-    },
-  });
-};
 
-export const useCreateOrder = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
+      // Get reseller info for orders with catalog tokens
+      const ordersWithResellers = await Promise.all(
+        (data || []).map(async (order) => {
+          if (order.catalog_token) {
+            try {
+              const { data: catalogData } = await supabase
+                .from('catalog_tokens')
+                .select(`
+                  reseller_id,
+                  resellers (
+                    id,
+                    name,
+                    phone
+                  )
+                `)
+                .eq('token', order.catalog_token)
+                .single();
 
-  return useMutation({
-    mutationFn: async ({ orderData, orderItems }: { 
-      orderData: CreateOrderData; 
-      orderItems: CreateOrderItemData[] 
-    }) => {
-      // Create the order first
-      const { data: order, error: orderError } = await supabase
-        .from('orders')
-        .insert(orderData)
-        .select()
-        .single();
+              if (catalogData?.resellers) {
+                return {
+                  ...order,
+                  reseller: catalogData.resellers
+                };
+              }
+            } catch (err) {
+              console.warn('Could not fetch reseller for order:', order.id, err);
+            }
+          }
+          return order;
+        })
+      );
 
-      if (orderError) {
-        throw orderError;
-      }
-
-      // Create order items
-      const orderItemsWithOrderId = orderItems.map(item => ({
-        ...item,
-        order_id: order.id
-      }));
-
-      const { data: items, error: itemsError } = await supabase
-        .from('order_items')
-        .insert(orderItemsWithOrderId)
-        .select();
-
-      if (itemsError) {
-        throw itemsError;
-      }
-
-      return { order, items };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['reseller-orders'] });
-      toast({
-        title: 'Sukses',
-        description: 'Pesanan berhasil dibuat',
-      });
-    },
-    onError: (error) => {
-      console.error('Error creating order:', error);
-      toast({
-        title: 'Error',
-        description: 'Gagal membuat pesanan',
-        variant: 'destructive',
-      });
+      console.log('Orders fetched successfully:', ordersWithResellers.length);
+      return ordersWithResellers as Order[];
     },
   });
 };
@@ -141,34 +108,19 @@ export const useUpdateOrderStatus = () => {
     mutationFn: async ({ orderId, status }: { orderId: string; status: string }) => {
       console.log('Updating order status:', orderId, status);
       
-      // Update orders table
       const { data, error } = await supabase
         .from('orders')
         .update({ 
-          status, 
-          updated_at: new Date().toISOString() 
+          status,
+          updated_at: new Date().toISOString()
         })
         .eq('id', orderId)
         .select()
         .single();
 
       if (error) {
-        console.error('Error updating orders table:', error);
+        console.error('Error updating order status:', error);
         throw error;
-      }
-
-      // Also update reseller_orders status if it exists
-      const { error: resellerOrderError } = await supabase
-        .from('reseller_orders')
-        .update({ 
-          status,
-          updated_at: new Date().toISOString()
-        })
-        .eq('order_id', orderId);
-
-      if (resellerOrderError) {
-        console.error('Error updating reseller_orders table:', resellerOrderError);
-        // Don't throw here as the main update succeeded
       }
 
       console.log('Order status updated successfully');
@@ -176,7 +128,7 @@ export const useUpdateOrderStatus = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['reseller-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: 'Sukses',
         description: 'Status pesanan berhasil diperbarui',
@@ -199,20 +151,36 @@ export const useDeleteOrder = () => {
 
   return useMutation({
     mutationFn: async (orderId: string) => {
+      console.log('Deleting order:', orderId);
+      
+      // Delete order items first (cascade should handle this, but being explicit)
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .delete()
+        .eq('order_id', orderId);
+
+      if (itemsError) {
+        console.error('Error deleting order items:', itemsError);
+        throw itemsError;
+      }
+
+      // Delete the order
       const { error } = await supabase
         .from('orders')
         .delete()
         .eq('id', orderId);
 
       if (error) {
+        console.error('Error deleting order:', error);
         throw error;
       }
 
+      console.log('Order deleted successfully');
       return orderId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['orders'] });
-      queryClient.invalidateQueries({ queryKey: ['reseller-orders'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: 'Sukses',
         description: 'Pesanan berhasil dihapus',
@@ -223,6 +191,94 @@ export const useDeleteOrder = () => {
       toast({
         title: 'Error',
         description: 'Gagal menghapus pesanan',
+        variant: 'destructive',
+      });
+    },
+  });
+};
+
+export const useCreateOrder = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (orderData: {
+      customer_name: string;
+      customer_phone: string;
+      catalog_token: string;
+      delivery_method: string;
+      expedisi?: string;
+      shipping_address?: string;
+      notes?: string;
+      items: Array<{
+        product_id: string;
+        product_name: string;
+        product_price: number;
+        quantity: number;
+        subtotal: number;
+      }>;
+    }) => {
+      console.log('Creating order:', orderData);
+
+      const total_amount = orderData.items.reduce((sum, item) => sum + item.subtotal, 0);
+
+      // Create the order
+      const { data: order, error: orderError } = await supabase
+        .from('orders')
+        .insert({
+          customer_name: orderData.customer_name,
+          customer_phone: orderData.customer_phone,
+          catalog_token: orderData.catalog_token,
+          delivery_method: orderData.delivery_method,
+          expedisi: orderData.expedisi,
+          shipping_address: orderData.shipping_address,
+          notes: orderData.notes,
+          total_amount,
+          status: 'pending'
+        })
+        .select()
+        .single();
+
+      if (orderError) {
+        console.error('Error creating order:', orderError);
+        throw orderError;
+      }
+
+      // Create order items
+      const { error: itemsError } = await supabase
+        .from('order_items')
+        .insert(
+          orderData.items.map(item => ({
+            order_id: order.id,
+            product_id: item.product_id,
+            product_name: item.product_name,
+            product_price: item.product_price,
+            quantity: item.quantity,
+            subtotal: item.subtotal
+          }))
+        );
+
+      if (itemsError) {
+        console.error('Error creating order items:', itemsError);
+        throw itemsError;
+      }
+
+      console.log('Order created successfully');
+      return order;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['orders'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
+      toast({
+        title: 'Sukses',
+        description: 'Pesanan berhasil dibuat',
+      });
+    },
+    onError: (error) => {
+      console.error('Error creating order:', error);
+      toast({
+        title: 'Error',
+        description: 'Gagal membuat pesanan',
         variant: 'destructive',
       });
     },

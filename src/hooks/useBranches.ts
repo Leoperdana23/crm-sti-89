@@ -1,52 +1,49 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Branch } from '@/types/branch';
 import { useToast } from '@/hooks/use-toast';
 
-export const useBranches = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+export interface Branch {
+  id: string;
+  code: string;
+  name: string;
+  address?: string;
+  phone?: string;
+  manager_name?: string;
+  created_at: string;
+  updated_at: string;
+}
 
-  const query = useQuery({
+export const useBranches = () => {
+  return useQuery({
     queryKey: ['branches'],
     queryFn: async () => {
-      try {
-        console.log('Fetching branches from database...');
-        
-        const { data, error } = await supabase
-          .from('branches')
-          .select('*')
-          .order('created_at', { ascending: false });
+      console.log('Fetching branches...');
+      
+      const { data, error } = await supabase
+        .from('branches')
+        .select('*')
+        .order('name');
 
-        if (error) {
-          console.error('Error fetching branches:', error);
-          throw error;
-        }
-
-        console.log('Branches fetched successfully:', data?.length || 0, 'records');
-        return data as Branch[] || [];
-      } catch (error) {
+      if (error) {
         console.error('Error fetching branches:', error);
         throw error;
       }
+
+      console.log('Branches fetched successfully:', data?.length);
+      return data as Branch[];
     },
   });
-
-  return {
-    branches: query.data || [],
-    loading: query.isLoading,
-    error: query.error,
-    ...query
-  };
 };
 
 export const useCreateBranch = () => {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
     mutationFn: async (branchData: Omit<Branch, 'id' | 'created_at' | 'updated_at'>) => {
+      console.log('Creating branch:', branchData);
+      
       const { data, error } = await supabase
         .from('branches')
         .insert(branchData)
@@ -54,23 +51,25 @@ export const useCreateBranch = () => {
         .single();
 
       if (error) {
+        console.error('Error creating branch:', error);
         throw error;
       }
 
+      console.log('Branch created successfully');
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['branches'] });
       toast({
         title: 'Sukses',
-        description: 'Cabang berhasil ditambahkan',
+        description: 'Cabang berhasil dibuat',
       });
     },
     onError: (error) => {
-      console.error('Error adding branch:', error);
+      console.error('Error creating branch:', error);
       toast({
         title: 'Error',
-        description: 'Gagal menambahkan cabang',
+        description: 'Gagal membuat cabang',
         variant: 'destructive',
       });
     },
@@ -78,22 +77,29 @@ export const useCreateBranch = () => {
 };
 
 export const useUpdateBranch = () => {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string } & Partial<Branch>) => {
+    mutationFn: async ({ id, ...branchData }: Partial<Branch> & { id: string }) => {
+      console.log('Updating branch:', id, branchData);
+      
       const { data, error } = await supabase
         .from('branches')
-        .update(updates)
+        .update({
+          ...branchData,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
         .select()
         .single();
 
       if (error) {
+        console.error('Error updating branch:', error);
         throw error;
       }
 
+      console.log('Branch updated successfully');
       return data;
     },
     onSuccess: () => {
@@ -115,19 +121,25 @@ export const useUpdateBranch = () => {
 };
 
 export const useDeleteBranch = () => {
-  const { toast } = useToast();
   const queryClient = useQueryClient();
+  const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (id: string) => {
+    mutationFn: async (branchId: string) => {
+      console.log('Deleting branch:', branchId);
+      
       const { error } = await supabase
         .from('branches')
         .delete()
-        .eq('id', id);
+        .eq('id', branchId);
 
       if (error) {
+        console.error('Error deleting branch:', error);
         throw error;
       }
+
+      console.log('Branch deleted successfully');
+      return branchId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['branches'] });

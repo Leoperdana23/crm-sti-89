@@ -1,265 +1,197 @@
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
-import { Customer, Interaction } from '@/types/customer';
 import { useToast } from '@/hooks/use-toast';
 
-export const useCustomers = () => {
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
+export interface Customer {
+  id: string;
+  name: string;
+  phone: string;
+  address: string;
+  email?: string;
+  id_number?: string;
+  birth_date?: string;
+  company_name?: string;
+  customer_type: string;
+  needs?: string;
+  status: string;
+  survey_status?: string;
+  branch_id?: string;
+  sales_id?: string;
+  deal_date?: string;
+  estimated_days?: number;
+  work_start_date?: string;
+  work_completed_date?: string;
+  work_status?: string;
+  work_notes?: string;
+  assigned_employees?: string;
+  notes?: string;
+  credit_limit: number;
+  payment_terms: number;
+  created_at: string;
+  updated_at: string;
+  branches?: {
+    id: string;
+    name: string;
+  };
+  sales?: {
+    id: string;
+    name: string;
+  };
+}
 
-  const query = useQuery({
+export const useCustomers = () => {
+  return useQuery({
     queryKey: ['customers'],
     queryFn: async () => {
-      try {
-        console.log('Fetching customers from database...');
-        
-        const { data, error } = await supabase
-          .from('customers')
-          .select(`
-            *,
-            interactions (
-              id,
-              type,
-              notes,
-              date,
-              follow_up_date
-            )
-          `)
-          .order('created_at', { ascending: false });
-
-        if (error) {
-          console.error('Error fetching customers:', error);
-          throw error;
-        }
-
-        console.log('Customers fetched successfully:', data?.length || 0, 'records');
-        
-        if (!data) {
-          return [];
-        }
-
-        // Transform the data to match our interface
-        const transformedData = data.map(customer => ({
-          ...customer,
-          interactions: (customer.interactions || []).map(interaction => ({
-            ...interaction,
-            customer_id: customer.id
-          })),
-          assigned_employees: customer.assigned_employees ? 
-            (typeof customer.assigned_employees === 'string' ? 
-              customer.assigned_employees.split(',').filter(Boolean) : 
-              customer.assigned_employees) : []
-        }));
-
-        return transformedData as Customer[];
-      } catch (error) {
-        console.error('Error fetching customers:', error);
-        throw error;
-      }
-    },
-  });
-
-  const getCustomersByStatus = (status: string) => {
-    const customers = query.data || [];
-    return customers.filter(customer => customer.status === status);
-  };
-
-  const getStatsByBranch = (branchId?: string) => {
-    const customers = query.data || [];
-    const filteredCustomers = branchId ? 
-      customers.filter(customer => customer.branch_id === branchId) : 
-      customers;
-    
-    return {
-      total: filteredCustomers.length,
-      prospek: filteredCustomers.filter(c => c.status === 'Prospek').length,
-      followUp: filteredCustomers.filter(c => c.status === 'Follow-up').length,
-      deal: filteredCustomers.filter(c => c.status === 'Deal').length,
-      tidakJadi: filteredCustomers.filter(c => c.status === 'Tidak Jadi').length
-    };
-  };
-
-  const deleteCustomersByName = async (name: string) => {
-    const { error } = await supabase
-      .from('customers')
-      .delete()
-      .eq('name', name);
-
-    if (error) {
-      throw error;
-    }
-
-    queryClient.invalidateQueries({ queryKey: ['customers'] });
-  };
-
-  const cancelWorkProcess = async (customerId: string) => {
-    const { error } = await supabase
-      .from('customers')
-      .update({ 
-        work_status: 'not_started',
-        work_start_date: null,
-        work_completed_date: null,
-        work_notes: null
-      })
-      .eq('id', customerId);
-
-    if (error) {
-      throw error;
-    }
-
-    queryClient.invalidateQueries({ queryKey: ['customers'] });
-  };
-
-  const addCustomerMutation = useMutation({
-    mutationFn: async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'interactions'>) => {
-      const dataForDB = {
-        ...customerData,
-        assigned_employees: customerData.assigned_employees?.join(',') || null
-      };
+      console.log('Fetching customers...');
       
       const { data, error } = await supabase
         .from('customers')
-        .insert(dataForDB)
+        .select(`
+          *,
+          branches (
+            id,
+            name
+          ),
+          sales (
+            id,
+            name
+          )
+        `)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching customers:', error);
+        throw error;
+      }
+
+      console.log('Customers fetched successfully:', data?.length);
+      return data as Customer[];
+    },
+  });
+};
+
+export const useCreateCustomer = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'branches' | 'sales'>) => {
+      console.log('Creating customer:', customerData);
+      
+      const { data, error } = await supabase
+        .from('customers')
+        .insert(customerData)
         .select()
         .single();
 
       if (error) {
+        console.error('Error creating customer:', error);
         throw error;
       }
 
+      console.log('Customer created successfully');
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: 'Sukses',
-        description: 'Pelanggan berhasil ditambahkan',
+        description: 'Customer berhasil dibuat',
       });
     },
     onError: (error) => {
-      console.error('Error adding customer:', error);
+      console.error('Error creating customer:', error);
       toast({
         title: 'Error',
-        description: 'Gagal menambahkan pelanggan',
+        description: 'Gagal membuat customer',
         variant: 'destructive',
       });
     },
   });
+};
 
-  const updateCustomerMutation = useMutation({
-    mutationFn: async ({ id, updates }: { id: string; updates: Partial<Customer> }) => {
-      const updatesForDB = {
-        ...updates,
-        ...(updates.assigned_employees && {
-          assigned_employees: updates.assigned_employees.join(',')
-        })
-      };
+export const useUpdateCustomer = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async ({ id, ...customerData }: Partial<Customer> & { id: string }) => {
+      console.log('Updating customer:', id, customerData);
       
       const { data, error } = await supabase
         .from('customers')
-        .update(updatesForDB)
+        .update({
+          ...customerData,
+          updated_at: new Date().toISOString()
+        })
         .eq('id', id)
         .select()
         .single();
 
       if (error) {
+        console.error('Error updating customer:', error);
         throw error;
       }
 
+      console.log('Customer updated successfully');
       return data;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: 'Sukses',
-        description: 'Pelanggan berhasil diperbarui',
+        description: 'Customer berhasil diperbarui',
       });
     },
     onError: (error) => {
       console.error('Error updating customer:', error);
       toast({
         title: 'Error',
-        description: 'Gagal memperbarui pelanggan',
+        description: 'Gagal memperbarui customer',
         variant: 'destructive',
       });
     },
   });
+};
 
-  const deleteCustomerMutation = useMutation({
-    mutationFn: async (id: string) => {
+export const useDeleteCustomer = () => {
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  return useMutation({
+    mutationFn: async (customerId: string) => {
+      console.log('Deleting customer:', customerId);
+      
       const { error } = await supabase
         .from('customers')
         .delete()
-        .eq('id', id);
+        .eq('id', customerId);
 
       if (error) {
+        console.error('Error deleting customer:', error);
         throw error;
       }
+
+      console.log('Customer deleted successfully');
+      return customerId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['customers'] });
+      queryClient.invalidateQueries({ queryKey: ['dashboard-stats'] });
       toast({
         title: 'Sukses',
-        description: 'Pelanggan berhasil dihapus',
+        description: 'Customer berhasil dihapus',
       });
     },
     onError: (error) => {
       console.error('Error deleting customer:', error);
       toast({
         title: 'Error',
-        description: 'Gagal menghapus pelanggan',
-        variant: 'destructive',
-      });
-    },
-  });
-
-  return {
-    customers: query.data || [],
-    loading: query.isLoading,
-    error: query.error,
-    getCustomersByStatus,
-    getStatsByBranch,
-    deleteCustomersByName,
-    cancelWorkProcess,
-    addCustomer: addCustomerMutation.mutateAsync,
-    updateCustomer: (id: string, updates: Partial<Customer>) => 
-      updateCustomerMutation.mutateAsync({ id, updates }),
-    deleteCustomer: deleteCustomerMutation.mutateAsync,
-    ...query
-  };
-};
-
-export const useAddInteraction = () => {
-  const queryClient = useQueryClient();
-  const { toast } = useToast();
-
-  return useMutation({
-    mutationFn: async (interactionData: Omit<Interaction, 'id'>) => {
-      const { data, error } = await supabase
-        .from('interactions')
-        .insert(interactionData)
-        .select()
-        .single();
-
-      if (error) {
-        throw error;
-      }
-
-      return data;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['customers'] });
-      toast({
-        title: 'Sukses',
-        description: 'Interaksi berhasil ditambahkan',
-      });
-    },
-    onError: (error) => {
-      console.error('Error adding interaction:', error);
-      toast({
-        title: 'Error',
-        description: 'Gagal menambahkan interaksi',
+        description: 'Gagal menghapus customer',
         variant: 'destructive',
       });
     },

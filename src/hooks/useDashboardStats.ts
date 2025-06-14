@@ -2,162 +2,154 @@
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
-interface DashboardStats {
-  totalCustomers: number;
-  totalProspects: number;
-  totalDeals: number;
-  totalOrders: number;
-  totalRevenue: number;
-  conversionRate: number;
-  monthlyGrowth: number;
-  customersByStatus: {
-    prospek: number;
-    followUp: number;
-    deal: number;
-    tidakJadi: number;
-  };
-  recentActivities: Array<{
+export interface DashboardStats {
+  total_customers: number;
+  total_orders: number;
+  total_revenue: number;
+  active_resellers: number;
+  total_products: number;
+  pending_orders: number;
+  completed_orders: number;
+  monthly_revenue: number;
+  monthly_orders: number;
+  top_products: Array<{
     id: string;
-    type: 'customer' | 'order' | 'interaction';
-    message: string;
-    timestamp: string;
-    customer?: string;
+    name: string;
+    sales_count: number;
+    revenue: number;
+  }>;
+  recent_orders: Array<{
+    id: string;
+    customer_name: string;
+    total_amount: number;
+    status: string;
+    created_at: string;
   }>;
 }
 
 export const useDashboardStats = () => {
-  const query = useQuery({
+  return useQuery({
     queryKey: ['dashboard-stats'],
     queryFn: async (): Promise<DashboardStats> => {
-      try {
-        console.log('Fetching dashboard stats from database...');
+      console.log('Fetching dashboard stats...');
 
-        // Fetch customers data
-        const { data: customersData, error: customersError } = await supabase
-          .from('customers')
-          .select('status, created_at');
+      // Get total customers
+      const { count: total_customers } = await supabase
+        .from('customers')
+        .select('*', { count: 'exact', head: true });
 
-        // Fetch orders data
-        const { data: ordersData, error: ordersError } = await supabase
-          .from('orders')
-          .select('total_amount, created_at, status');
+      // Get total orders
+      const { count: total_orders } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true });
 
-        // Fetch recent interactions
-        const { data: interactionsData, error: interactionsError } = await supabase
-          .from('interactions')
-          .select(`
-            id,
-            type,
-            notes,
-            date,
-            customers (name)
-          `)
-          .order('date', { ascending: false })
-          .limit(5);
+      // Get total revenue
+      const { data: revenueData } = await supabase
+        .from('orders')
+        .select('total_amount')
+        .eq('status', 'completed');
 
-        // Handle errors but still provide basic stats
-        if (customersError) {
-          console.error('Error fetching customers for stats:', customersError);
+      const total_revenue = revenueData?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+
+      // Get active resellers
+      const { count: active_resellers } = await supabase
+        .from('resellers')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      // Get total products
+      const { count: total_products } = await supabase
+        .from('products')
+        .select('*', { count: 'exact', head: true })
+        .eq('is_active', true);
+
+      // Get pending orders
+      const { count: pending_orders } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'pending');
+
+      // Get completed orders
+      const { count: completed_orders } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'completed');
+
+      // Get monthly revenue (current month)
+      const currentMonth = new Date();
+      const firstDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), 1);
+      const lastDay = new Date(currentMonth.getFullYear(), currentMonth.getMonth() + 1, 0);
+
+      const { data: monthlyRevenueData } = await supabase
+        .from('orders')
+        .select('total_amount')
+        .eq('status', 'completed')
+        .gte('created_at', firstDay.toISOString())
+        .lte('created_at', lastDay.toISOString());
+
+      const monthly_revenue = monthlyRevenueData?.reduce((sum, order) => sum + (order.total_amount || 0), 0) || 0;
+
+      // Get monthly orders count
+      const { count: monthly_orders } = await supabase
+        .from('orders')
+        .select('*', { count: 'exact', head: true })
+        .gte('created_at', firstDay.toISOString())
+        .lte('created_at', lastDay.toISOString());
+
+      // Get top products (most ordered)
+      const { data: orderItemsData } = await supabase
+        .from('order_items')
+        .select(`
+          product_id,
+          product_name,
+          quantity,
+          subtotal,
+          orders!inner(status)
+        `)
+        .eq('orders.status', 'completed');
+
+      const productStats = orderItemsData?.reduce((acc: any, item) => {
+        const productId = item.product_id;
+        if (!acc[productId]) {
+          acc[productId] = {
+            id: productId,
+            name: item.product_name,
+            sales_count: 0,
+            revenue: 0
+          };
         }
-        if (ordersError) {
-          console.error('Error fetching orders for stats:', ordersError);
-        }
-        if (interactionsError) {
-          console.error('Error fetching interactions for stats:', interactionsError);
-        }
+        acc[productId].sales_count += item.quantity;
+        acc[productId].revenue += item.subtotal || 0;
+        return acc;
+      }, {}) || {};
 
-        // Calculate stats from available data
-        const customers = customersData || [];
-        const orders = ordersData || [];
-        const interactions = interactionsData || [];
+      const top_products = Object.values(productStats)
+        .sort((a: any, b: any) => b.sales_count - a.sales_count)
+        .slice(0, 5) as any[];
 
-        const customersByStatus = customers.reduce((acc, customer) => {
-          switch (customer.status) {
-            case 'Prospek':
-              acc.prospek++;
-              break;
-            case 'Follow-up':
-              acc.followUp++;
-              break;
-            case 'Deal':
-              acc.deal++;
-              break;
-            case 'Tidak Jadi':
-              acc.tidakJadi++;
-              break;
-          }
-          return acc;
-        }, { prospek: 0, followUp: 0, deal: 0, tidakJadi: 0 });
+      // Get recent orders
+      const { data: recent_orders } = await supabase
+        .from('orders')
+        .select('id, customer_name, total_amount, status, created_at')
+        .order('created_at', { ascending: false })
+        .limit(10);
 
-        const completedOrders = orders.filter(order => order.status === 'completed');
-        const totalRevenue = completedOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
-        const conversionRate = customers.length > 0 ? (customersByStatus.deal / customers.length) * 100 : 0;
+      console.log('Dashboard stats fetched successfully');
 
-        // Format recent activities
-        const recentActivities = interactions.map(interaction => ({
-          id: interaction.id,
-          type: 'interaction' as const,
-          message: `${interaction.type} - ${interaction.notes}`,
-          timestamp: interaction.date,
-          customer: interaction.customers?.name || 'Unknown'
-        }));
-
-        console.log('Dashboard stats calculated successfully');
-        
-        return {
-          totalCustomers: customers.length,
-          totalProspects: customersByStatus.prospek,
-          totalDeals: customersByStatus.deal,
-          totalOrders: completedOrders.length,
-          totalRevenue,
-          conversionRate,
-          monthlyGrowth: 0, // This would need historical data for proper calculation
-          customersByStatus,
-          recentActivities
-        };
-      } catch (error) {
-        console.error('Error fetching dashboard stats:', error);
-        
-        // Return empty stats in case of error
-        return {
-          totalCustomers: 0,
-          totalProspects: 0,
-          totalDeals: 0,
-          totalOrders: 0,
-          totalRevenue: 0,
-          conversionRate: 0,
-          monthlyGrowth: 0,
-          customersByStatus: {
-            prospek: 0,
-            followUp: 0,
-            deal: 0,
-            tidakJadi: 0
-          },
-          recentActivities: []
-        };
-      }
+      return {
+        total_customers: total_customers || 0,
+        total_orders: total_orders || 0,
+        total_revenue,
+        active_resellers: active_resellers || 0,
+        total_products: total_products || 0,
+        pending_orders: pending_orders || 0,
+        completed_orders: completed_orders || 0,
+        monthly_revenue,
+        monthly_orders: monthly_orders || 0,
+        top_products,
+        recent_orders: recent_orders || []
+      };
     },
+    refetchInterval: 30000, // Refresh every 30 seconds
   });
-
-  return {
-    stats: query.data || {
-      totalCustomers: 0,
-      totalProspects: 0,
-      totalDeals: 0,
-      totalOrders: 0,
-      totalRevenue: 0,
-      conversionRate: 0,
-      monthlyGrowth: 0,
-      customersByStatus: {
-        prospek: 0,
-        followUp: 0,
-        deal: 0,
-        tidakJadi: 0
-      },
-      recentActivities: []
-    },
-    loading: query.isLoading,
-    error: query.error,
-    ...query
-  };
 };
