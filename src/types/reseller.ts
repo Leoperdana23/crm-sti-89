@@ -34,6 +34,7 @@ export interface CreateResellerData {
   branch_id?: string;
   commission_rate?: number;
   is_active?: boolean;
+  password?: string; // Add password field for creation
 }
 
 export interface UpdateResellerData extends Partial<CreateResellerData> {

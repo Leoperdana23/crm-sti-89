@@ -41,6 +41,7 @@ export const useCreateReseller = () => {
       
       // Clean the data before sending
       const cleanData = {
+        reseller_id: resellerData.reseller_id || null,
         name: resellerData.name,
         phone: resellerData.phone,
         address: resellerData.address,
@@ -50,6 +51,7 @@ export const useCreateReseller = () => {
         notes: resellerData.notes || null,
         branch_id: resellerData.branch_id || null,
         is_active: resellerData.is_active ?? true,
+        password_hash: resellerData.password || null,
       };
       
       const { data, error } = await supabase
@@ -94,6 +96,7 @@ export const useUpdateReseller = () => {
       
       // Clean the data before sending
       const cleanData = {
+        reseller_id: updates.reseller_id || null,
         name: updates.name,
         phone: updates.phone,
         address: updates.address,
@@ -103,6 +106,7 @@ export const useUpdateReseller = () => {
         notes: updates.notes || null,
         branch_id: updates.branch_id || null,
         is_active: updates.is_active,
+        ...(updates.password && { password_hash: updates.password }),
       };
       
       const { data, error } = await supabase

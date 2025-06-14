@@ -27,6 +27,7 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
 
   const form = useForm({
     defaultValues: {
+      reseller_id: reseller?.reseller_id || '',
       name: reseller?.name || '',
       phone: reseller?.phone || '',
       address: reseller?.address || '',
@@ -35,14 +36,15 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
       id_number: reseller?.id_number || '',
       notes: reseller?.notes || '',
       branch_id: reseller?.branch_id || '',
-      commission_rate: reseller?.commission_rate || 10,
       is_active: reseller?.is_active ?? true,
+      password: '',
     },
   });
 
   React.useEffect(() => {
     if (reseller) {
       form.reset({
+        reseller_id: reseller.reseller_id || '',
         name: reseller.name,
         phone: reseller.phone,
         address: reseller.address,
@@ -51,11 +53,12 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
         id_number: reseller.id_number || '',
         notes: reseller.notes || '',
         branch_id: reseller.branch_id || '',
-        commission_rate: reseller.commission_rate || 10,
         is_active: reseller.is_active,
+        password: '',
       });
     } else {
       form.reset({
+        reseller_id: '',
         name: '',
         phone: '',
         address: '',
@@ -64,8 +67,8 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
         id_number: '',
         notes: '',
         branch_id: '',
-        commission_rate: 10,
         is_active: true,
+        password: '',
       });
     }
   }, [reseller, form]);
@@ -76,12 +79,13 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
       
       const processedData = {
         ...data,
+        reseller_id: data.reseller_id || null,
         birth_date: data.birth_date || null,
         email: data.email || null,
         id_number: data.id_number || null,
         notes: data.notes || null,
         branch_id: data.branch_id === 'no-branch' ? null : data.branch_id || null,
-        commission_rate: Number(data.commission_rate) || 10,
+        password: data.password || null,
       };
       
       console.log('Processed form data:', processedData);
@@ -155,6 +159,20 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <FormField
+                control={form.control}
+                name="reseller_id"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>ID Reseller</FormLabel>
+                    <FormControl>
+                      <Input placeholder="Masukkan ID reseller (opsional)" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
               <FormField
                 control={form.control}
                 name="name"
@@ -253,18 +271,17 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
 
               <FormField
                 control={form.control}
-                name="commission_rate"
+                name="password"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Persentase Komisi (%)</FormLabel>
+                    <FormLabel>
+                      {reseller ? 'Password Baru (kosongkan jika tidak ingin mengubah)' : 'Password'}
+                    </FormLabel>
                     <FormControl>
                       <Input 
-                        type="number" 
-                        placeholder="10" 
-                        min="0"
-                        max="100"
-                        {...field}
-                        onChange={(e) => field.onChange(Number(e.target.value))}
+                        type="password" 
+                        placeholder={reseller ? "Kosongkan jika tidak ingin mengubah" : "Masukkan password"}
+                        {...field} 
                       />
                     </FormControl>
                     <FormMessage />
