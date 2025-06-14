@@ -174,7 +174,7 @@ const Commission = () => {
     return result;
   };
 
-  // Get redeemed amounts for each reseller
+  // Get redeemed amounts for each reseller - ONLY count approved redemptions
   const getRedeemedAmounts = (resellerId: string) => {
     if (!redemptions) return { redeemedCommission: 0, redeemedPoints: 0 };
     
@@ -190,6 +190,7 @@ const Commission = () => {
       .filter((r: any) => r.reward_type === 'points')
       .reduce((sum: number, r: any) => sum + (r.amount_redeemed || 0), 0);
 
+    console.log(`Redeemed amounts for ${resellerId}:`, { redeemedCommission, redeemedPoints });
     return { redeemedCommission, redeemedPoints };
   };
 
@@ -235,10 +236,13 @@ const Commission = () => {
 
     console.log('Reward redemption attempt:', {
       reward,
+      resellerInfo,
       availableCommission,
       availablePoints,
       rewardCost: reward.cost,
-      rewardType: reward.reward_type
+      rewardType: reward.reward_type,
+      redeemedCommission,
+      redeemedPoints
     });
 
     // Validate if reseller has enough balance
@@ -294,6 +298,7 @@ const Commission = () => {
   console.log('Total resellers:', resellers?.length);
   console.log('Calculated total commission:', totalStats.totalCommission);
   console.log('Calculated total points:', totalStats.totalPoints);
+  console.log('Total redemptions:', redemptions?.length);
 
   return (
     <div className="p-6 space-y-6">
@@ -511,48 +516,46 @@ const Commission = () => {
                                   <p className="text-gray-500">Belum ada hadiah yang tersedia</p>
                                 </div>
                               ) : (
-                                rewardCatalog
-                                  .filter(reward => reward.is_active)
-                                  .map((reward) => {
-                                    const canRedeem = reward.reward_type === 'points' 
-                                      ? availablePoints >= reward.cost
-                                      : availableCommission >= reward.cost;
-                                    
-                                    return (
-                                      <div key={reward.id} className="border rounded-lg p-4">
-                                        <div className="flex justify-between items-start">
-                                          <div className="flex-1">
-                                            <h4 className="font-medium">{reward.name}</h4>
-                                            <p className="text-sm text-gray-600 mt-1">{reward.description}</p>
-                                            <div className="flex items-center gap-2 mt-2">
-                                              <Badge variant={reward.reward_type === 'points' ? 'secondary' : 'default'}>
-                                                {reward.reward_type === 'points' ? 'Poin' : 'Komisi'}
-                                              </Badge>
-                                              <p className="text-sm font-medium text-blue-600">
-                                                {reward.reward_type === 'points' 
-                                                  ? `${reward.cost} Poin` 
-                                                  : formatCurrency(reward.cost)
-                                                }
-                                              </p>
-                                            </div>
+                                rewardCatalog.map((reward) => {
+                                  const canRedeem = reward.reward_type === 'points' 
+                                    ? availablePoints >= reward.cost
+                                    : availableCommission >= reward.cost;
+                                  
+                                  return (
+                                    <div key={reward.id} className="border rounded-lg p-4">
+                                      <div className="flex justify-between items-start">
+                                        <div className="flex-1">
+                                          <h4 className="font-medium">{reward.name}</h4>
+                                          <p className="text-sm text-gray-600 mt-1">{reward.description}</p>
+                                          <div className="flex items-center gap-2 mt-2">
+                                            <Badge variant={reward.reward_type === 'points' ? 'secondary' : 'default'}>
+                                              {reward.reward_type === 'points' ? 'Poin' : 'Komisi'}
+                                            </Badge>
+                                            <p className="text-sm font-medium text-blue-600">
+                                              {reward.reward_type === 'points' 
+                                                ? `${reward.cost} Poin` 
+                                                : formatCurrency(reward.cost)
+                                              }
+                                            </p>
                                           </div>
-                                          <Button
-                                            size="sm"
-                                            disabled={!canRedeem || createRedemption.isPending}
-                                            onClick={() => handleRedeemReward(reward)}
-                                            className="ml-4"
-                                          >
-                                            {createRedemption.isPending ? (
-                                              <>
-                                                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                                                Memproses...
-                                              </>
-                                            ) : canRedeem ? 'Tukar' : 'Tidak Cukup'}
-                                          </Button>
                                         </div>
+                                        <Button
+                                          size="sm"
+                                          disabled={!canRedeem || createRedemption.isPending}
+                                          onClick={() => handleRedeemReward(reward)}
+                                          className="ml-4"
+                                        >
+                                          {createRedemption.isPending ? (
+                                            <>
+                                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                              Memproses...
+                                            </>
+                                          ) : canRedeem ? 'Tukar' : 'Tidak Cukup'}
+                                        </Button>
                                       </div>
-                                    );
-                                  })
+                                    </div>
+                                  );
+                                })
                               )}
                             </div>
                           </div>

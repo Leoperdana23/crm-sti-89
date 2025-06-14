@@ -35,6 +35,7 @@ export const useRewardCatalog = () => {
       const { data, error } = await supabase
         .from('reward_catalog')
         .select('*')
+        .eq('is_active', true)
         .order('cost', { ascending: true });
 
       if (error) {
@@ -72,7 +73,7 @@ export const useRewardRedemptions = () => {
       console.log('Reward redemptions fetched:', data);
       return data;
     },
-    refetchInterval: 5000,
+    refetchInterval: 3000,
   });
 };
 
@@ -105,14 +106,10 @@ export const useCreateRedemption = () => {
         .select('*')
         .eq('id', redemption.reward_id)
         .eq('is_active', true)
-        .maybeSingle();
+        .single();
 
       if (rewardError) {
         console.error('Error checking reward:', rewardError);
-        throw new Error('Gagal memvalidasi hadiah');
-      }
-
-      if (!rewardData) {
         throw new Error('Hadiah tidak ditemukan atau tidak aktif');
       }
 
@@ -122,14 +119,10 @@ export const useCreateRedemption = () => {
         .select('*')
         .eq('id', redemption.reseller_id)
         .eq('is_active', true)
-        .maybeSingle();
+        .single();
 
       if (resellerError) {
         console.error('Error checking reseller:', resellerError);
-        throw new Error('Gagal memvalidasi reseller');
-      }
-
-      if (!resellerData) {
         throw new Error('Reseller tidak ditemukan atau tidak aktif');
       }
 
@@ -192,7 +185,7 @@ export const useApproveRedemption = () => {
         .from('reward_redemptions')
         .select('*')
         .eq('id', redemptionId)
-        .maybeSingle();
+        .single();
 
       if (fetchError) {
         console.error('Error fetching redemption:', fetchError);
@@ -222,45 +215,6 @@ export const useApproveRedemption = () => {
       if (error) {
         console.error('Error updating redemption:', error);
         throw new Error('Gagal memperbarui status penukaran hadiah');
-      }
-
-      // If approved and it's a points redemption, deduct points from reseller
-      if (status === 'approved' && redemption.reward_type === 'points') {
-        console.log('Deducting points from reseller:', redemption.reseller_id, redemption.amount_redeemed);
-        
-        const { data: resellerData, error: fetchResellerError } = await supabase
-          .from('resellers')
-          .select('total_points')
-          .eq('id', redemption.reseller_id)
-          .maybeSingle();
-
-        if (fetchResellerError) {
-          console.error('Error fetching reseller for points deduction:', fetchResellerError);
-          throw new Error('Gagal mengupdate poin reseller');
-        }
-
-        if (!resellerData) {
-          throw new Error('Data reseller tidak ditemukan');
-        }
-
-        const currentPoints = resellerData.total_points || 0;
-        if (currentPoints < redemption.amount_redeemed) {
-          throw new Error('Poin reseller tidak mencukupi untuk penukaran ini');
-        }
-
-        const newPoints = Math.max(0, currentPoints - redemption.amount_redeemed);
-
-        const { error: updateResellerError } = await supabase
-          .from('resellers')
-          .update({ total_points: newPoints })
-          .eq('id', redemption.reseller_id);
-        
-        if (updateResellerError) {
-          console.error('Error updating reseller points:', updateResellerError);
-          throw new Error('Gagal mengupdate poin reseller');
-        }
-
-        console.log('Points deducted successfully. New balance:', newPoints);
       }
 
       console.log('Redemption status updated successfully:', data);
