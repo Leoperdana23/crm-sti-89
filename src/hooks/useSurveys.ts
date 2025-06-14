@@ -1,5 +1,5 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface Survey {
@@ -20,7 +20,7 @@ export interface Survey {
 }
 
 export const useSurveys = () => {
-  return useQuery({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['surveys'],
     queryFn: async () => {
       console.log('Fetching surveys data...');
@@ -41,4 +41,47 @@ export const useSurveys = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
+
+  const getAverageRatings = () => {
+    if (!data || data.length === 0) {
+      return {
+        product_quality: 0,
+        service_technician: 0,
+        service_sales: 0,
+        usage_clarity: 0,
+        overall: 0
+      };
+    }
+
+    const totals = data.reduce((acc, survey) => {
+      acc.product_quality += survey.product_quality;
+      acc.service_technician += survey.service_technician;
+      acc.service_sales += survey.service_sales;
+      acc.usage_clarity += survey.usage_clarity;
+      return acc;
+    }, {
+      product_quality: 0,
+      service_technician: 0,
+      service_sales: 0,
+      usage_clarity: 0
+    });
+
+    const count = data.length;
+    const averages = {
+      product_quality: totals.product_quality / count,
+      service_technician: totals.service_technician / count,
+      service_sales: totals.service_sales / count,
+      usage_clarity: totals.usage_clarity / count,
+      overall: (totals.product_quality + totals.service_technician + totals.service_sales + totals.usage_clarity) / (count * 4)
+    };
+
+    return averages;
+  };
+
+  return {
+    surveys: data || [],
+    loading: isLoading,
+    error,
+    getAverageRatings,
+  };
 };

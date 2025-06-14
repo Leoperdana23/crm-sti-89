@@ -1,6 +1,7 @@
 
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
+import { useToast } from '@/hooks/use-toast';
 
 export interface Customer {
   id: string;
@@ -32,7 +33,10 @@ export interface Customer {
 }
 
 export const useCustomers = () => {
-  return useQuery({
+  const queryClient = useQueryClient();
+  const { toast } = useToast();
+
+  const { data, isLoading, error } = useQuery({
     queryKey: ['customers'],
     queryFn: async () => {
       console.log('Fetching customers data...');
@@ -52,4 +56,105 @@ export const useCustomers = () => {
     staleTime: 5 * 60 * 1000, // 5 minutes
     refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
+
+  const addCustomer = async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at'>) => {
+    const { data, error } = await supabase
+      .from('customers')
+      .insert([customerData])
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    queryClient.invalidateQueries({ queryKey: ['customers'] });
+    toast({
+      title: "Berhasil",
+      description: "Pelanggan berhasil ditambahkan",
+    });
+    
+    return data;
+  };
+
+  const updateCustomer = async ({ id, ...updateData }: Partial<Customer> & { id: string }) => {
+    const { data, error } = await supabase
+      .from('customers')
+      .update(updateData)
+      .eq('id', id)
+      .select()
+      .single();
+
+    if (error) throw error;
+    
+    queryClient.invalidateQueries({ queryKey: ['customers'] });
+    toast({
+      title: "Berhasil",
+      description: "Pelanggan berhasil diperbarui",
+    });
+    
+    return data;
+  };
+
+  const deleteCustomer = async (id: string) => {
+    const { error } = await supabase
+      .from('customers')
+      .delete()
+      .eq('id', id);
+
+    if (error) throw error;
+    
+    queryClient.invalidateQueries({ queryKey: ['customers'] });
+    toast({
+      title: "Berhasil",
+      description: "Pelanggan berhasil dihapus",
+    });
+  };
+
+  const deleteCustomersByName = async (name: string) => {
+    const { error } = await supabase
+      .from('customers')
+      .delete()
+      .ilike('name', name);
+
+    if (error) throw error;
+    
+    queryClient.invalidateQueries({ queryKey: ['customers'] });
+    toast({
+      title: "Berhasil",
+      description: `Pelanggan dengan nama "${name}" berhasil dihapus`,
+    });
+  };
+
+  const getCustomersByStatus = (status: string) => {
+    return (data || []).filter(customer => customer.status === status);
+  };
+
+  const cancelWorkProcess = async (customerId: string) => {
+    const { error } = await supabase
+      .from('customers')
+      .update({ 
+        work_status: 'cancelled',
+        work_notes: 'Proses kerja dibatalkan' 
+      })
+      .eq('id', customerId);
+
+    if (error) throw error;
+    
+    queryClient.invalidateQueries({ queryKey: ['customers'] });
+    toast({
+      title: "Berhasil",
+      description: "Proses kerja berhasil dibatalkan",
+    });
+  };
+
+  return {
+    customers: data || [],
+    loading: isLoading,
+    error,
+    addCustomer,
+    updateCustomer,
+    deleteCustomer,
+    deleteCustomersByName,
+    getCustomersByStatus,
+    cancelWorkProcess,
+  };
 };
