@@ -40,6 +40,7 @@ export const useBranches = () => {
     branches: data || [],
     loading: isLoading,
     error,
+    data: data || [], // Adding data property for compatibility
   };
 };
 
