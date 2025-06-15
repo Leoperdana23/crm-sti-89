@@ -376,96 +376,93 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                       )}
                     </div>
                     
-                    {/* Product Info */}
-                    <div className="flex-1">
-                      <div className="flex justify-between items-start">
-                        <div className="flex-1 pr-2">
-                          <h3 className="font-semibold text-sm md:text-lg text-gray-900 mb-0">{product.name}</h3>
-                        </div>
-                        
-                        <div className="text-right">
-                          {/* Quantity Controls */}
-                          {cartItem ? (
-                            <div className="flex items-center gap-2">
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => updateQuantity(product.id, cartItem.quantity - 1)}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Minus className="h-4 w-4" />
-                              </Button>
-                              
-                              {editingQuantity === product.id ? (
-                                <Input
-                                  value={tempQuantity}
-                                  onChange={(e) => setTempQuantity(e.target.value)}
-                                  onBlur={() => handleQuantitySubmit(product.id)}
-                                  onKeyDown={(e) => handleQuantityKeyPress(e, product.id)}
-                                  className="w-16 h-8 text-center p-1"
-                                  type="number"
-                                  min="1"
-                                  autoFocus
-                                />
-                              ) : (
-                                <span 
-                                  className="w-8 text-center font-medium cursor-pointer hover:bg-gray-100 rounded px-1"
-                                  onClick={() => handleQuantityClick(product.id, cartItem.quantity)}
-                                >
-                                  {cartItem.quantity}
-                                </span>
-                              )}
-                              
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
-                                className="h-8 w-8 p-0"
-                              >
-                                <Plus className="h-4 w-4" />
-                              </Button>
+                    {/* Product Info Kiri/Left */}
+                    <div className="flex-1 flex flex-col justify-between">
+                      <div>
+                        <h3 className="font-semibold text-sm md:text-lg text-gray-900 mb-0">{product.name}</h3>
+                        {/* Price Information - directly under name */}
+                        <div className="mt-1">
+                          <div className="text-sm md:text-base font-bold text-gray-900">{formatPrice(displayPrice)}</div>
+                          {priceType === 'reseller' && product.reseller_price && product.reseller_price < originalPrice && (
+                            <div className="text-xs text-gray-500 line-through">
+                              {formatPrice(originalPrice)}
                             </div>
-                          ) : (
+                          )}
+                          <div className="text-xs text-gray-500">per {product.unit}</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Aksi dan Info Kanan/Right */}
+                    <div className="flex flex-col items-end justify-between flex-shrink-0 min-w-[80px]">
+                      {/* Quantity Controls atau Tombol Tambah */}
+                      <div className="mb-2">
+                        {cartItem ? (
+                          <div className="flex items-center gap-2">
                             <Button
                               size="sm"
-                              onClick={() => addToCart(product)}
-                              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 h-8 text-xs rounded"
+                              variant="outline"
+                              onClick={() => updateQuantity(product.id, cartItem.quantity - 1)}
+                              className="h-8 w-8 p-0"
                             >
-                              <Plus className="h-4 w-4 mr-1" />
-                              Tambah
+                              <Minus className="h-4 w-4" />
                             </Button>
+                            {editingQuantity === product.id ? (
+                              <Input
+                                value={tempQuantity}
+                                onChange={(e) => setTempQuantity(e.target.value)}
+                                onBlur={() => handleQuantitySubmit(product.id)}
+                                onKeyDown={(e) => handleQuantityKeyPress(e, product.id)}
+                                className="w-16 h-8 text-center p-1"
+                                type="number"
+                                min="1"
+                                autoFocus
+                              />
+                            ) : (
+                              <span 
+                                className="w-8 text-center font-medium cursor-pointer hover:bg-gray-100 rounded px-1"
+                                onClick={() => handleQuantityClick(product.id, cartItem.quantity)}
+                              >
+                                {cartItem.quantity}
+                              </span>
+                            )}
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              onClick={() => updateQuantity(product.id, cartItem.quantity + 1)}
+                              className="h-8 w-8 p-0"
+                            >
+                              <Plus className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <Button
+                            size="sm"
+                            onClick={() => addToCart(product)}
+                            className="bg-green-600 hover:bg-green-700 text-white px-2 py-1 h-8 text-xs rounded"
+                          >
+                            <Plus className="h-4 w-4 mr-1" />
+                            Tambah
+                          </Button>
+                        )}
+                      </div>
+                      {/* Komisi & Poin - rata kanan, urutan: komisi, lalu poin */}
+                      {(!!product.commission_value || !!product.points_value) && (
+                        <div className="flex flex-col items-end w-full gap-1">
+                          {product.commission_value && product.commission_value > 0 && (
+                            <div className="flex items-center gap-1">
+                              <DollarSign className="h-3 w-3 text-green-500" />
+                              <span className="text-xs text-green-600">{formatPrice(product.commission_value)}</span>
+                            </div>
+                          )}
+                          {product.points_value && product.points_value > 0 && (
+                            <div className="flex items-center gap-1">
+                              <Award className="h-3 w-3 text-yellow-500" />
+                              <span className="text-xs text-yellow-600">{product.points_value} poin</span>
+                            </div>
                           )}
                         </div>
-                      </div>
-                      
-                      {/* Price Information - directly under name */}
-                      <div className="mt-1">
-                        <div className="text-sm md:text-base font-bold text-gray-900">
-                          {formatPrice(displayPrice)}
-                        </div>
-                        {priceType === 'reseller' && product.reseller_price && product.reseller_price < originalPrice && (
-                          <div className="text-xs text-gray-500 line-through">
-                            {formatPrice(originalPrice)}
-                          </div>
-                        )}
-                        <div className="text-xs text-gray-500">per {product.unit}</div>
-                      </div>
-
-                      {/* Points and Commission - below price */}
-                      <div className="flex gap-3 mt-2">
-                        {product.points_value && product.points_value > 0 && (
-                          <div className="flex items-center gap-1">
-                            <Award className="h-3 w-3 text-yellow-500" />
-                            <span className="text-xs text-yellow-600">{product.points_value} poin</span>
-                          </div>
-                        )}
-                        {product.commission_value && product.commission_value > 0 && (
-                          <div className="flex items-center gap-1">
-                            <DollarSign className="h-3 w-3 text-green-500" />
-                            <span className="text-xs text-green-600">{formatPrice(product.commission_value)}</span>
-                          </div>
-                        )}
-                      </div>
+                      )}
                     </div>
                   </div>
                 </CardContent>
