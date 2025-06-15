@@ -351,12 +351,12 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
           </CardContent>
         </Card>
       ) : (
-        <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredProducts.map((product) => {
             const cartItem = getCartItem(product.id);
             const displayPrice = getDisplayPrice(product);
             const originalPrice = product.price;
-            
+
             return (
               <Card key={product.id} className="overflow-hidden">
                 <CardContent className="p-4">
@@ -438,7 +438,7 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                         </div>
                       </div>
                       
-                      {/* Price Information - moved directly under name with no margin */}
+                      {/* Price Information - directly under name */}
                       <div className="mt-1">
                         <div className="text-sm md:text-base font-bold text-gray-900">
                           {formatPrice(displayPrice)}
@@ -451,7 +451,7 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                         <div className="text-xs text-gray-500">per {product.unit}</div>
                       </div>
 
-                      {/* Points and Commission - moved below price */}
+                      {/* Points and Commission - below price */}
                       <div className="flex gap-3 mt-2">
                         {product.points_value && product.points_value > 0 && (
                           <div className="flex items-center gap-1">
