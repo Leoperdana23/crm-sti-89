@@ -45,57 +45,73 @@ const ResellerLogin = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="text-center">
-          <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
-            <Store className="h-8 w-8 text-green-600" />
-          </div>
-          <CardTitle className="text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
-            Reseller App
-          </CardTitle>
-          <CardDescription>
-            Masuk untuk mengakses aplikasi reseller
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div className="space-y-2">
-              <Label htmlFor="phone">Nomor HP</Label>
-              <Input
-                id="phone"
-                type="text"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-                placeholder="Masukkan nomor HP terdaftar"
-              />
+    <div className="min-h-screen w-full bg-gradient-to-br from-green-50 via-white to-emerald-50 flex items-center justify-center p-3 sm:p-4 md:p-6">
+      <div className="w-full max-w-sm sm:max-w-md">
+        <Card className="w-full shadow-lg border-0 bg-white/95 backdrop-blur-sm">
+          <CardHeader className="text-center pb-4 sm:pb-6">
+            <div className="mx-auto w-12 h-12 sm:w-16 sm:h-16 bg-green-100 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+              <Store className="h-6 w-6 sm:h-8 sm:w-8 text-green-600" />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                placeholder="Masukkan password"
-              />
+            <CardTitle className="text-xl sm:text-2xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent">
+              Reseller App
+            </CardTitle>
+            <CardDescription className="text-sm sm:text-base text-gray-600 px-2">
+              Masuk untuk mengakses aplikasi reseller
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4 sm:space-y-6 px-4 sm:px-6 pb-6 sm:pb-8">
+            <form onSubmit={handleLogin} className="space-y-4 sm:space-y-5">
+              <div className="space-y-2">
+                <Label htmlFor="phone" className="text-sm font-medium text-gray-700">
+                  Nomor HP
+                </Label>
+                <Input
+                  id="phone"
+                  type="text"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  required
+                  placeholder="Masukkan nomor HP terdaftar"
+                  className="h-11 sm:h-12 text-base border-gray-200 focus:border-green-500 focus:ring-green-500"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="password" className="text-sm font-medium text-gray-700">
+                  Password
+                </Label>
+                <Input
+                  id="password"
+                  type="password"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  placeholder="Masukkan password"
+                  className="h-11 sm:h-12 text-base border-gray-200 focus:border-green-500 focus:ring-green-500"
+                />
+              </div>
+              <Button 
+                type="submit" 
+                className="w-full h-11 sm:h-12 bg-green-600 hover:bg-green-700 text-white font-medium text-base transition-colors"
+                disabled={loading}
+              >
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Masuk
+              </Button>
+            </form>
+            
+            <div className="mt-4 sm:mt-6 text-center">
+              <div className="text-xs sm:text-sm text-gray-600 space-y-2">
+                <p className="font-medium">Password Default:</p>
+                <div className="bg-gray-50 p-2 sm:p-3 rounded-lg border">
+                  <p className="text-xs sm:text-sm font-mono font-bold text-gray-800">
+                    123456
+                  </p>
+                </div>
+              </div>
             </div>
-            <Button type="submit" className="w-full bg-green-600 hover:bg-green-700" disabled={loading}>
-              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Masuk
-            </Button>
-          </form>
-          
-          <div className="mt-6 text-center text-sm text-gray-600">
-            <p className="mb-2">Password Default:</p>
-            <p className="text-xs bg-gray-50 p-2 rounded">
-              <strong>123456</strong>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };
