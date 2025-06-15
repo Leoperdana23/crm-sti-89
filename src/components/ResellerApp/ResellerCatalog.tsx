@@ -1,5 +1,3 @@
-
-
 import React, { useState, useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -431,7 +429,7 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                             <Button
                               size="sm"
                               onClick={() => addToCart(product)}
-                              className="bg-green-600 hover:bg-green-700 text-white"
+                              className="bg-green-600 hover:bg-green-700 text-white px-3 py-1 h-8 text-xs rounded"
                             >
                               <Plus className="h-4 w-4 mr-1" />
                               Tambah
@@ -628,4 +626,3 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
 };
 
 export default ResellerCatalog;
-
