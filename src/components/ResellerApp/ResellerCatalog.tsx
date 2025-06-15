@@ -1,4 +1,5 @@
 
+
 import React, { useState, useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -381,7 +382,7 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                     <div className="flex-1">
                       <div className="flex justify-between items-start">
                         <div className="flex-1 pr-2">
-                          <h3 className="font-semibold text-sm md:text-lg text-gray-900">{product.name}</h3>
+                          <h3 className="font-semibold text-sm md:text-lg text-gray-900 mb-0">{product.name}</h3>
                         </div>
                         
                         <div className="text-right">
@@ -439,9 +440,9 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                         </div>
                       </div>
                       
-                      {/* Price Information - font size reduced and closer spacing */}
-                      <div className="mb-2">
-                        <div className="text-base md:text-lg font-bold text-gray-900">
+                      {/* Price Information - moved directly under name with no margin */}
+                      <div className="mt-1">
+                        <div className="text-sm md:text-base font-bold text-gray-900">
                           {formatPrice(displayPrice)}
                         </div>
                         {priceType === 'reseller' && product.reseller_price && product.reseller_price < originalPrice && (
@@ -627,3 +628,4 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
 };
 
 export default ResellerCatalog;
+
