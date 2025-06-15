@@ -381,22 +381,6 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                       <div className="flex justify-between items-start mb-2">
                         <div className="flex-1 pr-2">
                           <h3 className="font-semibold text-sm md:text-lg text-gray-900">{product.name}</h3>
-                          
-                          {/* Points and Commission - Mobile friendly */}
-                          <div className="flex gap-3 mt-1">
-                            {product.points_value && product.points_value > 0 && (
-                              <div className="flex items-center gap-1">
-                                <Award className="h-3 w-3 text-yellow-500" />
-                                <span className="text-xs text-yellow-600">{product.points_value} poin</span>
-                              </div>
-                            )}
-                            {product.commission_value && product.commission_value > 0 && (
-                              <div className="flex items-center gap-1">
-                                <DollarSign className="h-3 w-3 text-green-500" />
-                                <span className="text-xs text-green-600">{formatPrice(product.commission_value)}</span>
-                              </div>
-                            )}
-                          </div>
                         </div>
                         
                         <div className="text-right">
@@ -454,17 +438,33 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                         </div>
                       </div>
                       
-                      {/* Price Information */}
+                      {/* Price Information - font size reduced */}
                       <div className="mb-3">
-                        <div className="text-lg md:text-xl font-bold text-gray-900">
+                        <div className="text-base md:text-lg font-bold text-gray-900">
                           {formatPrice(displayPrice)}
                         </div>
                         {priceType === 'reseller' && product.reseller_price && product.reseller_price < originalPrice && (
-                          <div className="text-sm text-gray-500 line-through">
+                          <div className="text-xs text-gray-500 line-through">
                             {formatPrice(originalPrice)}
                           </div>
                         )}
-                        <div className="text-sm text-gray-500">per {product.unit}</div>
+                        <div className="text-xs text-gray-500">per {product.unit}</div>
+                      </div>
+
+                      {/* Points and Commission - moved below price */}
+                      <div className="flex gap-3 mt-2">
+                        {product.points_value && product.points_value > 0 && (
+                          <div className="flex items-center gap-1">
+                            <Award className="h-3 w-3 text-yellow-500" />
+                            <span className="text-xs text-yellow-600">{product.points_value} poin</span>
+                          </div>
+                        )}
+                        {product.commission_value && product.commission_value > 0 && (
+                          <div className="flex items-center gap-1">
+                            <DollarSign className="h-3 w-3 text-green-500" />
+                            <span className="text-xs text-green-600">{formatPrice(product.commission_value)}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>
