@@ -378,7 +378,7 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                     
                     {/* Product Info */}
                     <div className="flex-1">
-                      <div className="flex justify-between items-start mb-2">
+                      <div className="flex justify-between items-start mb-1">
                         <div className="flex-1 pr-2">
                           <h3 className="font-semibold text-sm md:text-lg text-gray-900">{product.name}</h3>
                         </div>
@@ -438,8 +438,8 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                         </div>
                       </div>
                       
-                      {/* Price Information - font size reduced */}
-                      <div className="mb-3">
+                      {/* Price Information - font size reduced and closer spacing */}
+                      <div className="mb-2">
                         <div className="text-base md:text-lg font-bold text-gray-900">
                           {formatPrice(displayPrice)}
                         </div>
