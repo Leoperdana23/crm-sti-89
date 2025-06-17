@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -37,7 +36,7 @@ const RewardCatalogView: React.FC<RewardCatalogViewProps> = ({ reseller }) => {
     
     if (canRedeemReward) {
       return {
-        message: "Bisa ditukar - Hubungi penjual",
+        message: "Saldo cukup",
         variant: "default" as const,
         icon: MessageCircle
       };
