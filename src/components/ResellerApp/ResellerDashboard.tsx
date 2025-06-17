@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +6,7 @@ import { TrendingUp, Package, Clock, Star, ExternalLink } from 'lucide-react';
 import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useResellerBalance } from '@/hooks/useResellerApp';
+import RewardCatalogView from './RewardCatalogView';
 
 interface ResellerDashboardProps {
   reseller: ResellerSession;
@@ -99,6 +99,9 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
           </div>
         </CardContent>
       </Card>
+
+      {/* Reward Catalog View - New Section */}
+      <RewardCatalogView reseller={reseller} />
 
       {/* Stats Grid - Responsive */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6">
