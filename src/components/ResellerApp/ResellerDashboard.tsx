@@ -1,3 +1,4 @@
+
 import React, { useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -159,7 +160,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] sm:text-sm text-gray-600 truncate">Selesai</p>
+                <p className="text-[10px] sm:text-xs text-gray-600 truncate">Selesai</p>
                 <p className="text-lg sm:text-2xl lg:text-3xl font-bold">{completedOrders}</p>
               </div>
               <Star className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500 flex-shrink-0" />
