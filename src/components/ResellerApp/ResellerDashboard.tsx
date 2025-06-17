@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,6 +6,7 @@ import { TrendingUp, Package, Clock, Star, ExternalLink } from 'lucide-react';
 import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useResellerBalance } from '@/hooks/useResellerApp';
+import { useQueryClient } from '@tanstack/react-query';
 import RewardCatalogView from './RewardCatalogView';
 
 interface ResellerDashboardProps {
@@ -14,9 +15,22 @@ interface ResellerDashboardProps {
 }
 
 const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabChange }) => {
+  const queryClient = useQueryClient();
   const { data: orders = [] } = useResellerOrders(reseller.id);
   const { data: appSettings } = useAppSettings();
   const { data: balance } = useResellerBalance(reseller.id);
+
+  // Auto-refresh every 5 seconds
+  useEffect(() => {
+    const interval = setInterval(() => {
+      // Invalidate and refetch relevant queries
+      queryClient.invalidateQueries({ queryKey: ['reseller-orders', reseller.id] });
+      queryClient.invalidateQueries({ queryKey: ['reseller-balance', reseller.id] });
+      queryClient.invalidateQueries({ queryKey: ['reward-catalog'] });
+    }, 5000);
+
+    return () => clearInterval(interval);
+  }, [queryClient, reseller.id]);
 
   const totalOrders = orders.length;
   const pendingOrders = orders.filter(order => order.status === 'pending').length;
