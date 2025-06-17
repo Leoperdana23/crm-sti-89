@@ -8,6 +8,7 @@ import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useResellerBalance } from '@/hooks/useResellerApp';
 import { useQueryClient } from '@tanstack/react-query';
+import { useRewardRedemptions } from '@/hooks/useRewards';
 import RewardCatalogView from './RewardCatalogView';
 
 interface ResellerDashboardProps {
@@ -19,7 +20,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
   const queryClient = useQueryClient();
   const { data: orders = [] } = useResellerOrders(reseller.id);
   const { data: appSettings } = useAppSettings();
-  const { data: balance } = useResellerBalance(reseller.id);
+  const { data: allRedemptions } = useRewardRedemptions();
 
   // Auto-refresh every 5 seconds
   useEffect(() => {
@@ -36,22 +37,54 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
   const totalOrders = orders.length;
   const pendingOrders = orders.filter(order => order.status === 'pending').length;
   
-  // Count completed orders by number of orders (not quantity)
-  const completedOrders = orders.filter(order => order.status === 'selesai').length;
+  // Only count completed orders for all calculations
+  const completedOrders = orders.filter(order => 
+    order.status === 'selesai' || order.status === 'completed'
+  );
+
+  // Calculate total commission from completed orders using product commission values
+  const totalCommissionEarned = completedOrders.reduce((total, order) => {
+    return total + (order.order_items || []).reduce((orderTotal, item) => {
+      const productCommission = item.products?.commission_value || 0;
+      return orderTotal + (productCommission * item.quantity);
+    }, 0);
+  }, 0);
+
+  // Calculate total points from completed orders using product points values
+  const totalPointsEarned = completedOrders.reduce((total, order) => {
+    return total + (order.order_items || []).reduce((orderTotal, item) => {
+      const productPoints = item.products?.points_value || 0;
+      return orderTotal + (productPoints * item.quantity);
+    }, 0);
+  }, 0);
+
+  // Get redemption data for this reseller
+  const resellerRedemptions = allRedemptions?.filter(
+    (redemption: any) => redemption.reseller_id === reseller.id && redemption.status === 'approved'
+  ) || [];
+
+  // Calculate exchanged amounts from approved redemptions
+  const exchangedCommission = resellerRedemptions
+    .filter((r: any) => r.reward_type === 'commission')
+    .reduce((sum: number, r: any) => sum + r.amount_redeemed, 0);
+
+  const exchangedPoints = resellerRedemptions
+    .filter((r: any) => r.reward_type === 'points')
+    .reduce((sum: number, r: any) => sum + r.amount_redeemed, 0);
+
+  // Calculate remaining balances (accurate calculation)
+  const totalCommission = totalCommissionEarned - exchangedCommission;
+  const totalPoints = totalPointsEarned - exchangedPoints;
   
-  // Use calculated commission from balance hook instead of order sum
-  const totalCommission = balance?.remainingCommission || 0;
-  const totalPoints = balance?.remainingPoints || 0;
-  
-  // Calculate total quantity and average order
-  const totalQuantity = orders.reduce((sum, order) => {
+  // Calculate total quantity and average order from completed orders only
+  const totalQuantity = completedOrders.reduce((sum, order) => {
     if (order.order_items) {
       return sum + order.order_items.reduce((itemSum, item) => itemSum + item.quantity, 0);
     }
     return sum;
   }, 0);
   
-  const averageOrder = totalOrders > 0 ? Math.round((balance?.totalCommission || 0) / totalOrders) : 0;
+  const averageOrder = completedOrders.length > 0 ? Math.round(totalCommissionEarned / completedOrders.length) : 0;
 
   const siteName = appSettings?.catalog?.siteName || 'SEDEKAT App';
   const welcomeText = appSettings?.catalog?.welcomeText || 'Jadikan belanjamu banyak untung';
@@ -96,18 +129,18 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
             <div className="text-center">
               <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">{totalPoints}</div>
               <div className="text-xs sm:text-sm text-gray-600">Sisa Poin</div>
-              {balance && balance.redeemedPoints > 0 && (
+              {exchangedPoints > 0 && (
                 <div className="text-[10px] sm:text-xs text-gray-500">
-                  Sudah ditukar: {balance.redeemedPoints}
+                  Sudah ditukar: {exchangedPoints}
                 </div>
               )}
             </div>
             <div className="text-center">
               <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-blue-600">Rp {totalCommission.toLocaleString()}</div>
               <div className="text-xs sm:text-sm text-gray-600">Sisa Komisi</div>
-              {balance && balance.redeemedCommission > 0 && (
+              {exchangedCommission > 0 && (
                 <div className="text-[10px] sm:text-xs text-gray-500">
-                  Sudah ditukar: Rp {balance.redeemedCommission.toLocaleString()}
+                  Sudah ditukar: Rp {exchangedCommission.toLocaleString()}
                 </div>
               )}
             </div>
@@ -161,7 +194,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
                 <p className="text-[10px] sm:text-xs text-gray-600 truncate">Selesai</p>
-                <p className="text-lg sm:text-2xl lg:text-3xl font-bold">{completedOrders}</p>
+                <p className="text-lg sm:text-2xl lg:text-3xl font-bold">{completedOrders.length}</p>
               </div>
               <Star className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500 flex-shrink-0" />
             </div>
