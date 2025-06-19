@@ -8,7 +8,7 @@ export interface Customer {
   id_number?: string;
   needs?: string;
   notes?: string;
-  status: 'Prospek' | 'Follow-up' | 'Deal' | 'Tidak Jadi';
+  status: 'Prospek' | 'Follow-up' | 'Cold' | 'Warm' | 'Hot' | 'Deal' | 'Tidak Jadi';
   created_at: string;
   updated_at: string;
   deal_date?: string;
