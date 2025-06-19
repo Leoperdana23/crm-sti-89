@@ -17,6 +17,7 @@ const FollowUp = () => {
   
   // Filter states
   const [selectedBranch, setSelectedBranch] = useState<string>('all');
+  const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
 
@@ -31,6 +32,11 @@ const FollowUp = () => {
     return customerList.filter(customer => {
       // Filter by branch
       if (selectedBranch && selectedBranch !== 'all' && customer.branch_id !== selectedBranch) {
+        return false;
+      }
+
+      // Filter by status
+      if (selectedStatus && selectedStatus !== 'all' && customer.status !== selectedStatus) {
         return false;
       }
 
@@ -54,11 +60,26 @@ const FollowUp = () => {
     });
   };
 
-  const filteredProspekCustomers = filterCustomers(prospekCustomers);
-  const filteredFollowUpCustomers = filterCustomers(followUpCustomers);
-  const filteredColdCustomers = filterCustomers(coldCustomers);
-  const filteredWarmCustomers = filterCustomers(warmCustomers);
-  const filteredHotCustomers = filterCustomers(hotCustomers);
+  // Apply filters to all customer lists
+  const allCustomers = [...prospekCustomers, ...followUpCustomers, ...coldCustomers, ...warmCustomers, ...hotCustomers];
+  const filteredAllCustomers = filterCustomers(allCustomers);
+
+  // Get filtered customers by status from the filtered list
+  const filteredProspekCustomers = selectedStatus === 'all' || selectedStatus === 'Prospek' 
+    ? filterCustomers(prospekCustomers) 
+    : [];
+  const filteredFollowUpCustomers = selectedStatus === 'all' || selectedStatus === 'Follow-up' 
+    ? filterCustomers(followUpCustomers) 
+    : [];
+  const filteredColdCustomers = selectedStatus === 'all' || selectedStatus === 'Cold' 
+    ? filterCustomers(coldCustomers) 
+    : [];
+  const filteredWarmCustomers = selectedStatus === 'all' || selectedStatus === 'Warm' 
+    ? filterCustomers(warmCustomers) 
+    : [];
+  const filteredHotCustomers = selectedStatus === 'all' || selectedStatus === 'Hot' 
+    ? filterCustomers(hotCustomers) 
+    : [];
 
   const handleWhatsApp = (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
@@ -108,9 +129,24 @@ const FollowUp = () => {
 
   const clearFilters = () => {
     setSelectedBranch('all');
+    setSelectedStatus('all');
     setStartDate('');
     setEndDate('');
   };
+
+  // Generate filter message based on active filters
+  const getFilterMessage = () => {
+    const filters = [];
+    if (selectedBranch !== 'all') filters.push('cabang');
+    if (selectedStatus !== 'all') filters.push('status');
+    if (startDate || endDate) filters.push('tanggal');
+    
+    return filters.length > 0 
+      ? `sesuai filter ${filters.join(', ')}` 
+      : '';
+  };
+
+  const filterMessage = getFilterMessage();
 
   return (
     <div className="space-y-6">
@@ -122,9 +158,11 @@ const FollowUp = () => {
       <FilterSection
         branches={branches}
         selectedBranch={selectedBranch}
+        selectedStatus={selectedStatus}
         startDate={startDate}
         endDate={endDate}
         onBranchChange={setSelectedBranch}
+        onStatusChange={setSelectedStatus}
         onStartDateChange={setStartDate}
         onEndDateChange={setEndDate}
         onClearFilters={clearFilters}
@@ -137,8 +175,8 @@ const FollowUp = () => {
           customers={filteredProspekCustomers}
           type="prospect"
           emptyMessage={
-            selectedBranch !== 'all' || startDate || endDate 
-              ? "Tidak ada prospek baru sesuai filter" 
+            filterMessage 
+              ? `Tidak ada prospek baru ${filterMessage}` 
               : "Tidak ada prospek baru"
           }
           onWhatsApp={handleWhatsApp}
@@ -152,8 +190,8 @@ const FollowUp = () => {
           customers={filteredFollowUpCustomers}
           type="followup"
           emptyMessage={
-            selectedBranch !== 'all' || startDate || endDate 
-              ? "Tidak ada follow-up aktif sesuai filter" 
+            filterMessage 
+              ? `Tidak ada follow-up aktif ${filterMessage}` 
               : "Tidak ada follow-up aktif"
           }
           selectedCustomer={selectedCustomer}
@@ -174,8 +212,8 @@ const FollowUp = () => {
           customers={filteredColdCustomers}
           type="status"
           emptyMessage={
-            selectedBranch !== 'all' || startDate || endDate 
-              ? "Tidak ada cold leads sesuai filter" 
+            filterMessage 
+              ? `Tidak ada cold leads ${filterMessage}` 
               : "Tidak ada cold leads"
           }
           selectedCustomer={selectedCustomer}
@@ -196,8 +234,8 @@ const FollowUp = () => {
           customers={filteredWarmCustomers}
           type="status"
           emptyMessage={
-            selectedBranch !== 'all' || startDate || endDate 
-              ? "Tidak ada warm leads sesuai filter" 
+            filterMessage 
+              ? `Tidak ada warm leads ${filterMessage}` 
               : "Tidak ada warm leads"
           }
           selectedCustomer={selectedCustomer}
@@ -218,8 +256,8 @@ const FollowUp = () => {
           customers={filteredHotCustomers}
           type="status"
           emptyMessage={
-            selectedBranch !== 'all' || startDate || endDate 
-              ? "Tidak ada hot leads sesuai filter" 
+            filterMessage 
+              ? `Tidak ada hot leads ${filterMessage}` 
               : "Tidak ada hot leads"
           }
           selectedCustomer={selectedCustomer}
