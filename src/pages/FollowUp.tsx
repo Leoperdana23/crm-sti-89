@@ -5,7 +5,7 @@ import { useCustomers } from '@/hooks/useCustomers';
 import { useBranches } from '@/hooks/useBranches';
 import { useToast } from '@/hooks/use-toast';
 import FilterSection from '@/components/FollowUp/FilterSection';
-import CustomerSection from '@/components/FollowUp/CustomerSection';
+import FollowUpTable from '@/components/FollowUp/FollowUpTable';
 
 const FollowUp = () => {
   const { customers, updateCustomer, getCustomersByStatus } = useCustomers();
@@ -20,12 +20,6 @@ const FollowUp = () => {
   const [selectedStatus, setSelectedStatus] = useState<string>('all');
   const [startDate, setStartDate] = useState('');
   const [endDate, setEndDate] = useState('');
-
-  const prospekCustomers = getCustomersByStatus('Prospek');
-  const followUpCustomers = getCustomersByStatus('Follow-up');
-  const coldCustomers = getCustomersByStatus('Cold');
-  const warmCustomers = getCustomersByStatus('Warm');
-  const hotCustomers = getCustomersByStatus('Hot');
 
   // Filter function
   const filterCustomers = (customerList: any[]) => {
@@ -60,26 +54,16 @@ const FollowUp = () => {
     });
   };
 
+  // Get all customers for different statuses
+  const prospekCustomers = getCustomersByStatus('Prospek');
+  const followUpCustomers = getCustomersByStatus('Follow-up');
+  const coldCustomers = getCustomersByStatus('Cold');
+  const warmCustomers = getCustomersByStatus('Warm');
+  const hotCustomers = getCustomersByStatus('Hot');
+
   // Apply filters to all customer lists
   const allCustomers = [...prospekCustomers, ...followUpCustomers, ...coldCustomers, ...warmCustomers, ...hotCustomers];
-  const filteredAllCustomers = filterCustomers(allCustomers);
-
-  // Get filtered customers by status from the filtered list
-  const filteredProspekCustomers = selectedStatus === 'all' || selectedStatus === 'Prospek' 
-    ? filterCustomers(prospekCustomers) 
-    : [];
-  const filteredFollowUpCustomers = selectedStatus === 'all' || selectedStatus === 'Follow-up' 
-    ? filterCustomers(followUpCustomers) 
-    : [];
-  const filteredColdCustomers = selectedStatus === 'all' || selectedStatus === 'Cold' 
-    ? filterCustomers(coldCustomers) 
-    : [];
-  const filteredWarmCustomers = selectedStatus === 'all' || selectedStatus === 'Warm' 
-    ? filterCustomers(warmCustomers) 
-    : [];
-  const filteredHotCustomers = selectedStatus === 'all' || selectedStatus === 'Hot' 
-    ? filterCustomers(hotCustomers) 
-    : [];
+  const filteredCustomers = filterCustomers(allCustomers);
 
   const handleWhatsApp = (phone: string) => {
     const cleanPhone = phone.replace(/\D/g, '');
@@ -168,110 +152,21 @@ const FollowUp = () => {
         onClearFilters={clearFilters}
       />
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        <CustomerSection
-          title="Prospek Baru"
-          icon={<MessageSquare className="h-5 w-5 mr-2 text-yellow-600" />}
-          customers={filteredProspekCustomers}
-          type="prospect"
-          emptyMessage={
-            filterMessage 
-              ? `Tidak ada prospek baru ${filterMessage}` 
-              : "Tidak ada prospek baru"
-          }
-          onWhatsApp={handleWhatsApp}
-          onMoveToFollowUp={(customerId) => handleMoveToStatus(customerId, 'Follow-up')}
-          onMoveToStatus={handleMoveToStatus}
-        />
-
-        <CustomerSection
-          title="Follow-up Aktif"
-          icon={<Calendar className="h-5 w-5 mr-2 text-blue-600" />}
-          customers={filteredFollowUpCustomers}
-          type="followup"
-          emptyMessage={
-            filterMessage 
-              ? `Tidak ada follow-up aktif ${filterMessage}` 
-              : "Tidak ada follow-up aktif"
-          }
-          selectedCustomer={selectedCustomer}
-          notes={notes}
-          followUpDate={followUpDate}
-          onWhatsApp={handleWhatsApp}
-          onStatusUpdate={handleStatusUpdate}
-          onSelectCustomer={setSelectedCustomer}
-          onNotesChange={setNotes}
-          onFollowUpDateChange={setFollowUpDate}
-          onAddNote={addFollowUpNote}
-          onMoveToStatus={handleMoveToStatus}
-        />
-
-        <CustomerSection
-          title="Cold Leads"
-          icon={<Thermometer className="h-5 w-5 mr-2 text-gray-600" />}
-          customers={filteredColdCustomers}
-          type="status"
-          emptyMessage={
-            filterMessage 
-              ? `Tidak ada cold leads ${filterMessage}` 
-              : "Tidak ada cold leads"
-          }
-          selectedCustomer={selectedCustomer}
-          notes={notes}
-          followUpDate={followUpDate}
-          onWhatsApp={handleWhatsApp}
-          onStatusUpdate={handleStatusUpdate}
-          onSelectCustomer={setSelectedCustomer}
-          onNotesChange={setNotes}
-          onFollowUpDateChange={setFollowUpDate}
-          onAddNote={addFollowUpNote}
-          onMoveToStatus={handleMoveToStatus}
-        />
-
-        <CustomerSection
-          title="Warm Leads"
-          icon={<TrendingUp className="h-5 w-5 mr-2 text-orange-600" />}
-          customers={filteredWarmCustomers}
-          type="status"
-          emptyMessage={
-            filterMessage 
-              ? `Tidak ada warm leads ${filterMessage}` 
-              : "Tidak ada warm leads"
-          }
-          selectedCustomer={selectedCustomer}
-          notes={notes}
-          followUpDate={followUpDate}
-          onWhatsApp={handleWhatsApp}
-          onStatusUpdate={handleStatusUpdate}
-          onSelectCustomer={setSelectedCustomer}
-          onNotesChange={setNotes}
-          onFollowUpDateChange={setFollowUpDate}
-          onAddNote={addFollowUpNote}
-          onMoveToStatus={handleMoveToStatus}
-        />
-
-        <CustomerSection
-          title="Hot Leads"
-          icon={<Target className="h-5 w-5 mr-2 text-red-600" />}
-          customers={filteredHotCustomers}
-          type="status"
-          emptyMessage={
-            filterMessage 
-              ? `Tidak ada hot leads ${filterMessage}` 
-              : "Tidak ada hot leads"
-          }
-          selectedCustomer={selectedCustomer}
-          notes={notes}
-          followUpDate={followUpDate}
-          onWhatsApp={handleWhatsApp}
-          onStatusUpdate={handleStatusUpdate}
-          onSelectCustomer={setSelectedCustomer}
-          onNotesChange={setNotes}
-          onFollowUpDateChange={setFollowUpDate}
-          onAddNote={addFollowUpNote}
-          onMoveToStatus={handleMoveToStatus}
-        />
-      </div>
+      <FollowUpTable
+        customers={filteredCustomers}
+        branches={branches}
+        selectedCustomer={selectedCustomer}
+        notes={notes}
+        followUpDate={followUpDate}
+        onWhatsApp={handleWhatsApp}
+        onStatusUpdate={handleStatusUpdate}
+        onMoveToStatus={handleMoveToStatus}
+        onSelectCustomer={setSelectedCustomer}
+        onNotesChange={setNotes}
+        onFollowUpDateChange={setFollowUpDate}
+        onAddNote={addFollowUpNote}
+        filterMessage={filterMessage}
+      />
     </div>
   );
 };
