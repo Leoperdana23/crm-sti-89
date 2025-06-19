@@ -33,6 +33,7 @@ const formSchema = z.object({
   warranty_period: z.number().min(0, 'Periode garansi harus 0 atau lebih').optional(),
   featured: z.boolean().optional(),
   sort_order: z.number().min(0, 'Urutan harus 0 atau lebih').optional(),
+  image_url: z.string().url('URL gambar tidak valid').optional().or(z.literal('')),
 });
 
 type FormData = z.infer<typeof formSchema>;
@@ -70,6 +71,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
       warranty_period: product?.warranty_period || undefined,
       featured: product?.featured || false,
       sort_order: product?.sort_order || 0,
+      image_url: product?.image_url || '',
     },
   });
 
@@ -98,6 +100,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
           warranty_period: data.warranty_period,
           featured: data.featured,
           sort_order: data.sort_order,
+          image_url: data.image_url || null,
         });
       } else {
         await createProductMutation.mutateAsync({
@@ -119,6 +122,7 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
           warranty_period: data.warranty_period,
           featured: data.featured,
           sort_order: data.sort_order,
+          image_url: data.image_url || undefined,
         });
       }
       
@@ -460,6 +464,35 @@ const ProductForm = ({ product, onSuccess, onCancel }: ProductFormProps) => {
             )}
           />
         </div>
+
+        <FormField
+          control={form.control}
+          name="image_url"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>URL Gambar Produk</FormLabel>
+              <FormControl>
+                <Input 
+                  placeholder="https://example.com/image.jpg" 
+                  {...field} 
+                />
+              </FormControl>
+              <FormMessage />
+              {field.value && (
+                <div className="mt-2">
+                  <img 
+                    src={field.value} 
+                    alt="Preview" 
+                    className="w-32 h-32 object-cover rounded border"
+                    onError={(e) => {
+                      e.currentTarget.style.display = 'none';
+                    }}
+                  />
+                </div>
+              )}
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
