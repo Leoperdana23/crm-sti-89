@@ -21,7 +21,7 @@ const customerSchema = z.object({
   email: z.string().optional(),
   needs: z.string().optional(),
   notes: z.string().optional(),
-  status: z.enum(['Prospek', 'Follow-up', 'Deal', 'Tidak Jadi']),
+  status: z.enum(['Prospek', 'Follow-up', 'Cold', 'Warm', 'Hot', 'Deal', 'Tidak Jadi']),
   branch_id: z.string().min(1, 'Cabang harus dipilih'),
   sales_id: z.string().min(1, 'Sales harus dipilih'),
 });
@@ -204,6 +204,9 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
                   <SelectContent>
                     <SelectItem value="Prospek">Prospek</SelectItem>
                     <SelectItem value="Follow-up">Follow-up</SelectItem>
+                    <SelectItem value="Cold">Cold</SelectItem>
+                    <SelectItem value="Warm">Warm</SelectItem>
+                    <SelectItem value="Hot">Hot</SelectItem>
                     <SelectItem value="Deal">Deal</SelectItem>
                     <SelectItem value="Tidak Jadi">Tidak Jadi</SelectItem>
                   </SelectContent>
