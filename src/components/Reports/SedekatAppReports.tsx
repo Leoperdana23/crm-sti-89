@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { 
   Users, 
   Package, 
@@ -18,7 +19,10 @@ import {
   BarChart3,
   ShoppingCart,
   Gift,
-  Coins
+  Coins,
+  ChevronDown,
+  ChevronRight,
+  User
 } from 'lucide-react';
 import { useResellers } from '@/hooks/useResellers';
 import { useResellerLoginHistory } from '@/hooks/useResellerLoginHistory';
@@ -136,7 +140,7 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
     .filter(r => r.reward_type === 'points' && r.status === 'approved')
     .reduce((sum, r) => sum + Number(r.amount_redeemed), 0);
 
-  // Login analytics by hour dengan bar chart visualization
+  // Login analytics by hour dengan detailed reseller list
   const loginByHour = Array.from({ length: 24 }, (_, hour) => {
     const hourLogins = filteredLoginHistory.filter(login => {
       const loginHour = new Date(login.login_time).getHours();
@@ -146,7 +150,15 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
     return {
       hour: hour.toString().padStart(2, '0') + ':00',
       count: hourLogins.length,
-      uniqueResellers: new Set(hourLogins.map(login => login.reseller_id)).size
+      uniqueResellers: new Set(hourLogins.map(login => login.reseller_id)).size,
+      logins: hourLogins.map(login => ({
+        id: login.id,
+        reseller_id: login.reseller_id,
+        reseller_name: login.resellers?.name || 'Unknown',
+        reseller_phone: login.resellers?.phone || 'N/A',
+        login_time: login.login_time,
+        login_method: login.login_method
+      })).sort((a, b) => new Date(b.login_time).getTime() - new Date(a.login_time).getTime())
     };
   });
 
@@ -400,43 +412,92 @@ const SedekatAppReports: React.FC<SedekatAppReportsProps> = ({
         <TabsContent value="hourly-curve">
           <Card>
             <CardHeader>
-              <CardTitle>Kurva Login Per Jam (24 Jam) - Bar Chart</CardTitle>
+              <CardTitle>Kurva Login Per Jam (24 Jam) - Bar Chart dengan Detail Reseller</CardTitle>
               <p className="text-sm text-muted-foreground">
-                Distribusi login reseller sepanjang 24 jam dengan visualisasi bar chart
+                Distribusi login reseller sepanjang 24 jam dengan daftar lengkap nama dan waktu login
               </p>
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
                 {loginByHour.map((hourData) => (
-                  <div key={hourData.hour} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center space-x-3">
-                        <div className="w-16 text-center font-mono text-sm">
-                          {hourData.hour}
+                  <Collapsible key={hourData.hour} className="space-y-2">
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-16 text-center font-mono text-sm">
+                            {hourData.hour}
+                          </div>
+                          <div className="text-sm text-gray-600">
+                            {hourData.count} login • {hourData.uniqueResellers} reseller
+                          </div>
                         </div>
-                        <div className="text-sm text-gray-600">
-                          {hourData.count} login • {hourData.uniqueResellers} reseller
-                        </div>
-                      </div>
-                      <div className="text-sm font-medium">
-                        {hourData.count}
-                      </div>
-                    </div>
-                    <div className="relative">
-                      <div className="w-full bg-gray-200 rounded-full h-6">
-                        <div 
-                          className="bg-blue-600 h-6 rounded-full flex items-center justify-end pr-2 text-white text-xs font-medium transition-all duration-300" 
-                          style={{ 
-                            width: `${Math.max((hourData.count / maxHourlyLogins) * 100, 2)}%` 
-                          }}
-                        >
+                        <div className="flex items-center space-x-2">
+                          <div className="text-sm font-medium">
+                            {hourData.count}
+                          </div>
                           {hourData.count > 0 && (
-                            <span>{hourData.count}</span>
+                            <CollapsibleTrigger className="p-1 hover:bg-gray-100 rounded">
+                              <ChevronDown className="h-4 w-4" />
+                            </CollapsibleTrigger>
                           )}
                         </div>
                       </div>
+                      <div className="relative">
+                        <div className="w-full bg-gray-200 rounded-full h-6">
+                          <div 
+                            className="bg-blue-600 h-6 rounded-full flex items-center justify-end pr-2 text-white text-xs font-medium transition-all duration-300" 
+                            style={{ 
+                              width: `${Math.max((hourData.count / maxHourlyLogins) * 100, 2)}%` 
+                            }}
+                          >
+                            {hourData.count > 0 && (
+                              <span>{hourData.count}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
                     </div>
-                  </div>
+
+                    {hourData.count > 0 && (
+                      <CollapsibleContent className="mt-3">
+                        <div className="bg-gray-50 rounded-lg p-4 space-y-2">
+                          <h4 className="text-sm font-medium text-gray-700 mb-3">
+                            Daftar Reseller Login pada {hourData.hour}:
+                          </h4>
+                          <div className="space-y-2 max-h-40 overflow-y-auto">
+                            {hourData.logins.map((login, index) => (
+                              <div key={login.id} className="flex items-center justify-between p-2 bg-white rounded border">
+                                <div className="flex items-center space-x-3">
+                                  <div className="w-6 h-6 bg-blue-100 rounded-full flex items-center justify-center text-xs font-medium text-blue-600">
+                                    {index + 1}
+                                  </div>
+                                  <div className="flex items-center space-x-2">
+                                    <User className="h-4 w-4 text-gray-500" />
+                                    <div>
+                                      <p className="text-sm font-medium">{login.reseller_name}</p>
+                                      <p className="text-xs text-gray-500">{login.reseller_phone}</p>
+                                    </div>
+                                  </div>
+                                </div>
+                                <div className="text-right">
+                                  <p className="text-sm font-medium">
+                                    {new Date(login.login_time).toLocaleTimeString('id-ID', { 
+                                      hour: '2-digit', 
+                                      minute: '2-digit',
+                                      second: '2-digit'
+                                    })}
+                                  </p>
+                                  <Badge variant="outline" className="text-xs">
+                                    {login.login_method || 'password'}
+                                  </Badge>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </CollapsibleContent>
+                    )}
+                  </Collapsible>
                 ))}
               </div>
             </CardContent>
