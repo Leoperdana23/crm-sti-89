@@ -83,116 +83,229 @@ export const useCustomers = () => {
     refetchInterval: 30000, // Auto-refresh every 30 seconds
   });
 
-  const addCustomer = async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'interactions'>) => {
-    const dataToInsert = {
-      ...customerData,
-      assigned_employees: customerData.assigned_employees?.join(',') || null
-    };
-    
-    const { data, error } = await supabase
-      .from('customers')
-      .insert([dataToInsert])
-      .select()
-      .single();
+  const addCustomerMutation = useMutation({
+    mutationFn: async (customerData: Omit<Customer, 'id' | 'created_at' | 'updated_at' | 'interactions'>) => {
+      console.log('Adding customer with data:', customerData);
+      
+      const dataToInsert = {
+        name: customerData.name,
+        phone: customerData.phone,
+        address: customerData.address,
+        email: customerData.email || null,
+        id_number: customerData.id_number || null,
+        birth_date: customerData.birth_date || null,
+        needs: customerData.needs || null,
+        notes: customerData.notes || null,
+        status: customerData.status,
+        branch_id: customerData.branch_id,
+        sales_id: customerData.sales_id,
+        lead_source: customerData.lead_source,
+        assigned_employees: customerData.assigned_employees?.join(',') || null,
+        customer_type: customerData.customer_type || 'individual',
+        company_name: customerData.company_name || null,
+        deal_date: customerData.deal_date || null,
+        payment_terms: customerData.payment_terms || 30,
+        credit_limit: customerData.credit_limit || 0,
+        survey_status: customerData.survey_status || 'belum_disurvei',
+        work_status: customerData.work_status || null,
+        work_start_date: customerData.work_start_date || null,
+        work_completed_date: customerData.work_completed_date || null,
+        work_notes: customerData.work_notes || null,
+        estimated_days: customerData.estimated_days || null
+      };
+      
+      const { data, error } = await supabase
+        .from('customers')
+        .insert([dataToInsert])
+        .select()
+        .single();
 
-    if (error) throw error;
-    
-    queryClient.invalidateQueries({ queryKey: ['customers'] });
-    toast({
-      title: "Berhasil",
-      description: "Pelanggan berhasil ditambahkan",
-    });
-    
-    return data;
-  };
+      if (error) {
+        console.error('Error adding customer:', error);
+        throw error;
+      }
+      
+      console.log('Customer added successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast({
+        title: "Berhasil",
+        description: "Pelanggan berhasil ditambahkan",
+      });
+    },
+    onError: (error) => {
+      console.error('Error in addCustomer mutation:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menambahkan pelanggan. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    }
+  });
 
-  const updateCustomer = async ({ id, ...updateData }: Partial<Customer> & { id: string }) => {
-    const { interactions, ...customerData } = updateData;
-    
-    const dataToUpdate = {
-      ...customerData,
-      assigned_employees: customerData.assigned_employees?.join(',') || null
-    };
-    
-    const { data, error } = await supabase
-      .from('customers')
-      .update(dataToUpdate)
-      .eq('id', id)
-      .select()
-      .single();
+  const updateCustomerMutation = useMutation({
+    mutationFn: async ({ id, ...updateData }: Partial<Customer> & { id: string }) => {
+      console.log('Updating customer with ID:', id, 'Data:', updateData);
+      
+      const { interactions, ...customerData } = updateData;
+      
+      const dataToUpdate = {
+        ...customerData,
+        assigned_employees: customerData.assigned_employees?.join(',') || null
+      };
+      
+      const { data, error } = await supabase
+        .from('customers')
+        .update(dataToUpdate)
+        .eq('id', id)
+        .select()
+        .single();
 
-    if (error) throw error;
-    
-    queryClient.invalidateQueries({ queryKey: ['customers'] });
-    toast({
-      title: "Berhasil",
-      description: "Pelanggan berhasil diperbarui",
-    });
-    
-    return data;
-  };
+      if (error) {
+        console.error('Error updating customer:', error);
+        throw error;
+      }
+      
+      console.log('Customer updated successfully:', data);
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast({
+        title: "Berhasil",
+        description: "Pelanggan berhasil diperbarui",
+      });
+    },
+    onError: (error) => {
+      console.error('Error in updateCustomer mutation:', error);
+      toast({
+        title: "Error",
+        description: "Gagal memperbarui pelanggan. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    }
+  });
 
-  const deleteCustomer = async (id: string) => {
-    const { error } = await supabase
-      .from('customers')
-      .delete()
-      .eq('id', id);
+  const deleteCustomerMutation = useMutation({
+    mutationFn: async (id: string) => {
+      console.log('Deleting customer with ID:', id);
+      
+      const { error } = await supabase
+        .from('customers')
+        .delete()
+        .eq('id', id);
 
-    if (error) throw error;
-    
-    queryClient.invalidateQueries({ queryKey: ['customers'] });
-    toast({
-      title: "Berhasil",
-      description: "Pelanggan berhasil dihapus",
-    });
-  };
+      if (error) {
+        console.error('Error deleting customer:', error);
+        throw error;
+      }
+      
+      console.log('Customer deleted successfully');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast({
+        title: "Berhasil",
+        description: "Pelanggan berhasil dihapus",
+      });
+    },
+    onError: (error) => {
+      console.error('Error in deleteCustomer mutation:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus pelanggan. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    }
+  });
 
-  const deleteCustomersByName = async (name: string) => {
-    const { error } = await supabase
-      .from('customers')
-      .delete()
-      .ilike('name', name);
+  const deleteCustomersByNameMutation = useMutation({
+    mutationFn: async (name: string) => {
+      console.log('Deleting customers with name:', name);
+      
+      const { error } = await supabase
+        .from('customers')
+        .delete()
+        .ilike('name', name);
 
-    if (error) throw error;
-    
-    queryClient.invalidateQueries({ queryKey: ['customers'] });
-    toast({
-      title: "Berhasil",
-      description: `Pelanggan dengan nama "${name}" berhasil dihapus`,
-    });
-  };
+      if (error) {
+        console.error('Error deleting customers by name:', error);
+        throw error;
+      }
+      
+      console.log('Customers deleted successfully');
+    },
+    onSuccess: (_, name) => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast({
+        title: "Berhasil",
+        description: `Pelanggan dengan nama "${name}" berhasil dihapus`,
+      });
+    },
+    onError: (error) => {
+      console.error('Error in deleteCustomersByName mutation:', error);
+      toast({
+        title: "Error",
+        description: "Gagal menghapus pelanggan. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    }
+  });
+
+  const cancelWorkProcessMutation = useMutation({
+    mutationFn: async (customerId: string) => {
+      console.log('Cancelling work process for customer:', customerId);
+      
+      const { error } = await supabase
+        .from('customers')
+        .update({ 
+          work_status: 'cancelled',
+          work_notes: 'Proses kerja dibatalkan' 
+        })
+        .eq('id', customerId);
+
+      if (error) {
+        console.error('Error cancelling work process:', error);
+        throw error;
+      }
+      
+      console.log('Work process cancelled successfully');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['customers'] });
+      toast({
+        title: "Berhasil",
+        description: "Proses kerja berhasil dibatalkan",
+      });
+    },
+    onError: (error) => {
+      console.error('Error in cancelWorkProcess mutation:', error);
+      toast({
+        title: "Error",
+        description: "Gagal membatalkan proses kerja. Silakan coba lagi.",
+        variant: "destructive",
+      });
+    }
+  });
 
   const getCustomersByStatus = (status: string) => {
     return (data || []).filter(customer => customer.status === status);
-  };
-
-  const cancelWorkProcess = async (customerId: string) => {
-    const { error } = await supabase
-      .from('customers')
-      .update({ 
-        work_status: 'cancelled',
-        work_notes: 'Proses kerja dibatalkan' 
-      })
-      .eq('id', customerId);
-
-    if (error) throw error;
-    
-    queryClient.invalidateQueries({ queryKey: ['customers'] });
-    toast({
-      title: "Berhasil",
-      description: "Proses kerja berhasil dibatalkan",
-    });
   };
 
   return {
     customers: data || [],
     loading: isLoading,
     error,
-    addCustomer,
-    updateCustomer,
-    deleteCustomer,
-    deleteCustomersByName,
+    addCustomer: addCustomerMutation.mutate,
+    updateCustomer: updateCustomerMutation.mutate,
+    deleteCustomer: deleteCustomerMutation.mutate,
+    deleteCustomersByName: deleteCustomersByNameMutation.mutate,
     getCustomersByStatus,
-    cancelWorkProcess,
+    cancelWorkProcess: cancelWorkProcessMutation.mutate,
+    isAddingCustomer: addCustomerMutation.isPending,
+    isUpdatingCustomer: updateCustomerMutation.isPending,
+    isDeletingCustomer: deleteCustomerMutation.isPending,
   };
 };
