@@ -6,7 +6,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
-import { MessageSquare, CheckCircle, XCircle, ArrowRight, Edit2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { MessageSquare, CheckCircle, XCircle, ArrowRight, Edit2, MoreVertical } from 'lucide-react';
 import { Customer } from '@/types/customer';
 import { Branch } from '@/types/branch';
 
@@ -65,6 +66,23 @@ const FollowUpTable: React.FC<FollowUpTableProps> = ({
   const getBranchName = (branchId: string) => {
     const branch = branches.find(b => b.id === branchId);
     return branch ? branch.name : '-';
+  };
+
+  const getAvailableActions = (currentStatus: string) => {
+    const allStatuses = ['Prospek', 'Cold', 'Warm', 'Hot', 'Deal', 'Tidak Jadi'];
+    return allStatuses.filter(status => status !== currentStatus);
+  };
+
+  const handleStatusAction = (customerId: string, newStatus: string) => {
+    if (newStatus === 'Deal') {
+      onStatusUpdate(customerId, 'Deal', new Date().toISOString().split('T')[0]);
+    } else if (newStatus === 'Tidak Jadi') {
+      onStatusUpdate(customerId, 'Tidak Jadi');
+    } else if (['Cold', 'Warm', 'Hot'].includes(newStatus)) {
+      onMoveToStatus(customerId, newStatus as 'Cold' | 'Warm' | 'Hot');
+    } else if (newStatus === 'Prospek') {
+      onMoveToStatus(customerId, 'Follow-up');
+    }
   };
 
   return (
@@ -132,101 +150,31 @@ const FollowUpTable: React.FC<FollowUpTableProps> = ({
                             <MessageSquare className="h-3 w-3" />
                           </Button>
                           
-                          {customer.status === 'Follow-up' && (
-                            <>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
                               <Button
                                 size="sm"
                                 variant="outline"
-                                onClick={() => onStatusUpdate(customer.id, 'Deal', new Date().toISOString().split('T')[0])}
-                                className="text-green-600 hover:bg-green-50"
+                                className="text-gray-600 hover:bg-gray-50"
                               >
-                                <CheckCircle className="h-3 w-3" />
+                                <MoreVertical className="h-3 w-3" />
                               </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => onStatusUpdate(customer.id, 'Tidak Jadi')}
-                                className="text-red-600 hover:bg-red-50"
-                              >
-                                <XCircle className="h-3 w-3" />
-                              </Button>
-                            </>
-                          )}
-                          
-                          {customer.status === 'Prospek' && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              onClick={() => onMoveToStatus(customer.id, 'Follow-up')}
-                              className="text-blue-600 hover:bg-blue-50"
-                            >
-                              <ArrowRight className="h-3 w-3" />
-                            </Button>
-                          )}
-                          
-                          {['Cold', 'Warm', 'Hot'].includes(customer.status) && (
-                            <>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => onStatusUpdate(customer.id, 'Deal', new Date().toISOString().split('T')[0])}
-                                className="text-green-600 hover:bg-green-50"
-                              >
-                                <CheckCircle className="h-3 w-3" />
-                              </Button>
-                              <Button
-                                size="sm"
-                                variant="outline"
-                                onClick={() => onStatusUpdate(customer.id, 'Tidak Jadi')}
-                                className="text-red-600 hover:bg-red-50"
-                              >
-                                <XCircle className="h-3 w-3" />
-                              </Button>
-                            </>
-                          )}
-                        </div>
-                        
-                        <div className="flex space-x-1 mt-1">
-                          {customer.status !== 'Cold' && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => onMoveToStatus(customer.id, 'Cold')}
-                              className="text-xs px-2 py-1 h-6 text-gray-600 hover:bg-gray-50"
-                            >
-                              Cold
-                            </Button>
-                          )}
-                          {customer.status !== 'Warm' && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => onMoveToStatus(customer.id, 'Warm')}
-                              className="text-xs px-2 py-1 h-6 text-orange-600 hover:bg-orange-50"
-                            >
-                              Warm
-                            </Button>
-                          )}
-                          {customer.status !== 'Hot' && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => onMoveToStatus(customer.id, 'Hot')}
-                              className="text-xs px-2 py-1 h-6 text-red-600 hover:bg-red-50"
-                            >
-                              Hot
-                            </Button>
-                          )}
-                          {customer.status !== 'Follow-up' && ['Cold', 'Warm', 'Hot'].includes(customer.status) && (
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => onMoveToStatus(customer.id, 'Follow-up')}
-                              className="text-xs px-2 py-1 h-6 text-blue-600 hover:bg-blue-50"
-                            >
-                              F-up
-                            </Button>
-                          )}
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end" className="w-40">
+                              {getAvailableActions(customer.status).map((status) => (
+                                <DropdownMenuItem
+                                  key={status}
+                                  onClick={() => handleStatusAction(customer.id, status)}
+                                  className="cursor-pointer"
+                                >
+                                  {status === 'Deal' && <CheckCircle className="h-4 w-4 mr-2 text-green-600" />}
+                                  {status === 'Tidak Jadi' && <XCircle className="h-4 w-4 mr-2 text-red-600" />}
+                                  {!['Deal', 'Tidak Jadi'].includes(status) && <ArrowRight className="h-4 w-4 mr-2 text-blue-600" />}
+                                  Pindah ke {status}
+                                </DropdownMenuItem>
+                              ))}
+                            </DropdownMenuContent>
+                          </DropdownMenu>
                         </div>
                       </TableCell>
                       <TableCell>
