@@ -23,11 +23,9 @@ interface FilterSectionProps {
 const FilterSection: React.FC<FilterSectionProps> = ({
   branches,
   selectedBranch,
-  selectedStatus,
   startDate,
   endDate,
   onBranchChange,
-  onStatusChange,
   onStartDateChange,
   onEndDateChange,
   onClearFilters
@@ -41,7 +39,7 @@ const FilterSection: React.FC<FilterSectionProps> = ({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
           <div className="space-y-2">
             <label className="text-sm font-medium">Cabang</label>
             <Select value={selectedBranch} onValueChange={onBranchChange}>
@@ -55,25 +53,6 @@ const FilterSection: React.FC<FilterSectionProps> = ({
                     {branch.name}
                   </SelectItem>
                 ))}
-              </SelectContent>
-            </Select>
-          </div>
-
-          <div className="space-y-2">
-            <label className="text-sm font-medium">Status</label>
-            <Select value={selectedStatus} onValueChange={onStatusChange}>
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">Semua Status</SelectItem>
-                <SelectItem value="Prospek">Prospek</SelectItem>
-                <SelectItem value="Follow-up">Follow-up</SelectItem>
-                <SelectItem value="Cold">Cold</SelectItem>
-                <SelectItem value="Warm">Warm</SelectItem>
-                <SelectItem value="Hot">Hot</SelectItem>
-                <SelectItem value="Deal">Deal</SelectItem>
-                <SelectItem value="Tidak Jadi">Tidak Jadi</SelectItem>
               </SelectContent>
             </Select>
           </div>
