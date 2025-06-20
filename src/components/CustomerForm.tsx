@@ -24,6 +24,7 @@ const customerSchema = z.object({
   status: z.enum(['Prospek', 'Follow-up', 'Cold', 'Warm', 'Hot', 'Deal', 'Tidak Jadi']),
   branch_id: z.string().min(1, 'Cabang harus dipilih'),
   sales_id: z.string().min(1, 'Sales harus dipilih'),
+  lead_source: z.string().min(1, 'Sumber lead harus dipilih'),
 });
 
 type CustomerFormData = z.infer<typeof customerSchema>;
@@ -52,6 +53,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
       status: customer?.status || 'Prospek',
       branch_id: customer?.branch_id || '',
       sales_id: customer?.sales_id || '',
+      lead_source: customer?.lead_source || '',
     },
   });
 
@@ -163,7 +165,7 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
           )}
         />
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
           <FormField
             control={form.control}
             name="branch_id"
@@ -234,6 +236,34 @@ const CustomerForm: React.FC<CustomerFormProps> = ({ customer, onSubmit, onCance
                         {salesPerson.name} ({salesPerson.code})
                       </SelectItem>
                     ))}
+                  </SelectContent>
+                </Select>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="lead_source"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Sumber Lead *</FormLabel>
+                <Select onValueChange={field.onChange} value={field.value}>
+                  <FormControl>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pilih sumber lead" />
+                    </SelectTrigger>
+                  </FormControl>
+                  <SelectContent>
+                    <SelectItem value="toko">Toko</SelectItem>
+                    <SelectItem value="telepon">Telepon</SelectItem>
+                    <SelectItem value="wa">WhatsApp</SelectItem>
+                    <SelectItem value="website">Website</SelectItem>
+                    <SelectItem value="instagram">Instagram</SelectItem>
+                    <SelectItem value="tiktok">TikTok</SelectItem>
+                    <SelectItem value="rekan">Rekan</SelectItem>
+                    <SelectItem value="lainnya">Lainnya</SelectItem>
                   </SelectContent>
                 </Select>
                 <FormMessage />

@@ -28,6 +28,7 @@ export interface Customer {
   deal_date?: string;
   branch_id?: string;
   sales_id?: string;
+  lead_source?: string;
   survey_status?: 'sudah_disurvei' | 'belum_disurvei';
   work_status?: 'not_started' | 'in_progress' | 'completed' | 'cancelled';
   work_start_date?: string;
