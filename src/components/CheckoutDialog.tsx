@@ -75,15 +75,16 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, resellerSession, 
       return;
     }
 
+    // Combine notes with branch information
+    const combinedNotes = `${notes.trim() ? notes.trim() + ' | ' : ''}Cabang: ${selectedBranch}`;
+
     const orderData = {
       customer_name: customerName.trim(),
       customer_phone: customerPhone.trim(),
       catalog_token: catalogToken,
       delivery_method: deliveryMethod,
       expedisi: deliveryMethod === 'delivery' ? expedisi.trim() : undefined,
-      notes: notes.trim() || undefined,
-      // Add selected branch to notes for tracking
-      notes: `${notes.trim() ? notes.trim() + ' | ' : ''}Cabang: ${selectedBranch}`,
+      notes: combinedNotes,
       items: cart.map(item => ({
         product_id: item.product.id,
         product_name: item.product.name,
