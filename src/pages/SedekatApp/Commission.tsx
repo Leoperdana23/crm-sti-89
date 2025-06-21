@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -25,7 +24,8 @@ import {
   Award, 
   Download,
   Search,
-  Loader2
+  Loader2,
+  Edit
 } from 'lucide-react';
 import { useResellers } from '@/hooks/useResellers';
 import { useRewardRedemptions, useApproveRedemption } from '@/hooks/useRewards';
@@ -33,6 +33,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import RewardExchangeDialog from '@/components/RewardExchangeDialog';
+import RedemptionEditDialog from '@/components/RedemptionEditDialog';
 
 const Commission = () => {
   const { data: resellers, isLoading } = useResellers();
@@ -44,6 +45,8 @@ const Commission = () => {
   const [dateFilter, setDateFilter] = useState('all');
   const [selectedReseller, setSelectedReseller] = useState<any>(null);
   const [isRedemptionDialogOpen, setIsRedemptionDialogOpen] = useState(false);
+  const [selectedRedemption, setSelectedRedemption] = useState<any>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   // Fetch all reseller orders with order items for commission calculation
   const { data: allResellerOrders } = useQuery({
@@ -212,6 +215,11 @@ const Commission = () => {
     console.log('Opening redemption dialog for reseller:', resellerInfo);
     setSelectedReseller(resellerInfo);
     setIsRedemptionDialogOpen(true);
+  };
+
+  const handleEditRedemption = (redemption: any) => {
+    setSelectedRedemption(redemption);
+    setIsEditDialogOpen(true);
   };
 
   if (isLoading) {
@@ -461,35 +469,45 @@ const Commission = () => {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {redemption.status === 'pending' && (
-                      <div className="flex gap-2">
-                        <Button
-                          size="sm"
-                          variant="default"
-                          disabled={approveRedemption.isPending}
-                          onClick={() => approveRedemption.mutate({
-                            redemptionId: redemption.id,
-                            status: 'approved'
-                          })}
-                        >
-                          {approveRedemption.isPending ? (
-                            <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                          ) : null}
-                          Setujui
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          disabled={approveRedemption.isPending}
-                          onClick={() => approveRedemption.mutate({
-                            redemptionId: redemption.id,
-                            status: 'rejected'
-                          })}
-                        >
-                          Tolak
-                        </Button>
-                      </div>
-                    )}
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => handleEditRedemption(redemption)}
+                      >
+                        <Edit className="h-4 w-4 mr-1" />
+                        Edit
+                      </Button>
+                      {redemption.status === 'pending' && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="default"
+                            disabled={approveRedemption.isPending}
+                            onClick={() => approveRedemption.mutate({
+                              redemptionId: redemption.id,
+                              status: 'approved'
+                            })}
+                          >
+                            {approveRedemption.isPending ? (
+                              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                            ) : null}
+                            Setujui
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            disabled={approveRedemption.isPending}
+                            onClick={() => approveRedemption.mutate({
+                              redemptionId: redemption.id,
+                              status: 'rejected'
+                            })}
+                          >
+                            Tolak
+                          </Button>
+                        </>
+                      )}
+                    </div>
                   </TableCell>
                 </TableRow>
               ))}
@@ -508,6 +526,18 @@ const Commission = () => {
           }}
           reseller={selectedReseller}
           getRedeemedAmounts={getRedeemedAmounts}
+        />
+      )}
+
+      {/* Redemption Edit Dialog */}
+      {selectedRedemption && (
+        <RedemptionEditDialog
+          isOpen={isEditDialogOpen}
+          onClose={() => {
+            setIsEditDialogOpen(false);
+            setSelectedRedemption(null);
+          }}
+          redemption={selectedRedemption}
         />
       )}
     </div>
