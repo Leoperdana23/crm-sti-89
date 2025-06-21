@@ -96,6 +96,13 @@ const OrderManagement = () => {
     window.open(waUrl, '_blank');
   };
 
+  // Helper function to get branch name from branch_id
+  const getBranchName = (branchId: string | undefined) => {
+    if (!branchId) return '-';
+    const branch = branches?.find(b => b.id === branchId);
+    return branch?.name || branchId;
+  };
+
   const filteredOrders = orders?.filter(order => {
     const matchesSearch = 
       order.customer_name.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -258,7 +265,7 @@ const OrderManagement = () => {
                 <TableHead>Tanggal</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Reseller</TableHead>
-                <TableHead>Cabang</TableHead>
+                <TableHead>Cabang Reseller</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Aksi</TableHead>
@@ -283,9 +290,9 @@ const OrderManagement = () => {
                     </div>
                   </TableCell>
                   <TableCell>
-                    <div className="text-sm text-gray-500">
+                    <div className="text-sm font-medium">
                       {order.reseller?.branch_id ? 
-                        branches?.find(b => b.id === order.reseller?.branch_id)?.name || order.reseller.branch_id 
+                        getBranchName(order.reseller.branch_id)
                         : '-'
                       }
                     </div>
