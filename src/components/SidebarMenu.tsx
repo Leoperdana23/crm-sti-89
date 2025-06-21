@@ -201,7 +201,6 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
   return (
     <nav className="space-y-1">
       {menuItems.map((item) => {
-        // Show all items for super_admin, or check permission for others
         const shouldShow = hasPermission(item.permission, 'view');
         
         console.log(`Menu item ${item.label}: permission=${item.permission}, shouldShow=${shouldShow}`);
@@ -222,94 +221,91 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
         );
       })}
 
-      {/* SEDEKAT APP Menu with Submenu */}
-      <div className="space-y-1">
-        <button
-          onClick={() => setSedekatAppOpen(!sedekatAppOpen)}
-          className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-        >
-          <div className="flex items-center space-x-3">
-            <Store className="h-5 w-5" />
-            <span>SEDEKAT APP</span>
-          </div>
-          {sedekatAppOpen ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
+      {/* SEDEKAT APP Menu with Submenu - only show if user has access to any sedekat app items */}
+      {sedekatAppMenuItems.some(item => hasPermission(item.permission, 'view')) && (
+        <div className="space-y-1">
+          <button
+            onClick={() => setSedekatAppOpen(!sedekatAppOpen)}
+            className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+          >
+            <div className="flex items-center space-x-3">
+              <Store className="h-5 w-5" />
+              <span>SEDEKAT APP</span>
+            </div>
+            {sedekatAppOpen ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </button>
+
+          {sedekatAppOpen && (
+            <div className="ml-6 space-y-1">
+              {sedekatAppMenuItems.map((item) => {
+                const shouldShow = hasPermission(item.permission, 'view');
+
+                if (!shouldShow) {
+                  return null;
+                }
+
+                return (
+                  <MenuItem
+                    key={item.to}
+                    to={item.to}
+                    icon={item.icon}
+                    onClick={onItemClick}
+                  >
+                    {item.label}
+                  </MenuItem>
+                );
+              })}
+            </div>
           )}
-        </button>
+        </div>
+      )}
 
-        {sedekatAppOpen && (
-          <div className="ml-6 space-y-1">
-            {sedekatAppMenuItems.map((item) => {
-              // Show item if user has permission to view it
-              let shouldShow = hasPermission(item.permission, 'view');
+      {/* Settings Menu with Submenu - only show if user has access to any settings items */}
+      {settingsMenuItems.some(item => hasPermission(item.permission, 'view')) && (
+        <div className="space-y-1">
+          <button
+            onClick={() => setSettingsOpen(!settingsOpen)}
+            className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
+          >
+            <div className="flex items-center space-x-3">
+              <Settings className="h-5 w-5" />
+              <span>Pengaturan</span>
+            </div>
+            {settingsOpen ? (
+              <ChevronDown className="h-4 w-4" />
+            ) : (
+              <ChevronRight className="h-4 w-4" />
+            )}
+          </button>
 
-              // PERUBAHAN: Jika menu "Komisi & Poin" dan user staff, paksa tampilkan
-              if (item.permission === 'commission' && userRole === 'staff') {
-                shouldShow = true;
-              }
+          {settingsOpen && (
+            <div className="ml-6 space-y-1">
+              {settingsMenuItems.map((item) => {
+                const shouldShow = hasPermission(item.permission, 'view');
+                
+                if (!shouldShow) {
+                  return null;
+                }
 
-              if (!shouldShow) {
-                return null;
-              }
-
-              return (
-                <MenuItem
-                  key={item.to}
-                  to={item.to}
-                  icon={item.icon}
-                  onClick={onItemClick}
-                >
-                  {item.label}
-                </MenuItem>
-              );
-            })}
-          </div>
-        )}
-      </div>
-
-      {/* Settings Menu with Submenu */}
-      <div className="space-y-1">
-        <button
-          onClick={() => setSettingsOpen(!settingsOpen)}
-          className="flex items-center justify-between w-full px-3 py-2 rounded-lg text-sm font-medium text-gray-600 hover:bg-gray-100 hover:text-gray-900 transition-colors"
-        >
-          <div className="flex items-center space-x-3">
-            <Settings className="h-5 w-5" />
-            <span>Pengaturan</span>
-          </div>
-          {settingsOpen ? (
-            <ChevronDown className="h-4 w-4" />
-          ) : (
-            <ChevronRight className="h-4 w-4" />
+                return (
+                  <MenuItem
+                    key={item.to}
+                    to={item.to}
+                    icon={item.icon}
+                    onClick={onItemClick}
+                  >
+                    {item.label}
+                  </MenuItem>
+                );
+              })}
+            </div>
           )}
-        </button>
-
-        {settingsOpen && (
-          <div className="ml-6 space-y-1">
-            {settingsMenuItems.map((item) => {
-              // Show item if user has permission to view it
-              const shouldShow = hasPermission(item.permission, 'view');
-              
-              if (!shouldShow) {
-                return null;
-              }
-
-              return (
-                <MenuItem
-                  key={item.to}
-                  to={item.to}
-                  icon={item.icon}
-                  onClick={onItemClick}
-                >
-                  {item.label}
-                </MenuItem>
-              );
-            })}
-          </div>
-        )}
-      </div>
+        </div>
+      )}
     </nav>
   );
 };

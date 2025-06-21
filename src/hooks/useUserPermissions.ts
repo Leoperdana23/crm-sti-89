@@ -12,6 +12,30 @@ interface UserPermissions {
   };
 }
 
+// Define role-based menu access
+const ROLE_MENU_ACCESS = {
+  super_admin: [
+    'dashboard', 'orders', 'customers', 'resellers', 'follow_up', 'work_process', 
+    'survey', 'deal_history', 'birthday', 'reports', 'users', 'role_permissions', 
+    'sales', 'branches', 'products', 'catalog', 'commission', 'app_settings', 
+    'contact_help', 'statistics'
+  ],
+  admin: [
+    'dashboard', 'orders', 'customers', 'resellers', 'follow_up', 'work_process', 
+    'survey', 'deal_history', 'birthday', 'reports', 'users', 'role_permissions', 
+    'sales', 'branches', 'products', 'catalog', 'commission', 'app_settings', 
+    'contact_help', 'statistics'
+  ],
+  manager: [
+    'dashboard', 'orders', 'customers', 'resellers', 'follow_up', 'work_process', 
+    'survey', 'deal_history', 'birthday', 'products', 'catalog', 'commission'
+  ],
+  staff: [
+    'dashboard', 'customers', 'resellers', 'follow_up', 'work_process', 
+    'survey', 'deal_history', 'birthday'
+  ]
+};
+
 export const useUserPermissions = () => {
   const { user } = useAuth();
   const [permissions, setPermissions] = useState<UserPermissions>({});
@@ -141,10 +165,20 @@ export const useUserPermissions = () => {
       return true;
     }
 
+    // Check role-based menu access first
+    const userRole = currentUser?.role || 'staff';
+    const allowedMenus = ROLE_MENU_ACCESS[userRole as keyof typeof ROLE_MENU_ACCESS] || [];
+    
+    if (!allowedMenus.includes(permissionName)) {
+      console.log(`Menu ${permissionName} not allowed for role ${userRole}`);
+      return false;
+    }
+
     const permission = permissions[permissionName];
     if (!permission) {
-      console.log(`No permission found for: ${permissionName}`);
-      return false;
+      console.log(`No permission found for: ${permissionName}, but allowed by role`);
+      // If no specific permission found but allowed by role, grant view access
+      return action === 'view';
     }
 
     const hasAccess = (() => {

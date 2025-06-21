@@ -5,6 +5,7 @@ import { X, ChevronDown, ChevronRight, Settings } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import { menuItems, settingsMenuItems } from '@/constants/menuItems';
+import { useUserPermissions } from '@/hooks/useUserPermissions';
 
 interface ModernSidebarProps {
   isOpen: boolean;
@@ -14,8 +15,20 @@ interface ModernSidebarProps {
 const ModernSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
   const location = useLocation();
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const { hasPermission } = useUserPermissions();
 
   const isSettingsActive = settingsMenuItems.some(item => location.pathname === item.path);
+
+  // Filter menu items based on permissions
+  const filteredMenuItems = menuItems.filter(item => {
+    const permission = item.path.replace('/', '').replace('-', '_');
+    return hasPermission(permission, 'view');
+  });
+
+  const filteredSettingsMenuItems = settingsMenuItems.filter(item => {
+    const permission = item.path.replace('/', '').replace('-', '_');
+    return hasPermission(permission, 'view');
+  });
 
   return (
     <>
@@ -58,7 +71,7 @@ const ModernSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
             <ul role="list" className="flex flex-1 flex-col gap-y-7">
               <li>
                 <ul role="list" className="-mx-2 space-y-1">
-                  {menuItems.map((item) => {
+                  {filteredMenuItems.map((item) => {
                     const isActive = location.pathname === item.path;
                     return (
                       <li key={item.path}>
@@ -84,62 +97,64 @@ const ModernSidebar = ({ isOpen, onClose }: ModernSidebarProps) => {
                     );
                   })}
                   
-                  {/* Settings Menu with Submenu */}
-                  <li>
-                    <button
-                      onClick={() => setSettingsOpen(!settingsOpen)}
-                      className={cn(
-                        "group flex w-full items-center gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors",
-                        isSettingsActive
-                          ? "bg-blue-50 text-blue-700"
-                          : "text-gray-700 hover:text-blue-700 hover:bg-gray-50"
-                      )}
-                    >
-                      <Settings
+                  {/* Settings Menu with Submenu - only show if user has access */}
+                  {filteredSettingsMenuItems.length > 0 && (
+                    <li>
+                      <button
+                        onClick={() => setSettingsOpen(!settingsOpen)}
                         className={cn(
-                          "h-5 w-5 shrink-0",
-                          isSettingsActive ? "text-blue-700" : "text-gray-400 group-hover:text-blue-700"
+                          "group flex w-full items-center gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold transition-colors",
+                          isSettingsActive
+                            ? "bg-blue-50 text-blue-700"
+                            : "text-gray-700 hover:text-blue-700 hover:bg-gray-50"
                         )}
-                      />
-                      <span className="flex-1 text-left">Pengaturan</span>
-                      {settingsOpen ? (
-                        <ChevronDown className="h-4 w-4" />
-                      ) : (
-                        <ChevronRight className="h-4 w-4" />
-                      )}
-                    </button>
-                    
-                    {/* Submenu */}
-                    {settingsOpen && (
-                      <ul className="mt-1 ml-6 space-y-1">
-                        {settingsMenuItems.map((item) => {
-                          const isActive = location.pathname === item.path;
-                          return (
-                            <li key={item.path}>
-                              <Link
-                                to={item.path}
-                                className={cn(
-                                  "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-medium transition-colors",
-                                  isActive
-                                    ? "bg-blue-50 text-blue-700"
-                                    : "text-gray-600 hover:text-blue-700 hover:bg-gray-50"
-                                )}
-                                onClick={() => onClose()}
-                              >
-                                <item.icon
+                      >
+                        <Settings
+                          className={cn(
+                            "h-5 w-5 shrink-0",
+                            isSettingsActive ? "text-blue-700" : "text-gray-400 group-hover:text-blue-700"
+                          )}
+                        />
+                        <span className="flex-1 text-left">Pengaturan</span>
+                        {settingsOpen ? (
+                          <ChevronDown className="h-4 w-4" />
+                        ) : (
+                          <ChevronRight className="h-4 w-4" />
+                        )}
+                      </button>
+                      
+                      {/* Submenu */}
+                      {settingsOpen && (
+                        <ul className="mt-1 ml-6 space-y-1">
+                          {filteredSettingsMenuItems.map((item) => {
+                            const isActive = location.pathname === item.path;
+                            return (
+                              <li key={item.path}>
+                                <Link
+                                  to={item.path}
                                   className={cn(
-                                    "h-4 w-4 shrink-0",
-                                    isActive ? "text-blue-700" : "text-gray-400 group-hover:text-blue-700"
+                                    "group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-medium transition-colors",
+                                    isActive
+                                      ? "bg-blue-50 text-blue-700"
+                                      : "text-gray-600 hover:text-blue-700 hover:bg-gray-50"
                                   )}
-                                />
-                                {item.label}
-                              </Link>
-                            </li>
-                          );
-                        })}
-                      </ul>
-                    )}
-                  </li>
+                                  onClick={() => onClose()}
+                                >
+                                  <item.icon
+                                    className={cn(
+                                      "h-4 w-4 shrink-0",
+                                      isActive ? "text-blue-700" : "text-gray-400 group-hover:text-blue-700"
+                                    )}
+                                  />
+                                  {item.label}
+                                </Link>
+                              </li>
+                            );
+                          })}
+                        </ul>
+                      )}
+                    </li>
+                  )}
                 </ul>
               </li>
             </ul>
