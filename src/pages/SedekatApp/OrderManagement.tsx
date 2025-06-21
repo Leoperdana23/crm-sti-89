@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -28,13 +29,16 @@ import {
   XCircle
 } from 'lucide-react';
 import { useOrders, useUpdateOrderStatus } from '@/hooks/useOrders';
+import { useBranches } from '@/hooks/useBranches';
 import { useOrderNotifications } from '@/hooks/useOrderNotifications';
 
 const OrderManagement = () => {
   const { data: orders, isLoading } = useOrders();
+  const { branches } = useBranches();
   const updateOrderStatus = useUpdateOrderStatus();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
+  const [branchFilter, setBranchFilter] = useState('all');
   const [resellerFilter, setResellerFilter] = useState('');
 
   // Enable order notifications
@@ -100,8 +104,10 @@ const OrderManagement = () => {
     
     const matchesStatus = statusFilter === 'all' || order.status === statusFilter;
     const matchesReseller = !resellerFilter || order.reseller?.name?.toLowerCase().includes(resellerFilter.toLowerCase());
+    const matchesBranch = branchFilter === 'all' || 
+      (order.reseller && order.reseller.branch_id === branchFilter);
     
-    return matchesSearch && matchesStatus && matchesReseller;
+    return matchesSearch && matchesStatus && matchesReseller && matchesBranch;
   });
 
   const orderStats = {
@@ -215,6 +221,19 @@ const OrderManagement = () => {
                 <SelectItem value="cancelled">Batal</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={branchFilter} onValueChange={setBranchFilter}>
+              <SelectTrigger className="w-48">
+                <SelectValue placeholder="Filter Cabang" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Semua Cabang</SelectItem>
+                {branches?.map((branch) => (
+                  <SelectItem key={branch.id} value={branch.id}>
+                    {branch.name}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
             <div className="relative w-48">
               <Input
                 placeholder="Filter Reseller..."
@@ -239,6 +258,7 @@ const OrderManagement = () => {
                 <TableHead>Tanggal</TableHead>
                 <TableHead>Customer</TableHead>
                 <TableHead>Reseller</TableHead>
+                <TableHead>Cabang</TableHead>
                 <TableHead>Total</TableHead>
                 <TableHead>Status</TableHead>
                 <TableHead>Aksi</TableHead>
@@ -260,9 +280,14 @@ const OrderManagement = () => {
                   <TableCell>
                     <div>
                       <div className="font-medium">{order.reseller?.name || 'Direct'}</div>
-                      <div className="text-sm text-gray-500">
-                        {order.reseller?.branch_id ? `Branch: ${order.reseller.branch_id}` : '-'}
-                      </div>
+                    </div>
+                  </TableCell>
+                  <TableCell>
+                    <div className="text-sm text-gray-500">
+                      {order.reseller?.branch_id ? 
+                        branches?.find(b => b.id === order.reseller?.branch_id)?.name || order.reseller.branch_id 
+                        : '-'
+                      }
                     </div>
                   </TableCell>
                   <TableCell>{formatCurrency(order.total_amount)}</TableCell>
