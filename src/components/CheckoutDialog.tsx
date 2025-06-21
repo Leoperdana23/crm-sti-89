@@ -37,6 +37,7 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, resellerSession, 
   const [notes, setNotes] = useState('');
   const [deliveryMethod, setDeliveryMethod] = useState('pickup');
   const [expedisi, setExpedisi] = useState('');
+  const [selectedBranch, setSelectedBranch] = useState('');
   
   const createOrderMutation = useCreateOrder();
 
@@ -66,7 +67,7 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, resellerSession, 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!customerName.trim() || !customerPhone.trim()) {
+    if (!customerName.trim() || !customerPhone.trim() || !selectedBranch.trim()) {
       return;
     }
 
@@ -81,6 +82,8 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, resellerSession, 
       delivery_method: deliveryMethod,
       expedisi: deliveryMethod === 'delivery' ? expedisi.trim() : undefined,
       notes: notes.trim() || undefined,
+      // Add selected branch to notes for tracking
+      notes: `${notes.trim() ? notes.trim() + ' | ' : ''}Cabang: ${selectedBranch}`,
       items: cart.map(item => ({
         product_id: item.product.id,
         product_name: item.product.name,
@@ -103,6 +106,7 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, resellerSession, 
       setNotes('');
       setDeliveryMethod('pickup');
       setExpedisi('');
+      setSelectedBranch('');
     } catch (error) {
       console.error('Failed to create order:', error);
     }
@@ -160,6 +164,21 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, resellerSession, 
                 disabled
                 className="mt-1 bg-gray-100"
               />
+            </div>
+
+            {/* Branch Selection */}
+            <div>
+              <Label htmlFor="branch" className="text-sm">Pilih Cabang *</Label>
+              <Select value={selectedBranch} onValueChange={setSelectedBranch}>
+                <SelectTrigger className="mt-1">
+                  <SelectValue placeholder="Pilih cabang untuk order ini" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="Bandar Lampung">Bandar Lampung</SelectItem>
+                  <SelectItem value="Metro">Metro</SelectItem>
+                  <SelectItem value="Tulang Bawang">Tulang Bawang</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
 
             {/* Delivery Method - Editable */}
@@ -223,6 +242,7 @@ const CheckoutDialog = ({ isOpen, onClose, cart, catalogToken, resellerSession, 
                 createOrderMutation.isPending || 
                 !customerName.trim() || 
                 !customerPhone.trim() ||
+                !selectedBranch.trim() ||
                 (deliveryMethod === 'delivery' && !expedisi.trim())
               }
             >
