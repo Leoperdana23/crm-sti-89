@@ -6,7 +6,6 @@ import { Button } from '@/components/ui/button';
 import { TrendingUp, Package, Clock, Star, ExternalLink } from 'lucide-react';
 import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { useAppSettings } from '@/hooks/useAppSettings';
-import { useResellerBalance } from '@/hooks/useResellerApp';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRewardRedemptions } from '@/hooks/useRewards';
 import RewardCatalogView from './RewardCatalogView';
@@ -148,8 +147,12 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
         </CardContent>
       </Card>
 
-      {/* Reward Catalog View - New Section */}
-      <RewardCatalogView reseller={reseller} />
+      {/* Reward Catalog View - Pass remaining balances */}
+      <RewardCatalogView 
+        reseller={reseller} 
+        remainingCommission={totalCommission}
+        remainingPoints={totalPoints}
+      />
 
       {/* Stats Grid - Responsive */}
       <div className="grid grid-cols-2 gap-3 sm:gap-4 lg:gap-6">

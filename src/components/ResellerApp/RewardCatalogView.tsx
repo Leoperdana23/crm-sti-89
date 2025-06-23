@@ -1,18 +1,23 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Award, DollarSign, Gift, MessageCircle } from 'lucide-react';
 import { useRewardCatalog } from '@/hooks/useRewards';
-import { useResellerBalance } from '@/hooks/useResellerApp';
 import { ResellerSession } from '@/types/resellerApp';
 
 interface RewardCatalogViewProps {
   reseller: ResellerSession;
+  remainingCommission: number;
+  remainingPoints: number;
 }
 
-const RewardCatalogView: React.FC<RewardCatalogViewProps> = ({ reseller }) => {
+const RewardCatalogView: React.FC<RewardCatalogViewProps> = ({ 
+  reseller, 
+  remainingCommission, 
+  remainingPoints 
+}) => {
   const { data: rewards = [], isLoading: rewardsLoading } = useRewardCatalog();
-  const { data: balance } = useResellerBalance(reseller.id);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -24,9 +29,9 @@ const RewardCatalogView: React.FC<RewardCatalogViewProps> = ({ reseller }) => {
 
   const canRedeem = (reward: any) => {
     if (reward.reward_type === 'points') {
-      return (balance?.remainingPoints || 0) >= reward.cost;
+      return remainingPoints >= reward.cost;
     } else if (reward.reward_type === 'commission') {
-      return (balance?.remainingCommission || 0) >= reward.cost;
+      return remainingCommission >= reward.cost;
     }
     return false;
   };
@@ -137,8 +142,8 @@ const RewardCatalogView: React.FC<RewardCatalogViewProps> = ({ reseller }) => {
                   {/* Show current balance for context */}
                   <div className="text-xs text-gray-500">
                     Saldo: {reward.reward_type === 'points' 
-                      ? `${balance?.remainingPoints || 0} poin`
-                      : formatCurrency(balance?.remainingCommission || 0)}
+                      ? `${remainingPoints} poin`
+                      : formatCurrency(remainingCommission)}
                   </div>
                 </div>
               </div>
