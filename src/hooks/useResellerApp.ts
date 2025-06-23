@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
@@ -12,11 +11,8 @@ export const useResellerApp = () => {
     if (sessionData) {
       try {
         const parsed = JSON.parse(sessionData);
-        if (parsed.expires_at && new Date(parsed.expires_at) > new Date()) {
-          setSession(parsed);
-        } else {
-          localStorage.removeItem('reseller_session');
-        }
+        // Don't check expiration for reseller sessions - keep them persistent
+        setSession(parsed);
       } catch (error) {
         console.error('Error parsing session data:', error);
         localStorage.removeItem('reseller_session');

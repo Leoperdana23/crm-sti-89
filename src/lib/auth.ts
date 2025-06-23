@@ -14,6 +14,7 @@ interface AuthSession {
   user: User;
   token: string;
   expires_at: string;
+  loginTime: string; // Add login timestamp
 }
 
 class AuthClient {
@@ -29,6 +30,19 @@ class AuthClient {
       const sessionData = localStorage.getItem('auth_session');
       if (sessionData) {
         const session = JSON.parse(sessionData);
+        // Check if session is older than 1 day
+        if (session.loginTime) {
+          const oneDayInMs = 24 * 60 * 60 * 1000;
+          const loginDate = new Date(session.loginTime);
+          const now = new Date();
+          
+          if ((now.getTime() - loginDate.getTime()) > oneDayInMs) {
+            console.log('Session expired, clearing...');
+            this.clearSession();
+            return;
+          }
+        }
+        
         if (new Date(session.expires_at) > new Date()) {
           this.currentSession = session;
         } else {
@@ -67,8 +81,13 @@ class AuthClient {
 
       const data = await response.json();
       if (data.success) {
-        this.saveSession(data.session);
-        return { data: { user: data.session.user }, error: null };
+        // Add login timestamp
+        const sessionWithTimestamp = {
+          ...data.session,
+          loginTime: new Date().toISOString()
+        };
+        this.saveSession(sessionWithTimestamp);
+        return { data: { user: sessionWithTimestamp.user }, error: null };
       } else {
         return { data: null, error: { message: data.message } };
       }

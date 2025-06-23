@@ -15,6 +15,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
+  const isSessionExpired = (loginTime: string) => {
+    const oneDayInMs = 24 * 60 * 60 * 1000; // 1 day in milliseconds
+    const loginDate = new Date(loginTime);
+    const now = new Date();
+    return (now.getTime() - loginDate.getTime()) > oneDayInMs;
+  };
+
   useEffect(() => {
     // Check for existing session
     const getSession = async () => {
@@ -24,10 +31,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         if (appUser) {
           try {
             const parsedAppUser = JSON.parse(appUser);
+            
+            // Check if session is older than 1 day
+            if (parsedAppUser.loginTime && isSessionExpired(parsedAppUser.loginTime)) {
+              console.log('App user session expired, removing...');
+              localStorage.removeItem('appUser');
+              setUser(null);
+              setLoading(false);
+              return;
+            }
+            
             console.log('App user found in localStorage:', parsedAppUser.email);
             const mockUser = {
-              id: parsedAppUser.id || 'test-user-id',
-              email: parsedAppUser.email || 'test@example.com',
+              id: parsedAppUser.id || 'app-user-id',
+              email: parsedAppUser.email,
               aud: 'authenticated',
               role: 'authenticated',
               created_at: new Date().toISOString(),
@@ -40,7 +57,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
               },
               user_metadata: {
                 role: parsedAppUser.user_metadata?.role || 'super_admin',
-                full_name: parsedAppUser.user_metadata?.full_name || 'Test User'
+                full_name: parsedAppUser.user_metadata?.full_name || 'App User'
               },
               identities: [],
               factors: []
@@ -64,54 +81,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           console.log('User session found:', session.user.email);
           setUser(session.user);
         } else {
-          // For testing, create a mock user if no session exists
-          console.log('No session found, creating mock user for testing');
-          const mockUser = {
-            id: 'test-user-id',
-            email: 'test@example.com',
-            aud: 'authenticated',
-            role: 'authenticated',
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-            email_confirmed_at: new Date().toISOString(),
-            last_sign_in_at: new Date().toISOString(),
-            app_metadata: {
-              provider: 'email',
-              providers: ['email']
-            },
-            user_metadata: {
-              role: 'super_admin',
-              full_name: 'Test User'
-            },
-            identities: [],
-            factors: []
-          } as User;
-          setUser(mockUser);
+          console.log('No valid session found');
+          setUser(null);
         }
       } catch (error) {
         console.error('Session check failed:', error);
-        // Create mock user even if session check fails
-        const mockUser = {
-          id: 'test-user-id',
-          email: 'test@example.com',
-          aud: 'authenticated',
-          role: 'authenticated',
-          created_at: new Date().toISOString(),
-          updated_at: new Date().toISOString(),
-          email_confirmed_at: new Date().toISOString(),
-          last_sign_in_at: new Date().toISOString(),
-          app_metadata: {
-            provider: 'email',
-            providers: ['email']
-          },
-          user_metadata: {
-            role: 'super_admin',
-            full_name: 'Test User'
-          },
-          identities: [],
-          factors: []
-        } as User;
-        setUser(mockUser);
+        setUser(null);
       } finally {
         setLoading(false);
       }
