@@ -1,180 +1,196 @@
-
-import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
+import React, { useState } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { 
-  MessageSquare, 
-  Trash2, 
-  Edit3, 
-  Phone, 
-  MapPin,
-  User,
-  Building2,
-  Calendar,
-  ShoppingCart
-} from 'lucide-react';
-import { Order, OrderItem } from '@/types/order';
-import { useBranches } from '@/hooks/useBranches';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Clock, Package, CheckCircle, XCircle } from 'lucide-react';
+import { Order } from '@/types/order';
+import { formatCurrency, formatDate } from '@/lib/utils';
+import PrintOrderDialog from './PrintOrderDialog';
 
 interface OrderCardProps {
-  order: Order & { order_items: OrderItem[] };
-  onEditStatus: (order: Order) => void;
-  onWhatsAppFollowUp: (order: Order) => void;
-  onDelete: (orderId: string) => void;
+  order: Order;
+  onUpdateStatus?: (orderId: string, status: string) => void;
+  onViewHistory?: (order: Order) => void;
 }
 
-const OrderCard = ({ order, onEditStatus, onWhatsAppFollowUp, onDelete }: OrderCardProps) => {
-  const { branches } = useBranches();
+const getBranchName = (notes: string | undefined): string | undefined => {
+  if (!notes) return undefined;
+  const branchRegex = /Cabang: (.+)/;
+  const match = notes.match(branchRegex);
+  return match ? match[1] : undefined;
+};
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('id-ID', {
-      style: 'currency',
-      currency: 'IDR',
-      minimumFractionDigits: 0,
-    }).format(amount);
-  };
+const OrderCard: React.FC<OrderCardProps> = ({ order, onUpdateStatus, onViewHistory }) => {
+  const [localStatus, setLocalStatus] = useState(order.status);
 
-  const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('id-ID', {
-      day: '2-digit',
-      month: 'short',
-      year: 'numeric',
-    });
+  const handleStatusChange = (value: string) => {
+    setLocalStatus(value);
+    onUpdateStatus?.(order.id, value);
   };
 
   const getStatusColor = (status: string) => {
-    switch (status?.toLowerCase()) {
-      case 'pending': return 'bg-yellow-100 text-yellow-800 border-yellow-200';
-      case 'processing': return 'bg-blue-100 text-blue-800 border-blue-200';
-      case 'completed': return 'bg-green-100 text-green-800 border-green-200';
-      case 'cancelled': return 'bg-red-100 text-red-800 border-red-200';
-      default: return 'bg-gray-100 text-gray-800 border-gray-200';
+    switch (status.toLowerCase()) {
+      case 'pending':
+        return 'bg-gray-100 text-gray-800';
+      case 'processing':
+      case 'proses':
+        return 'bg-blue-100 text-blue-800';
+      case 'completed':
+      case 'selesai':
+        return 'bg-green-100 text-green-800';
+      case 'cancelled':
+      case 'batal':
+        return 'bg-red-100 text-red-800';
+      default:
+        return 'bg-gray-100 text-gray-800';
     }
   };
 
-  // Helper function to get branch name from branch_id
-  const getBranchName = (branchId: string | undefined) => {
-    if (!branchId) return null;
-    const branch = branches?.find(b => b.id === branchId);
-    return branch?.name || branchId;
+  const getStatusIcon = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'processing':
+      case 'proses':
+        return <Package className="h-4 w-4" />;
+      case 'completed':
+      case 'selesai':
+        return <CheckCircle className="h-4 w-4" />;
+      case 'cancelled':
+      case 'batal':
+        return <XCircle className="h-4 w-4" />;
+      default:
+        return <Clock className="h-4 w-4" />;
+    }
+  };
+
+  const getStatusLabel = (status: string) => {
+    const mapping: { [key: string]: string } = {
+      'pending': 'Menunggu',
+      'processing': 'Proses',
+      'proses': 'Proses',
+      'completed': 'Selesai',
+      'selesai': 'Selesai',
+      'cancelled': 'Batal',
+      'batal': 'Batal'
+    };
+    return mapping[status.toLowerCase()] || status;
   };
 
   return (
     <Card className="hover:shadow-md transition-shadow">
-      <CardContent className="p-6">
-        <div className="flex justify-between items-start mb-4">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-2">
-              <h3 className="font-semibold text-lg">#{order.id.slice(-8)}</h3>
-              <Badge className={getStatusColor(order.status)}>
-                {order.status}
-              </Badge>
-            </div>
-            
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <User className="h-4 w-4 text-gray-500" />
-                  <span className="font-medium">{order.customer_name}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Phone className="h-4 w-4 text-gray-500" />
-                  <span>{order.customer_phone}</span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <Calendar className="h-4 w-4 text-gray-500" />
-                  <span>{formatDate(order.created_at)}</span>
-                </div>
-              </div>
-              
-              <div className="space-y-2">
-                {order.reseller && (
-                  <>
-                    <div className="flex items-center gap-2">
-                      <User className="h-4 w-4 text-blue-500" />
-                      <span className="font-medium text-blue-700">{order.reseller.name}</span>
-                    </div>
-                    {order.reseller.branch_id && (
-                      <div className="flex items-center gap-2">
-                        <Building2 className="h-4 w-4 text-blue-500" />
-                        <span className="text-blue-700">{getBranchName(order.reseller.branch_id)}</span>
-                      </div>
-                    )}
-                  </>
-                )}
-                <div className="flex items-center gap-2">
-                  <ShoppingCart className="h-4 w-4 text-gray-500" />
-                  <span className="font-semibold text-lg">{formatCurrency(order.total_amount)}</span>
-                </div>
-              </div>
-            </div>
-
-            {order.delivery_method && (
-              <div className="mt-3 pt-3 border-t">
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-gray-500" />
-                  <span>
-                    {order.delivery_method === 'pickup' ? 'Diambil di Toko' : 'Dikirim'}
-                    {order.expedisi && ` via ${order.expedisi}`}
-                  </span>
-                </div>
-              </div>
-            )}
-
-            {order.notes && (
-              <div className="mt-3 pt-3 border-t">
-                <p className="text-sm text-gray-600">{order.notes}</p>
-              </div>
-            )}
+      <CardHeader className="pb-3">
+        <div className="flex justify-between items-start">
+          <div>
+            <CardTitle className="text-sm">
+              Order #{order.id?.slice(-8)}
+            </CardTitle>
+            <p className="text-xs text-gray-500">
+              {formatDate(order.created_at)}
+            </p>
           </div>
-
-          <div className="flex flex-col gap-2 ml-4">
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onEditStatus(order)}
-              className="flex items-center gap-1"
-            >
-              <Edit3 className="h-3 w-3" />
-              Edit
-            </Button>
-            
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onWhatsAppFollowUp(order)}
-              className="flex items-center gap-1 text-green-600 hover:text-green-700"
-            >
-              <MessageSquare className="h-3 w-3" />
-              WA
-            </Button>
-            
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => onDelete(order.id)}
-              className="flex items-center gap-1 text-red-600 hover:text-red-700"
-            >
-              <Trash2 className="h-3 w-3" />
-              Hapus
-            </Button>
+          <div className="flex items-center gap-2">
+            <Badge className={getStatusColor(order.status || 'pending')}>
+              <span className="flex items-center gap-1">
+                {getStatusIcon(order.status || 'pending')}
+                {getStatusLabel(order.status || 'pending')}
+              </span>
+            </Badge>
           </div>
         </div>
+      </CardHeader>
+      <CardContent className="pt-0">
+        <div className="space-y-2">
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Customer:</span>
+            <span className="font-medium">{order.customer_name}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Phone:</span>
+            <span className="font-medium">{order.customer_phone}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Total:</span>
+            <span className="font-medium">{formatCurrency(order.total_amount || 0)}</span>
+          </div>
+          <div className="flex justify-between text-sm">
+            <span className="text-gray-600">Delivery:</span>
+            <span className="font-medium capitalize">{order.delivery_method || 'pickup'}</span>
+          </div>
+          
+          {/* Show expedisi if delivery method is delivery */}
+          {order.delivery_method === 'delivery' && order.expedisi && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Expedisi:</span>
+              <span className="font-medium">{order.expedisi}</span>
+            </div>
+          )}
 
-        {order.order_items && order.order_items.length > 0 && (
-          <div className="mt-4 pt-4 border-t">
-            <h4 className="font-medium text-sm mb-2">Item Pesanan:</h4>
-            <div className="space-y-1">
-              {order.order_items.map((item) => (
-                <div key={item.id} className="flex justify-between items-center text-sm">
-                  <span>{item.product_name} x{item.quantity}</span>
-                  <span className="font-medium">{formatCurrency(item.subtotal)}</span>
+          {/* Show reseller info if available */}
+          {order.reseller && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Reseller:</span>
+              <span className="font-medium">{order.reseller.name}</span>
+            </div>
+          )}
+
+          {/* Show branch info if available */}
+          {getBranchName(order.notes) && (
+            <div className="flex justify-between text-sm">
+              <span className="text-gray-600">Cabang:</span>
+              <span className="font-medium">{getBranchName(order.notes)}</span>
+            </div>
+          )}
+          
+          {order.notes && (
+            <div className="mt-2 p-2 bg-gray-50 rounded text-xs">
+              <span className="text-gray-600">Notes: </span>
+              <span>{order.notes}</span>
+            </div>
+          )}
+          
+          {/* Order Items */}
+          {order.order_items && order.order_items.length > 0 && (
+            <div className="mt-3 pt-3 border-t">
+              <p className="text-xs text-gray-600 mb-2">Items:</p>
+              {order.order_items.map((item, index) => (
+                <div key={index} className="flex justify-between text-xs mb-1">
+                  <span>{item.quantity}x {item.product_name}</span>
+                  <span>{formatCurrency(item.subtotal)}</span>
                 </div>
               ))}
             </div>
+          )}
+
+          {/* Action Buttons */}
+          <div className="flex gap-2 mt-4 pt-2 border-t">
+            {/* Print Button */}
+            <PrintOrderDialog order={order} />
+            
+            {/* Status Update Dropdown */}
+            <Select value={localStatus} onValueChange={handleStatusChange}>
+              <SelectTrigger className="h-8 text-xs flex-1">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="pending">Menunggu</SelectItem>
+                <SelectItem value="processing">Proses</SelectItem>
+                <SelectItem value="completed">Selesai</SelectItem>
+                <SelectItem value="cancelled">Dibatalkan</SelectItem>
+              </SelectContent>
+            </Select>
+            
+            {/* View History Button */}
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => onViewHistory?.(order)}
+              className="h-8 text-xs"
+            >
+              <Clock className="h-3 w-3 mr-1" />
+              History
+            </Button>
           </div>
-        )}
+        </div>
       </CardContent>
     </Card>
   );
