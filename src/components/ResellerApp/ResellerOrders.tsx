@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Package, Clock, CheckCircle, XCircle } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
+import ResellerPrintOrderDialog from './ResellerPrintOrderDialog';
 
 interface ResellerOrdersProps {
   reseller: ResellerSession;
@@ -155,12 +156,14 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
                 {formatDate(order.created_at)}
               </p>
             </div>
-            <Badge className={getStatusColor(order.status || 'pending')}>
-              <span className="flex items-center gap-1">
-                {getStatusIcon(order.status || 'pending')}
-                {getStatusLabel(order.status || 'pending')}
-              </span>
-            </Badge>
+            <div className="flex items-center gap-2">
+              <Badge className={getStatusColor(order.status || 'pending')}>
+                <span className="flex items-center gap-1">
+                  {getStatusIcon(order.status || 'pending')}
+                  {getStatusLabel(order.status || 'pending')}
+                </span>
+              </Badge>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="pt-0">
@@ -206,6 +209,11 @@ const ResellerOrders: React.FC<ResellerOrdersProps> = ({ reseller }) => {
                 ))}
               </div>
             )}
+
+            {/* Print Button */}
+            <div className="mt-4 pt-3 border-t">
+              <ResellerPrintOrderDialog order={order} />
+            </div>
           </div>
         </CardContent>
       </Card>
