@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
-import { Clock, Package, CheckCircle, XCircle } from 'lucide-react';
+import { Clock, Package, CheckCircle, XCircle, MessageCircle, Trash2 } from 'lucide-react';
 import { Order } from '@/types/order';
 import { formatCurrency, formatDate } from '@/lib/utils';
 import PrintOrderDialog from './PrintOrderDialog';
@@ -12,6 +12,9 @@ interface OrderCardProps {
   order: Order;
   onUpdateStatus?: (orderId: string, status: string) => void;
   onViewHistory?: (order: Order) => void;
+  onEditStatus?: (order: Order) => void;
+  onWhatsAppFollowUp?: (order: Order) => void;
+  onDelete?: (orderId: string) => void;
 }
 
 const getBranchName = (notes: string | undefined): string | undefined => {
@@ -21,7 +24,14 @@ const getBranchName = (notes: string | undefined): string | undefined => {
   return match ? match[1] : undefined;
 };
 
-const OrderCard: React.FC<OrderCardProps> = ({ order, onUpdateStatus, onViewHistory }) => {
+const OrderCard: React.FC<OrderCardProps> = ({ 
+  order, 
+  onUpdateStatus, 
+  onViewHistory, 
+  onEditStatus,
+  onWhatsAppFollowUp,
+  onDelete
+}) => {
   const [localStatus, setLocalStatus] = useState(order.status);
 
   const handleStatusChange = (value: string) => {
@@ -179,6 +189,19 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onUpdateStatus, onViewHist
               </SelectContent>
             </Select>
             
+            {/* WhatsApp Follow Up Button */}
+            {onWhatsAppFollowUp && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onWhatsAppFollowUp(order)}
+                className="h-8 text-xs"
+              >
+                <MessageCircle className="h-3 w-3 mr-1" />
+                WA
+              </Button>
+            )}
+            
             {/* View History Button */}
             <Button
               variant="outline"
@@ -189,6 +212,18 @@ const OrderCard: React.FC<OrderCardProps> = ({ order, onUpdateStatus, onViewHist
               <Clock className="h-3 w-3 mr-1" />
               History
             </Button>
+
+            {/* Delete Button */}
+            {onDelete && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onDelete(order.id)}
+                className="h-8 text-xs text-red-600 hover:text-red-700"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            )}
           </div>
         </div>
       </CardContent>
