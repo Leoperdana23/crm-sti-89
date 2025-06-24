@@ -7,7 +7,9 @@ import { useRewardRedemptions } from '@/hooks/useRewards';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { TrendingUp, DollarSign, Award, Package, Gift, Target } from 'lucide-react';
+import { TrendingUp, DollarSign, Award, Package, Gift, Target, BarChart3, PieChart } from 'lucide-react';
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart as RechartsPieChart, Cell } from 'recharts';
 
 interface ResellerReportsProps {
   reseller: ResellerSession;
@@ -79,11 +81,6 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
   const remainingCommission = totalCommissionEarned - exchangedCommission;
   const remainingPoints = totalPointsEarned - exchangedPoints;
 
-  // Average order value calculation (only completed orders)
-  const averageOrderValue = completedOrders.length > 0 
-    ? completedOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0) / completedOrders.length
-    : 0;
-
   // Get orders from the last year for completed orders
   const oneYearAgo = new Date();
   oneYearAgo.setFullYear(oneYearAgo.getFullYear() - 1);
@@ -134,6 +131,96 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
     return total + (order.total_amount || 0);
   }, 0);
 
+  // Prepare monthly achievement data (last 6 months)
+  const getMonthlyData = () => {
+    const monthlyData = [];
+    const now = new Date();
+    
+    for (let i = 5; i >= 0; i--) {
+      const month = new Date(now.getFullYear(), now.getMonth() - i, 1);
+      const monthName = month.toLocaleDateString('id-ID', { month: 'short', year: '2-digit' });
+      
+      const monthOrders = completedOrders.filter(order => {
+        const orderDate = new Date(order.created_at);
+        return orderDate.getMonth() === month.getMonth() && 
+               orderDate.getFullYear() === month.getFullYear();
+      });
+      
+      const monthCommission = monthOrders.reduce((total, order) => {
+        return total + (order.order_items || []).reduce((orderTotal, item) => {
+          const productCommission = item.products?.commission_value || 0;
+          return orderTotal + (productCommission * item.quantity);
+        }, 0);
+      }, 0);
+      
+      const monthPoints = monthOrders.reduce((total, order) => {
+        return total + (order.order_items || []).reduce((orderTotal, item) => {
+          const productPoints = item.products?.points_value || 0;
+          return orderTotal + (productPoints * item.quantity);
+        }, 0);
+      }, 0);
+      
+      monthlyData.push({
+        month: monthName,
+        commission: monthCommission,
+        points: monthPoints,
+        orders: monthOrders.length
+      });
+    }
+    
+    return monthlyData;
+  };
+
+  // Prepare top products data
+  const getTopProducts = () => {
+    const productMap = new Map();
+    
+    completedOrders.forEach(order => {
+      order.order_items?.forEach(item => {
+        const productName = item.product_name;
+        if (productMap.has(productName)) {
+          const existing = productMap.get(productName);
+          productMap.set(productName, {
+            ...existing,
+            quantity: existing.quantity + item.quantity,
+            revenue: existing.revenue + item.subtotal
+          });
+        } else {
+          productMap.set(productName, {
+            name: productName,
+            quantity: item.quantity,
+            revenue: item.subtotal
+          });
+        }
+      });
+    });
+    
+    return Array.from(productMap.values())
+      .sort((a, b) => b.quantity - a.quantity)
+      .slice(0, 5);
+  };
+
+  const monthlyData = getMonthlyData();
+  const topProducts = getTopProducts();
+
+  // Chart colors
+  const COLORS = ['#16a34a', '#059669', '#0d9488', '#0891b2', '#3b82f6'];
+
+  const chartConfig = {
+    commission: {
+      label: "Komisi",
+      color: "#16a34a",
+    },
+    points: {
+      label: "Poin",
+      color: "#3b82f6",
+    },
+    orders: {
+      label: "Pesanan",
+      color: "#f59e0b",
+    },
+  };
+
   return (
     <div className="p-4 space-y-6">
       <h2 className="text-xl font-bold">Laporan Pencapaian</h2>
@@ -164,24 +251,6 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-              <Package className="h-4 w-4 mr-2 text-blue-500" />
-              Order Selesai (1 Tahun)
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {ordersLoading ? (
-              <Skeleton className="h-8 w-16" />
-            ) : (
-              <div className="text-2xl font-bold text-blue-600">
-                {completedOrdersLastYear.length}
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
               <Award className="h-4 w-4 mr-2 text-purple-500" />
               Sisa Poin
             </CardTitle>
@@ -199,28 +268,138 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
             </p>
           </CardContent>
         </Card>
-
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-sm font-medium text-gray-600 flex items-center">
-              <Target className="h-4 w-4 mr-2 text-orange-500" />
-              Total Nilai Order
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            {ordersLoading ? (
-              <Skeleton className="h-8 w-20" />
-            ) : (
-              <div className="text-lg font-bold text-orange-600">
-                {formatCurrency(totalOrderValue)}
-              </div>
-            )}
-            <p className="text-xs text-gray-500 mt-1">
-              Total nilai order selesai
-            </p>
-          </CardContent>
-        </Card>
       </div>
+
+      {/* Monthly Achievement Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            <BarChart3 className="h-5 w-5 mr-2 text-blue-500" />
+            Pencapaian Bulanan (6 Bulan Terakhir)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis tick={{ fontSize: 12 }} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Bar 
+                  dataKey="commission" 
+                  fill="#16a34a" 
+                  name="Komisi (Rp)"
+                  radius={[2, 2, 0, 0]}
+                />
+              </BarChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      {/* Commission vs Points Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            <TrendingUp className="h-5 w-5 mr-2 text-green-500" />
+            Tren Komisi dan Poin
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ChartContainer config={chartConfig} className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={monthlyData}>
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis 
+                  dataKey="month" 
+                  tick={{ fontSize: 12 }}
+                />
+                <YAxis tick={{ fontSize: 12 }} />
+                <ChartTooltip content={<ChartTooltipContent />} />
+                <Line 
+                  type="monotone" 
+                  dataKey="commission" 
+                  stroke="#16a34a" 
+                  strokeWidth={3}
+                  name="Komisi (Rp)"
+                  dot={{ fill: '#16a34a', strokeWidth: 2, r: 4 }}
+                />
+                <Line 
+                  type="monotone" 
+                  dataKey="points" 
+                  stroke="#3b82f6" 
+                  strokeWidth={3}
+                  name="Poin"
+                  dot={{ fill: '#3b82f6', strokeWidth: 2, r: 4 }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </ChartContainer>
+        </CardContent>
+      </Card>
+
+      {/* Top Products Chart */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            <PieChart className="h-5 w-5 mr-2 text-orange-500" />
+            Produk Terlaris
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            <div className="h-[250px]">
+              <ChartContainer config={chartConfig} className="h-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RechartsPieChart>
+                    <ChartTooltip content={<ChartTooltipContent />} />
+                    <RechartsPieChart
+                      data={topProducts}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={40}
+                      outerRadius={80}
+                      paddingAngle={5}
+                      dataKey="quantity"
+                    >
+                      {topProducts.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                      ))}
+                    </RechartsPieChart>
+                  </RechartsPieChart>
+                </ResponsiveContainer>
+              </ChartContainer>
+            </div>
+            
+            <div className="space-y-2">
+              <h4 className="font-medium text-sm text-gray-600 mb-3">Top 5 Produk:</h4>
+              {topProducts.map((product, index) => (
+                <div key={product.name} className="flex items-center justify-between p-2 bg-gray-50 rounded">
+                  <div className="flex items-center gap-2">
+                    <div 
+                      className="w-3 h-3 rounded-full" 
+                      style={{ backgroundColor: COLORS[index % COLORS.length] }}
+                    />
+                    <span className="text-sm font-medium truncate max-w-[120px]">
+                      {product.name}
+                    </span>
+                  </div>
+                  <div className="text-right">
+                    <div className="text-sm font-semibold">{product.quantity} unit</div>
+                    <div className="text-xs text-gray-500">
+                      {formatCurrency(product.revenue)}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
       {/* Exchange Information */}
       <Card>
