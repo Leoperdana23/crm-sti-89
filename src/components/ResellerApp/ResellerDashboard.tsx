@@ -1,11 +1,11 @@
-
 import React, { useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Package, Clock, Star, ExternalLink } from 'lucide-react';
+import { TrendingUp, Package, Clock, Star, ExternalLink, MessageCircle } from 'lucide-react';
 import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { useAppSettings } from '@/hooks/useAppSettings';
+import { useContactSettings } from '@/hooks/useContactSettings';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRewardRedemptions } from '@/hooks/useRewards';
 import RewardCatalogView from './RewardCatalogView';
@@ -19,6 +19,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
   const queryClient = useQueryClient();
   const { data: orders = [] } = useResellerOrders(reseller.id);
   const { data: appSettings } = useAppSettings();
+  const { data: contactSettings } = useContactSettings();
   const { data: allRedemptions } = useRewardRedemptions();
 
   // Auto-refresh every 5 seconds
@@ -90,6 +91,14 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
   const bannerUrl = appSettings?.catalog?.bannerUrl || '';
   const secondaryColor = appSettings?.catalog?.secondaryColor || '#059669';
 
+  const handleContactAdmin = () => {
+    if (contactSettings?.whatsapp_number) {
+      const message = encodeURIComponent('Halo admin, saya ingin menanyakan produk yang tidak ada di katalog.');
+      const whatsappUrl = `https://wa.me/${contactSettings.whatsapp_number.replace(/\D/g, '')}?text=${message}`;
+      window.open(whatsappUrl, '_blank');
+    }
+  };
+
   return (
     <div className="p-3 sm:p-4 lg:p-6 space-y-4 sm:space-y-6 w-full max-w-7xl mx-auto">
       {/* Banner Section - Responsive */}
@@ -146,6 +155,32 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
           </div>
         </CardContent>
       </Card>
+
+      {/* Contact Admin Info */}
+      {contactSettings?.whatsapp_number && (
+        <Card className="bg-blue-50 border-blue-200">
+          <CardContent className="p-4">
+            <div className="flex items-center justify-between gap-3">
+              <div className="flex-1">
+                <p className="text-sm sm:text-base text-blue-800 font-medium mb-1">
+                  Produk tidak ditemukan?
+                </p>
+                <p className="text-xs sm:text-sm text-blue-600">
+                  Jika produk yang Anda cari tidak ada, silakan menghubungi admin
+                </p>
+              </div>
+              <Button
+                onClick={handleContactAdmin}
+                size="sm"
+                className="bg-green-600 hover:bg-green-700 text-white flex-shrink-0"
+              >
+                <MessageCircle className="h-4 w-4 mr-1" />
+                Chat Admin
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Reward Catalog View - Pass remaining balances */}
       <RewardCatalogView 
