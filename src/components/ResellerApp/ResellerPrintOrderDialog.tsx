@@ -3,6 +3,8 @@ import React from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Printer } from 'lucide-react';
+import { useAppSettings } from '@/hooks/useAppSettings';
+import { useContactSettings } from '@/hooks/useContactSettings';
 
 interface ResellerOrder {
   id: string;
@@ -31,6 +33,9 @@ interface ResellerPrintOrderDialogProps {
 }
 
 const ResellerPrintOrderDialog: React.FC<ResellerPrintOrderDialogProps> = ({ order }) => {
+  const { data: appSettings } = useAppSettings();
+  const { data: contactSettings } = useContactSettings();
+
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
       style: 'currency',
@@ -40,9 +45,6 @@ const ResellerPrintOrderDialog: React.FC<ResellerPrintOrderDialogProps> = ({ ord
   };
 
   const handlePrint = () => {
-    const printWindow = window.open('', '_blank');
-    if (!printWindow) return;
-
     const orderDate = new Date(order.created_at).toLocaleDateString('id-ID', {
       day: '2-digit',
       month: '2-digit',
@@ -61,6 +63,10 @@ const ResellerPrintOrderDialog: React.FC<ResellerPrintOrderDialogProps> = ({ ord
       const points = item.product_points_snapshot || 0;
       return total + (points * item.quantity);
     }, 0) || 0;
+
+    // Get app name and contact info from settings
+    const appName = appSettings?.catalog?.siteName || 'SEDEKAT App';
+    const phoneNumber = contactSettings?.whatsapp_number || contactSettings?.phone_number || '0721-123456';
 
     const printContent = `
       <!DOCTYPE html>
@@ -163,9 +169,9 @@ const ResellerPrintOrderDialog: React.FC<ResellerPrintOrderDialogProps> = ({ ord
         </head>
         <body>
           <div class="header">
-            <div class="company-name">SEDEKAT STORE</div>
-            <div>Reseller Order System</div>
-            <div>Telp: 0721-123456</div>
+            <div class="company-name">${appName}</div>
+            <div>Aplikasinya teman installer</div>
+            <div>Telp: ${phoneNumber}</div>
           </div>
 
           <div class="order-info">
@@ -239,13 +245,20 @@ const ResellerPrintOrderDialog: React.FC<ResellerPrintOrderDialogProps> = ({ ord
       </html>
     `;
 
-    printWindow.document.write(printContent);
-    printWindow.document.close();
+    // Create popup window instead of new tab
+    const popup = window.open('', 'print-receipt', 'width=400,height=600,scrollbars=yes,resizable=yes');
+    if (!popup) return;
+
+    popup.document.write(printContent);
+    popup.document.close();
     
-    printWindow.onload = () => {
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
+    popup.onload = () => {
+      popup.focus();
+      popup.print();
+      // Close popup after printing
+      setTimeout(() => {
+        popup.close();
+      }, 1000);
     };
   };
 
