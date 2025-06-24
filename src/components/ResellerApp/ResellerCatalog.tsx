@@ -387,14 +387,7 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                     {/* Product Info Kiri/Left */}
                     <div className="flex-1 flex flex-col justify-between">
                       <div>
-                        <div className="flex items-center gap-1">
-                          <h3 className="font-semibold text-sm md:text-lg text-gray-900 mb-0">{product.name}</h3>
-                          {product.featured && (
-                            <Badge variant="secondary" className="text-xs">
-                              Unggulan
-                            </Badge>
-                          )}
-                        </div>
+                        <h3 className="font-semibold text-sm md:text-lg text-gray-900 mb-0">{product.name}</h3>
                         {/* Price Information - directly under name */}
                         <div className="mt-1">
                           <div className="text-sm md:text-base font-bold text-gray-900">{formatPrice(displayPrice)}</div>
