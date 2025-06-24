@@ -9,7 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { Package, Search, Plus, Minus, ShoppingCart, Loader2, Award, DollarSign } from 'lucide-react';
+import { Package, Search, Plus, Minus, ShoppingCart, Loader2, Award, DollarSign, Star } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import { Product, ProductCategory } from '@/types/product';
 import { useToast } from '@/hooks/use-toast';
@@ -55,7 +55,7 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
     try {
       setLoading(true);
       
-      // Fetch products
+      // Fetch products with featured products first, then by name
       const { data: productsData, error: productsError } = await supabase
         .from('products')
         .select(`
@@ -65,7 +65,9 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
           )
         `)
         .eq('is_active', true)
-        .order('name');
+        .order('featured', { ascending: false }) // Featured products first
+        .order('sort_order', { ascending: true }) // Then by sort order
+        .order('name'); // Finally by name
 
       if (productsError) throw productsError;
 
@@ -362,7 +364,7 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                 <CardContent className="p-4">
                   <div className="flex gap-4">
                     {/* Product Image */}
-                    <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden">
+                    <div className="w-20 h-20 bg-gray-100 rounded-lg flex-shrink-0 overflow-hidden relative">
                       {product.image_url ? (
                         <img
                           src={product.image_url}
@@ -374,12 +376,25 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
                           <Package className="h-8 w-8" />
                         </div>
                       )}
+                      {/* Featured Badge */}
+                      {product.featured && (
+                        <div className="absolute top-1 left-1">
+                          <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
+                        </div>
+                      )}
                     </div>
                     
                     {/* Product Info Kiri/Left */}
                     <div className="flex-1 flex flex-col justify-between">
                       <div>
-                        <h3 className="font-semibold text-sm md:text-lg text-gray-900 mb-0">{product.name}</h3>
+                        <div className="flex items-center gap-1">
+                          <h3 className="font-semibold text-sm md:text-lg text-gray-900 mb-0">{product.name}</h3>
+                          {product.featured && (
+                            <Badge variant="secondary" className="text-xs">
+                              Unggulan
+                            </Badge>
+                          )}
+                        </div>
                         {/* Price Information - directly under name */}
                         <div className="mt-1">
                           <div className="text-sm md:text-base font-bold text-gray-900">{formatPrice(displayPrice)}</div>
