@@ -9,24 +9,30 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+  try {
+    const { user, loading } = useAuth();
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
-        <div className="flex items-center space-x-2">
-          <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
-          <span className="text-sm md:text-base">Memuat...</span>
+    if (loading) {
+      return (
+        <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center">
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-6 w-6 animate-spin text-blue-600" />
+            <span className="text-sm md:text-base">Memuat...</span>
+          </div>
         </div>
-      </div>
-    );
-  }
+      );
+    }
 
-  if (!user) {
-    return <Navigate to="/auth" replace />;
-  }
+    if (!user) {
+      return <Navigate to="/login" replace />;
+    }
 
-  return <>{children}</>;
+    return <>{children}</>;
+  } catch (error) {
+    console.error('ProtectedRoute error:', error);
+    // If there's an error, redirect to auth page
+    return <Navigate to="/login" replace />;
+  }
 };
 
 export default ProtectedRoute;
