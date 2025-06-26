@@ -27,6 +27,19 @@ export interface AppSettings {
     enabled: boolean;
     message: string;
   };
+  promo_settings?: {
+    bonusCommissionEnabled: boolean;
+    bonusCommissionRate: number;
+    pointsSystemEnabled: boolean;
+    monthlyTargetEnabled: boolean;
+    monthlyTarget10: number;
+    monthlyTarget20: number;
+    promoTitle: string;
+    promoDescription: string;
+    welcomeMessage: string;
+    ctaButton1Text: string;
+    ctaButton2Text: string;
+  };
   allow_registration?: boolean;
   auto_moderation?: boolean;
   created_at: string;
