@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { useResellerStats } from '@/hooks/useResellerApp';
@@ -9,7 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { TrendingUp, DollarSign, Award, Package, Gift, Target, BarChart3, PieChart } from 'lucide-react';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart as RechartsPieChart, Cell } from 'recharts';
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LineChart, Line, PieChart as RechartsPieChart, Cell, Pie } from 'recharts';
 
 interface ResellerReportsProps {
   reseller: ResellerSession;
@@ -357,7 +356,7 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
                 <ResponsiveContainer width="100%" height="100%">
                   <RechartsPieChart>
                     <ChartTooltip content={<ChartTooltipContent />} />
-                    <RechartsPieChart
+                    <Pie
                       data={topProducts}
                       cx="50%"
                       cy="50%"
@@ -369,7 +368,7 @@ const ResellerReports: React.FC<ResellerReportsProps> = ({ reseller }) => {
                       {topProducts.map((entry, index) => (
                         <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
                       ))}
-                    </RechartsPieChart>
+                    </Pie>
                   </RechartsPieChart>
                 </ResponsiveContainer>
               </ChartContainer>
