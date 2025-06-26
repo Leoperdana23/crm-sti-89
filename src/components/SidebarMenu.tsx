@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   Home, 
@@ -24,7 +23,8 @@ import {
   Bell,
   PieChart,
   HelpCircle,
-  FolderOpen
+  FolderOpen,
+  Target
 } from 'lucide-react';
 import { useUserPermissions } from '@/hooks/useUserPermissions';
 import MenuItem from './MenuItem';
@@ -137,6 +137,12 @@ const SidebarMenu = ({ onItemClick }: SidebarMenuProps) => {
       icon: Gift,
       label: 'Komisi & Poin',
       permission: 'commission'
+    },
+    {
+      to: '/sedekat-app/program-promo',
+      icon: Target,
+      label: 'Program Promo & Benefit',
+      permission: 'app_settings'
     },
     {
       to: '/sedekat-app/app-settings',

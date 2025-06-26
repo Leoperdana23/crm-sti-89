@@ -1,4 +1,3 @@
-
 import React, { useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -213,7 +212,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
               size="sm"
             >
               <Package className="h-4 w-4 mr-2" />
-              Mulai Jualan Sekarang
+              Order Sekarang
             </Button>
             <Button
               onClick={() => onTabChange('reports')}
