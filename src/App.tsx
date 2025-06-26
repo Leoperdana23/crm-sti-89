@@ -3,6 +3,7 @@ import React from 'react';
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { Toaster } from '@/components/ui/toaster';
+import { AuthProvider } from '@/hooks/useAuth';
 import Dashboard from './pages/Dashboard';
 import Orders from './pages/Orders';
 import Customers from './pages/Customers';
@@ -36,38 +37,40 @@ const queryClient = new QueryClient();
 function App() {
   return (
     <QueryClientProvider client={queryClient}>
-      <Toaster />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/auth" element={<Auth />} />
-          <Route path="/login" element={<Auth />} />
-          <Route path="/" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
-          <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
-          <Route path="/orders" element={<ProtectedRoute><Layout><Orders /></Layout></ProtectedRoute>} />
-          <Route path="/customers" element={<ProtectedRoute><Layout><Customers /></Layout></ProtectedRoute>} />
-          <Route path="/sales" element={<ProtectedRoute><Layout><Sales /></Layout></ProtectedRoute>} />
-          <Route path="/branches" element={<ProtectedRoute><Layout><Branches /></Layout></ProtectedRoute>} />
-          <Route path="/users" element={<ProtectedRoute><Layout><Users /></Layout></ProtectedRoute>} />
-          <Route path="/role-permissions" element={<ProtectedRoute><Layout><RolePermissions /></Layout></ProtectedRoute>} />
-          <Route path="/follow-up" element={<ProtectedRoute><Layout><FollowUp /></Layout></ProtectedRoute>} />
-          <Route path="/work-process" element={<ProtectedRoute><Layout><WorkProcess /></Layout></ProtectedRoute>} />
-          <Route path="/survey" element={<ProtectedRoute><Layout><Survey /></Layout></ProtectedRoute>} />
-          <Route path="/deal-history" element={<ProtectedRoute><Layout><DealHistory /></Layout></ProtectedRoute>} />
-          <Route path="/birthday" element={<ProtectedRoute><Layout><Birthday /></Layout></ProtectedRoute>} />
-          <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
-          <Route path="/warranty-management" element={<ProtectedRoute><Layout><WarrantyManagement /></Layout></ProtectedRoute>} />
-          <Route path="/resellers" element={<ProtectedRoute><Layout><Resellers /></Layout></ProtectedRoute>} />
-          <Route path="/sedekat-app/product-management" element={<ProtectedRoute><Layout><SedekatAppProductManagement /></Layout></ProtectedRoute>} />
-          <Route path="/sedekat-app/catalog-management" element={<ProtectedRoute><Layout><SedekatAppCatalogManagement /></Layout></ProtectedRoute>} />
-          <Route path="/sedekat-app/reseller-management" element={<ProtectedRoute><Layout><SedekatAppResellerManagement /></Layout></ProtectedRoute>} />
-          <Route path="/sedekat-app/order-management" element={<ProtectedRoute><Layout><SedekatAppOrderManagement /></Layout></ProtectedRoute>} />
-          <Route path="/sedekat-app/commission" element={<ProtectedRoute><Layout><SedekatAppCommission /></Layout></ProtectedRoute>} />
-          <Route path="/sedekat-app/app-settings" element={<ProtectedRoute><Layout><SedekatAppSettings /></Layout></ProtectedRoute>} />
-          <Route path="/sedekat-app/contact-help" element={<ProtectedRoute><Layout><SedekatAppContactHelp /></Layout></ProtectedRoute>} />
-          <Route path="/sedekat-app/statistics" element={<ProtectedRoute><Layout><SedekatAppStatistics /></Layout></ProtectedRoute>} />
-          <Route path="/sedekat-app/program-promo" element={<ProtectedRoute><Layout><ProgramPromo /></Layout></ProtectedRoute>} />
-        </Routes>
-      </BrowserRouter>
+      <AuthProvider>
+        <Toaster />
+        <BrowserRouter>
+          <Routes>
+            <Route path="/auth" element={<Auth />} />
+            <Route path="/login" element={<Auth />} />
+            <Route path="/" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
+            <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
+            <Route path="/orders" element={<ProtectedRoute><Layout><Orders /></Layout></ProtectedRoute>} />
+            <Route path="/customers" element={<ProtectedRoute><Layout><Customers /></Layout></ProtectedRoute>} />
+            <Route path="/sales" element={<ProtectedRoute><Layout><Sales /></Layout></ProtectedRoute>} />
+            <Route path="/branches" element={<ProtectedRoute><Layout><Branches /></Layout></ProtectedRoute>} />
+            <Route path="/users" element={<ProtectedRoute><Layout><Users /></Layout></ProtectedRoute>} />
+            <Route path="/role-permissions" element={<ProtectedRoute><Layout><RolePermissions /></Layout></ProtectedRoute>} />
+            <Route path="/follow-up" element={<ProtectedRoute><Layout><FollowUp /></Layout></ProtectedRoute>} />
+            <Route path="/work-process" element={<ProtectedRoute><Layout><WorkProcess /></Layout></ProtectedRoute>} />
+            <Route path="/survey" element={<ProtectedRoute><Layout><Survey /></Layout></ProtectedRoute>} />
+            <Route path="/deal-history" element={<ProtectedRoute><Layout><DealHistory /></Layout></ProtectedRoute>} />
+            <Route path="/birthday" element={<ProtectedRoute><Layout><Birthday /></Layout></ProtectedRoute>} />
+            <Route path="/reports" element={<ProtectedRoute><Layout><Reports /></Layout></ProtectedRoute>} />
+            <Route path="/warranty-management" element={<ProtectedRoute><Layout><WarrantyManagement /></Layout></ProtectedRoute>} />
+            <Route path="/resellers" element={<ProtectedRoute><Layout><Resellers /></Layout></ProtectedRoute>} />
+            <Route path="/sedekat-app/product-management" element={<ProtectedRoute><Layout><SedekatAppProductManagement /></Layout></ProtectedRoute>} />
+            <Route path="/sedekat-app/catalog-management" element={<ProtectedRoute><Layout><SedekatAppCatalogManagement /></Layout></ProtectedRoute>} />
+            <Route path="/sedekat-app/reseller-management" element={<ProtectedRoute><Layout><SedekatAppResellerManagement /></Layout></ProtectedRoute>} />
+            <Route path="/sedekat-app/order-management" element={<ProtectedRoute><Layout><SedekatAppOrderManagement /></Layout></ProtectedRoute>} />
+            <Route path="/sedekat-app/commission" element={<ProtectedRoute><Layout><SedekatAppCommission /></Layout></ProtectedRoute>} />
+            <Route path="/sedekat-app/app-settings" element={<ProtectedRoute><Layout><SedekatAppSettings /></Layout></ProtectedRoute>} />
+            <Route path="/sedekat-app/contact-help" element={<ProtectedRoute><Layout><SedekatAppContactHelp /></Layout></ProtectedRoute>} />
+            <Route path="/sedekat-app/statistics" element={<ProtectedRoute><Layout><SedekatAppStatistics /></Layout></ProtectedRoute>} />
+            <Route path="/sedekat-app/program-promo" element={<ProtectedRoute><Layout><ProgramPromo /></Layout></ProtectedRoute>} />
+          </Routes>
+        </BrowserRouter>
+      </AuthProvider>
     </QueryClientProvider>
   );
 }
