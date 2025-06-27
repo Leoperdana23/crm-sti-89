@@ -1345,6 +1345,60 @@ export type Database = {
           },
         ]
       }
+      promo_benefit_settings: {
+        Row: {
+          bonus_commission_enabled: boolean | null
+          bonus_commission_rate: number | null
+          created_at: string | null
+          cta_button_1_text: string | null
+          cta_button_2_text: string | null
+          id: string
+          is_active: boolean | null
+          monthly_target_10: number | null
+          monthly_target_20: number | null
+          monthly_target_enabled: boolean | null
+          points_system_enabled: boolean | null
+          promo_description: string | null
+          promo_title: string | null
+          updated_at: string | null
+          welcome_message: string | null
+        }
+        Insert: {
+          bonus_commission_enabled?: boolean | null
+          bonus_commission_rate?: number | null
+          created_at?: string | null
+          cta_button_1_text?: string | null
+          cta_button_2_text?: string | null
+          id?: string
+          is_active?: boolean | null
+          monthly_target_10?: number | null
+          monthly_target_20?: number | null
+          monthly_target_enabled?: boolean | null
+          points_system_enabled?: boolean | null
+          promo_description?: string | null
+          promo_title?: string | null
+          updated_at?: string | null
+          welcome_message?: string | null
+        }
+        Update: {
+          bonus_commission_enabled?: boolean | null
+          bonus_commission_rate?: number | null
+          created_at?: string | null
+          cta_button_1_text?: string | null
+          cta_button_2_text?: string | null
+          id?: string
+          is_active?: boolean | null
+          monthly_target_10?: number | null
+          monthly_target_20?: number | null
+          monthly_target_enabled?: boolean | null
+          points_system_enabled?: boolean | null
+          promo_description?: string | null
+          promo_title?: string | null
+          updated_at?: string | null
+          welcome_message?: string | null
+        }
+        Relationships: []
+      }
       purchase_order_items: {
         Row: {
           created_at: string

@@ -8,47 +8,53 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Target, Gift, Zap, TrendingUp } from 'lucide-react';
-import { useAppSettings, useUpdateAppSettings } from '@/hooks/useAppSettings';
+import { usePromoBenefitSettings, useUpdatePromoBenefitSettings } from '@/hooks/usePromoBenefitSettings';
 import { useToast } from '@/hooks/use-toast';
 
 const ProgramPromo = () => {
-  const { data: appSettings, isLoading } = useAppSettings();
-  const updateSettings = useUpdateAppSettings();
+  const { data: promoBenefitSettings, isLoading } = usePromoBenefitSettings();
+  const updateSettings = useUpdatePromoBenefitSettings();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Form states
   const [promoSettings, setPromoSettings] = useState({
-    bonusCommissionEnabled: true,
-    bonusCommissionRate: 50,
-    pointsSystemEnabled: true,
-    monthlyTargetEnabled: true,
-    monthlyTarget10: 50,
-    monthlyTarget20: 100,
-    promoTitle: 'Promo Khusus Bulan Ini',
-    promoDescription: '🎉 Target 10 Order = Bonus Komisi 50%\n🏆 Target 20 Order = Hadiah Spesial + Bonus Komisi 100%',
-    welcomeMessage: 'Jadikan belanjamu banyak untung',
-    ctaButton1Text: 'Order Sekarang',
-    ctaButton2Text: 'Lihat Progress'
+    bonus_commission_enabled: true,
+    bonus_commission_rate: 50,
+    points_system_enabled: true,
+    monthly_target_enabled: true,
+    monthly_target_10: 50,
+    monthly_target_20: 100,
+    promo_title: 'Promo Khusus Bulan Ini',
+    promo_description: '🎉 Target 10 Order = Bonus Komisi 50%\n🏆 Target 20 Order = Hadiah Spesial + Bonus Komisi 100%',
+    welcome_message: 'Jadikan belanjamu banyak untung',
+    cta_button_1_text: 'Order Sekarang',
+    cta_button_2_text: 'Lihat Progress'
   });
 
   // Update form states when data is loaded
   useEffect(() => {
-    if (appSettings?.promo_settings) {
-      setPromoSettings(prev => ({
-        ...prev,
-        ...appSettings.promo_settings
-      }));
+    if (promoBenefitSettings) {
+      setPromoSettings({
+        bonus_commission_enabled: promoBenefitSettings.bonus_commission_enabled,
+        bonus_commission_rate: promoBenefitSettings.bonus_commission_rate,
+        points_system_enabled: promoBenefitSettings.points_system_enabled,
+        monthly_target_enabled: promoBenefitSettings.monthly_target_enabled,
+        monthly_target_10: promoBenefitSettings.monthly_target_10,
+        monthly_target_20: promoBenefitSettings.monthly_target_20,
+        promo_title: promoBenefitSettings.promo_title,
+        promo_description: promoBenefitSettings.promo_description,
+        welcome_message: promoBenefitSettings.welcome_message,
+        cta_button_1_text: promoBenefitSettings.cta_button_1_text,
+        cta_button_2_text: promoBenefitSettings.cta_button_2_text
+      });
     }
-  }, [appSettings]);
+  }, [promoBenefitSettings]);
 
   const handleSubmit = async () => {
     setIsSubmitting(true);
     try {
-      await updateSettings.mutateAsync({
-        ...appSettings,
-        promo_settings: promoSettings
-      });
+      await updateSettings.mutateAsync(promoSettings);
 
       toast({
         title: "Berhasil",
@@ -108,24 +114,24 @@ const ProgramPromo = () => {
             <CardContent className="space-y-4">
               <div className="flex items-center space-x-2">
                 <Switch 
-                  checked={promoSettings.bonusCommissionEnabled}
-                  onCheckedChange={(checked) => setPromoSettings(prev => ({ ...prev, bonusCommissionEnabled: checked }))}
+                  checked={promoSettings.bonus_commission_enabled}
+                  onCheckedChange={(checked) => setPromoSettings(prev => ({ ...prev, bonus_commission_enabled: checked }))}
                 />
                 <Label>Aktifkan Program Bonus Komisi</Label>
               </div>
               
               <div className="flex items-center space-x-2">
                 <Switch 
-                  checked={promoSettings.pointsSystemEnabled}
-                  onCheckedChange={(checked) => setPromoSettings(prev => ({ ...prev, pointsSystemEnabled: checked }))}
+                  checked={promoSettings.points_system_enabled}
+                  onCheckedChange={(checked) => setPromoSettings(prev => ({ ...prev, points_system_enabled: checked }))}
                 />
                 <Label>Aktifkan Sistem Poin</Label>
               </div>
               
               <div className="flex items-center space-x-2">
                 <Switch 
-                  checked={promoSettings.monthlyTargetEnabled}
-                  onCheckedChange={(checked) => setPromoSettings(prev => ({ ...prev, monthlyTargetEnabled: checked }))}
+                  checked={promoSettings.monthly_target_enabled}
+                  onCheckedChange={(checked) => setPromoSettings(prev => ({ ...prev, monthly_target_enabled: checked }))}
                 />
                 <Label>Aktifkan Target Bulanan</Label>
               </div>
@@ -133,8 +139,8 @@ const ProgramPromo = () => {
               <div className="space-y-2">
                 <Label>Pesan Selamat Datang</Label>
                 <Input 
-                  value={promoSettings.welcomeMessage}
-                  onChange={(e) => setPromoSettings(prev => ({ ...prev, welcomeMessage: e.target.value }))}
+                  value={promoSettings.welcome_message}
+                  onChange={(e) => setPromoSettings(prev => ({ ...prev, welcome_message: e.target.value }))}
                   placeholder="Pesan selamat datang untuk reseller"
                 />
               </div>
@@ -152,8 +158,8 @@ const ProgramPromo = () => {
                 <Label>Bonus Komisi Rate (%)</Label>
                 <Input 
                   type="number"
-                  value={promoSettings.bonusCommissionRate}
-                  onChange={(e) => setPromoSettings(prev => ({ ...prev, bonusCommissionRate: Number(e.target.value) }))}
+                  value={promoSettings.bonus_commission_rate}
+                  onChange={(e) => setPromoSettings(prev => ({ ...prev, bonus_commission_rate: Number(e.target.value) }))}
                   placeholder="50"
                 />
               </div>
@@ -162,8 +168,8 @@ const ProgramPromo = () => {
                 <Label>Bonus Komisi Target 10 Order (%)</Label>
                 <Input 
                   type="number"
-                  value={promoSettings.monthlyTarget10}
-                  onChange={(e) => setPromoSettings(prev => ({ ...prev, monthlyTarget10: Number(e.target.value) }))}
+                  value={promoSettings.monthly_target_10}
+                  onChange={(e) => setPromoSettings(prev => ({ ...prev, monthly_target_10: Number(e.target.value) }))}
                   placeholder="50"
                 />
               </div>
@@ -172,8 +178,8 @@ const ProgramPromo = () => {
                 <Label>Bonus Komisi Target 20 Order (%)</Label>
                 <Input 
                   type="number"
-                  value={promoSettings.monthlyTarget20}
-                  onChange={(e) => setPromoSettings(prev => ({ ...prev, monthlyTarget20: Number(e.target.value) }))}
+                  value={promoSettings.monthly_target_20}
+                  onChange={(e) => setPromoSettings(prev => ({ ...prev, monthly_target_20: Number(e.target.value) }))}
                   placeholder="100"
                 />
               </div>
@@ -190,8 +196,8 @@ const ProgramPromo = () => {
               <div className="space-y-2">
                 <Label>Judul Promo</Label>
                 <Input 
-                  value={promoSettings.promoTitle}
-                  onChange={(e) => setPromoSettings(prev => ({ ...prev, promoTitle: e.target.value }))}
+                  value={promoSettings.promo_title}
+                  onChange={(e) => setPromoSettings(prev => ({ ...prev, promo_title: e.target.value }))}
                   placeholder="Promo Khusus Bulan Ini"
                 />
               </div>
@@ -199,8 +205,8 @@ const ProgramPromo = () => {
               <div className="space-y-2">
                 <Label>Deskripsi Promo</Label>
                 <Textarea 
-                  value={promoSettings.promoDescription}
-                  onChange={(e) => setPromoSettings(prev => ({ ...prev, promoDescription: e.target.value }))}
+                  value={promoSettings.promo_description}
+                  onChange={(e) => setPromoSettings(prev => ({ ...prev, promo_description: e.target.value }))}
                   placeholder="Deskripsi program promo..."
                   rows={4}
                 />
@@ -209,8 +215,8 @@ const ProgramPromo = () => {
               <div className="space-y-2">
                 <Label>Teks Tombol Utama</Label>
                 <Input 
-                  value={promoSettings.ctaButton1Text}
-                  onChange={(e) => setPromoSettings(prev => ({ ...prev, ctaButton1Text: e.target.value }))}
+                  value={promoSettings.cta_button_1_text}
+                  onChange={(e) => setPromoSettings(prev => ({ ...prev, cta_button_1_text: e.target.value }))}
                   placeholder="Order Sekarang"
                 />
               </div>
@@ -218,8 +224,8 @@ const ProgramPromo = () => {
               <div className="space-y-2">
                 <Label>Teks Tombol Sekunder</Label>
                 <Input 
-                  value={promoSettings.ctaButton2Text}
-                  onChange={(e) => setPromoSettings(prev => ({ ...prev, ctaButton2Text: e.target.value }))}
+                  value={promoSettings.cta_button_2_text}
+                  onChange={(e) => setPromoSettings(prev => ({ ...prev, cta_button_2_text: e.target.value }))}
                   placeholder="Lihat Progress"
                 />
               </div>

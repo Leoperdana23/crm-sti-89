@@ -6,6 +6,7 @@ import { TrendingUp, Package, Clock, Star, ExternalLink, MessageCircle, Gift, Za
 import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useContactSettings } from '@/hooks/useContactSettings';
+import { usePromoBenefitSettings } from '@/hooks/usePromoBenefitSettings';
 import { useQueryClient } from '@tanstack/react-query';
 import { useRewardRedemptions } from '@/hooks/useRewards';
 import RewardCatalogView from './RewardCatalogView';
@@ -20,6 +21,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
   const { data: orders = [] } = useResellerOrders(reseller.id);
   const { data: appSettings } = useAppSettings();
   const { data: contactSettings } = useContactSettings();
+  const { data: promoBenefitSettings } = usePromoBenefitSettings();
   const { data: allRedemptions } = useRewardRedemptions();
 
   // Auto-refresh every 5 seconds
@@ -29,6 +31,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
       queryClient.invalidateQueries({ queryKey: ['reseller-orders', reseller.id] });
       queryClient.invalidateQueries({ queryKey: ['reseller-balance', reseller.id] });
       queryClient.invalidateQueries({ queryKey: ['reward-catalog'] });
+      queryClient.invalidateQueries({ queryKey: ['promo-benefit-settings'] });
     }, 5000);
 
     return () => clearInterval(interval);
@@ -87,9 +90,17 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
   const averageOrder = completedOrders.length > 0 ? Math.round(totalCommissionEarned / completedOrders.length) : 0;
 
   const siteName = appSettings?.catalog?.siteName || 'SEDEKAT App';
-  const welcomeText = appSettings?.catalog?.welcomeText || 'Jadikan belanjamu banyak untung';
+  const welcomeText = promoBenefitSettings?.welcome_message || appSettings?.catalog?.welcomeText || 'Jadikan belanjamu banyak untung';
   const bannerUrl = appSettings?.catalog?.bannerUrl || '';
   const secondaryColor = appSettings?.catalog?.secondaryColor || '#059669';
+
+  // Use promo benefit settings for display
+  const promoTitle = promoBenefitSettings?.promo_title || 'Promo Khusus Bulan Ini';
+  const promoDescription = promoBenefitSettings?.promo_description || '🎉 Target 10 Order = Bonus Komisi 50%\n🏆 Target 20 Order = Hadiah Spesial + Bonus Komisi 100%';
+  const ctaButton1Text = promoBenefitSettings?.cta_button_1_text || 'Order Sekarang';
+  const ctaButton2Text = promoBenefitSettings?.cta_button_2_text || 'Lihat Progress';
+  const monthlyTarget10 = promoBenefitSettings?.monthly_target_10 || 50;
+  const monthlyTarget20 = promoBenefitSettings?.monthly_target_20 || 100;
 
   const handleContactAdmin = () => {
     if (contactSettings?.whatsapp_number) {
@@ -127,7 +138,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
         </Card>
       )}
 
-      {/* Program Promo Section - NEW */}
+      {/* Program Promo Section - Updated with database settings */}
       <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
         <CardHeader className="pb-3 sm:pb-4">
           <CardTitle className="text-base sm:text-lg flex items-center text-purple-800">
@@ -138,71 +149,74 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
         <CardContent className="space-y-3 sm:space-y-4">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 sm:gap-4">
             {/* Bonus Komisi */}
-            <div className="bg-white p-3 sm:p-4 rounded-lg border border-purple-100">
-              <div className="flex items-center mb-2">
-                <Zap className="h-4 w-4 text-yellow-500 mr-2" />
-                <h4 className="font-semibold text-sm sm:text-base text-purple-800">Bonus Komisi</h4>
+            {promoBenefitSettings?.bonus_commission_enabled && (
+              <div className="bg-white p-3 sm:p-4 rounded-lg border border-purple-100">
+                <div className="flex items-center mb-2">
+                  <Zap className="h-4 w-4 text-yellow-500 mr-2" />
+                  <h4 className="font-semibold text-sm sm:text-base text-purple-800">Bonus Komisi</h4>
+                </div>
+                <p className="text-xs sm:text-sm text-gray-600 mb-2">
+                  Dapatkan komisi ekstra untuk setiap penjualan yang berhasil!
+                </p>
+                <div className="text-xs sm:text-sm font-medium text-purple-600">
+                  Komisi Rate: {(reseller.commission_rate * 100).toFixed(1)}%
+                </div>
               </div>
-              <p className="text-xs sm:text-sm text-gray-600 mb-2">
-                Dapatkan komisi ekstra untuk setiap penjualan yang berhasil!
-              </p>
-              <div className="text-xs sm:text-sm font-medium text-purple-600">
-                Komisi Rate: {(reseller.commission_rate * 100).toFixed(1)}%
-              </div>
-            </div>
+            )}
 
             {/* Sistem Poin */}
-            <div className="bg-white p-3 sm:p-4 rounded-lg border border-purple-100">
-              <div className="flex items-center mb-2">
-                <Target className="h-4 w-4 text-blue-500 mr-2" />
-                <h4 className="font-semibold text-sm sm:text-base text-purple-800">Sistem Poin</h4>
+            {promoBenefitSettings?.points_system_enabled && (
+              <div className="bg-white p-3 sm:p-4 rounded-lg border border-purple-100">
+                <div className="flex items-center mb-2">
+                  <Target className="h-4 w-4 text-blue-500 mr-2" />
+                  <h4 className="font-semibold text-sm sm:text-base text-purple-800">Sistem Poin</h4>
+                </div>
+                <p className="text-xs sm:text-sm text-gray-600 mb-2">
+                  Kumpulkan poin dari setiap order dan tukar dengan hadiah menarik!
+                </p>
+                <div className="text-xs sm:text-sm font-medium text-blue-600">
+                  Poin Anda: {totalPoints}
+                </div>
               </div>
-              <p className="text-xs sm:text-sm text-gray-600 mb-2">
-                Kumpulkan poin dari setiap order dan tukar dengan hadiah menarik!
-              </p>
-              <div className="text-xs sm:text-sm font-medium text-blue-600">
-                Poin Anda: {totalPoints}
-              </div>
-            </div>
+            )}
           </div>
 
           {/* Promo Khusus */}
-          <div className="bg-gradient-to-r from-orange-100 to-red-100 p-3 sm:p-4 rounded-lg border border-orange-200">
-            <div className="flex items-center justify-between">
-              <div className="flex-1">
-                <div className="flex items-center mb-2">
-                  <Gift className="h-4 w-4 text-orange-600 mr-2" />
-                  <h4 className="font-semibold text-sm sm:text-base text-orange-800">Promo Khusus Bulan Ini</h4>
+          {promoBenefitSettings?.monthly_target_enabled && (
+            <div className="bg-gradient-to-r from-orange-100 to-red-100 p-3 sm:p-4 rounded-lg border border-orange-200">
+              <div className="flex items-center justify-between">
+                <div className="flex-1">
+                  <div className="flex items-center mb-2">
+                    <Gift className="h-4 w-4 text-orange-600 mr-2" />
+                    <h4 className="font-semibold text-sm sm:text-base text-orange-800">{promoTitle}</h4>
+                  </div>
+                  <div className="text-xs sm:text-sm text-orange-700 whitespace-pre-line">
+                    {promoDescription.replace('50%', `${monthlyTarget10}%`).replace('100%', `${monthlyTarget20}%`)}
+                  </div>
                 </div>
-                <p className="text-xs sm:text-sm text-orange-700 mb-1">
-                  🎉 Target 10 Order = Bonus Komisi 50%
-                </p>
-                <p className="text-xs sm:text-sm text-orange-700">
-                  🏆 Target 20 Order = Hadiah Spesial + Bonus Komisi 100%
-                </p>
+                <div className="text-right ml-3">
+                  <div className="text-lg sm:text-xl font-bold text-orange-600">
+                    {completedOrders.length}/20
+                  </div>
+                  <div className="text-xs text-orange-600">Order Selesai</div>
+                </div>
               </div>
-              <div className="text-right ml-3">
-                <div className="text-lg sm:text-xl font-bold text-orange-600">
-                  {completedOrders.length}/20
+              
+              {/* Progress Bar */}
+              <div className="mt-3">
+                <div className="flex justify-between text-xs text-orange-700 mb-1">
+                  <span>Progress Target</span>
+                  <span>{Math.min(100, (completedOrders.length / 20) * 100).toFixed(0)}%</span>
                 </div>
-                <div className="text-xs text-orange-600">Order Selesai</div>
+                <div className="w-full bg-orange-200 rounded-full h-2">
+                  <div
+                    className="bg-gradient-to-r from-orange-400 to-red-400 h-2 rounded-full transition-all duration-300"
+                    style={{ width: `${Math.min(100, (completedOrders.length / 20) * 100)}%` }}
+                  />
+                </div>
               </div>
             </div>
-            
-            {/* Progress Bar */}
-            <div className="mt-3">
-              <div className="flex justify-between text-xs text-orange-700 mb-1">
-                <span>Progress Target</span>
-                <span>{Math.min(100, (completedOrders.length / 20) * 100).toFixed(0)}%</span>
-              </div>
-              <div className="w-full bg-orange-200 rounded-full h-2">
-                <div
-                  className="bg-gradient-to-r from-orange-400 to-red-400 h-2 rounded-full transition-all duration-300"
-                  style={{ width: `${Math.min(100, (completedOrders.length / 20) * 100)}%` }}
-                />
-              </div>
-            </div>
-          </div>
+          )}
 
           {/* Call to Action */}
           <div className="flex flex-col sm:flex-row gap-2 sm:gap-3">
@@ -212,7 +226,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
               size="sm"
             >
               <Package className="h-4 w-4 mr-2" />
-              Order Sekarang
+              {ctaButton1Text}
             </Button>
             <Button
               onClick={() => onTabChange('reports')}
@@ -221,7 +235,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
               size="sm"
             >
               <TrendingUp className="h-4 w-4 mr-2" />
-              Lihat Progress
+              {ctaButton2Text}
             </Button>
           </div>
         </CardContent>
