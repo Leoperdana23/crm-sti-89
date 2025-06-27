@@ -94,15 +94,24 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
   const bannerUrl = appSettings?.catalog?.bannerUrl || '';
   const secondaryColor = appSettings?.catalog?.secondaryColor || '#059669';
 
-  // Use promo benefit settings for display
+  // Use promo benefit settings for display with point-based calculations
   const promoTitle = promoBenefitSettings?.promo_title || 'Promo Khusus Bulan Ini';
-  const promoDescription = promoBenefitSettings?.promo_description || '🎉 Target 10 Order = Bonus Komisi 50%\n🏆 Target 20 Order = Hadiah Spesial + Bonus Komisi 100%';
+  const promoDescription = promoBenefitSettings?.promo_description || '🎉 Target 100 Poin = Voucher Belanja\n🏆 Target 200 Poin = Hadiah Spesial';
   const ctaButton1Text = promoBenefitSettings?.cta_button_1_text || 'Order Sekarang';
   const ctaButton2Text = promoBenefitSettings?.cta_button_2_text || 'Lihat Progress';
-  const monthlyTarget10 = promoBenefitSettings?.monthly_target_10 || 50;
-  const monthlyTarget20 = promoBenefitSettings?.monthly_target_20 || 100;
+  
+  // Point-based settings
+  const pointsPerOrder = promoBenefitSettings?.points_per_order || 10;
+  const pointsTarget10 = promoBenefitSettings?.points_target_10 || 100;
+  const pointsTarget20 = promoBenefitSettings?.points_target_20 || 200;
+  const commissionPerPoint = promoBenefitSettings?.commission_per_point || 1000;
   const giftTarget10 = promoBenefitSettings?.gift_target_10 || 'Voucher Belanja Rp 100.000';
   const giftTarget20 = promoBenefitSettings?.gift_target_20 || 'Smartphone + Bonus Komisi 100%';
+
+  // Calculate point-based progress
+  const currentPoints = totalPoints;
+  const maxTargetPoints = Math.max(pointsTarget10, pointsTarget20);
+  const progressPercentage = Math.min(100, (currentPoints / maxTargetPoints) * 100);
 
   const handleContactAdmin = () => {
     if (contactSettings?.whatsapp_number) {
@@ -140,12 +149,12 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
         </Card>
       )}
 
-      {/* Program Promo Section - Updated with gift information */}
+      {/* Program Promo Section - Updated with point-based calculations */}
       <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
         <CardHeader className="pb-3 sm:pb-4">
           <CardTitle className="text-base sm:text-lg flex items-center text-purple-800">
             <Gift className="h-5 w-5 mr-2" />
-            Program Promo & Benefit
+            Program Promo & Benefit (Berbasis Poin)
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-3 sm:space-y-4">
@@ -155,13 +164,13 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
               <div className="bg-white p-3 sm:p-4 rounded-lg border border-purple-100">
                 <div className="flex items-center mb-2">
                   <Zap className="h-4 w-4 text-yellow-500 mr-2" />
-                  <h4 className="font-semibold text-sm sm:text-base text-purple-800">Bonus Komisi</h4>
+                  <h4 className="font-semibold text-sm sm:text-base text-purple-800">Komisi per Poin</h4>
                 </div>
                 <p className="text-xs sm:text-sm text-gray-600 mb-2">
-                  Dapatkan komisi ekstra untuk setiap penjualan yang berhasil!
+                  Dapatkan Rp {commissionPerPoint.toLocaleString()} untuk setiap poin yang dikumpulkan!
                 </p>
                 <div className="text-xs sm:text-sm font-medium text-purple-600">
-                  Komisi Rate: {(reseller.commission_rate * 100).toFixed(1)}%
+                  Poin Anda: {currentPoints} = Rp {(currentPoints * commissionPerPoint).toLocaleString()}
                 </div>
               </div>
             )}
@@ -174,16 +183,16 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
                   <h4 className="font-semibold text-sm sm:text-base text-purple-800">Sistem Poin</h4>
                 </div>
                 <p className="text-xs sm:text-sm text-gray-600 mb-2">
-                  Kumpulkan poin dari setiap order dan tukar dengan hadiah menarik!
+                  Dapatkan {pointsPerOrder} poin untuk setiap order yang diselesaikan!
                 </p>
                 <div className="text-xs sm:text-sm font-medium text-blue-600">
-                  Poin Anda: {totalPoints}
+                  Total Poin: {currentPoints}
                 </div>
               </div>
             )}
           </div>
 
-          {/* Promo Khusus dengan Gift Information */}
+          {/* Promo Khusus dengan Point-based Targets */}
           {promoBenefitSettings?.monthly_target_enabled && (
             <div className="bg-gradient-to-r from-orange-100 to-red-100 p-3 sm:p-4 rounded-lg border border-orange-200">
               <div className="flex items-center justify-between mb-3">
@@ -195,25 +204,25 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
                 </div>
                 <div className="text-right ml-3">
                   <div className="text-lg sm:text-xl font-bold text-orange-600">
-                    {completedOrders.length}/20
+                    {currentPoints}/{maxTargetPoints}
                   </div>
-                  <div className="text-xs text-orange-600">Order Selesai</div>
+                  <div className="text-xs text-orange-600">Poin Terkumpul</div>
                 </div>
               </div>
 
-              {/* Gift Targets */}
+              {/* Point-based Targets */}
               <div className="space-y-2 mb-3">
                 <div className="flex items-center justify-between p-2 bg-white rounded border border-orange-200">
                   <div className="flex items-center">
                     <span className="text-lg mr-2">🎉</span>
-                    <span className="text-xs sm:text-sm font-medium text-orange-800">Target 10 Order:</span>
+                    <span className="text-xs sm:text-sm font-medium text-orange-800">Target {pointsTarget10} Poin:</span>
                   </div>
                   <span className="text-xs sm:text-sm text-orange-700 font-semibold">{giftTarget10}</span>
                 </div>
                 <div className="flex items-center justify-between p-2 bg-white rounded border border-orange-200">
                   <div className="flex items-center">
                     <span className="text-lg mr-2">🏆</span>
-                    <span className="text-xs sm:text-sm font-medium text-orange-800">Target 20 Order:</span>
+                    <span className="text-xs sm:text-sm font-medium text-orange-800">Target {pointsTarget20} Poin:</span>
                   </div>
                   <span className="text-xs sm:text-sm text-orange-700 font-semibold">{giftTarget20}</span>
                 </div>
@@ -223,13 +232,16 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
               <div>
                 <div className="flex justify-between text-xs text-orange-700 mb-1">
                   <span>Progress Target</span>
-                  <span>{Math.min(100, (completedOrders.length / 20) * 100).toFixed(0)}%</span>
+                  <span>{progressPercentage.toFixed(0)}%</span>
                 </div>
                 <div className="w-full bg-orange-200 rounded-full h-2">
                   <div
                     className="bg-gradient-to-r from-orange-400 to-red-400 h-2 rounded-full transition-all duration-300"
-                    style={{ width: `${Math.min(100, (completedOrders.length / 20) * 100)}%` }}
+                    style={{ width: `${progressPercentage}%` }}
                   />
+                </div>
+                <div className="text-xs text-orange-600 mt-1">
+                  Butuh {Math.max(0, pointsTarget10 - currentPoints)} poin lagi untuk hadiah pertama
                 </div>
               </div>
             </div>
@@ -268,6 +280,9 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
             <div className="text-center">
               <div className="text-xl sm:text-2xl lg:text-3xl font-bold text-green-600">{totalPoints}</div>
               <div className="text-xs sm:text-sm text-gray-600">Sisa Poin</div>
+              <div className="text-xs text-gray-500">
+                = Rp {(totalPoints * commissionPerPoint).toLocaleString()}
+              </div>
               {exchangedPoints > 0 && (
                 <div className="text-[10px] sm:text-xs text-gray-500">
                   Sudah ditukar: {exchangedPoints}
@@ -350,7 +365,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
           <CardContent className="p-3 sm:p-4">
             <div className="flex items-center justify-between">
               <div className="min-w-0 flex-1">
-                <p className="text-[10px] sm:text-sm text-gray-600 truncate">Menunggu</p>
+                <p className="text-[10px] sm:text-xs text-gray-600 truncate">Menunggu</p>
                 <p className="text-lg sm:text-2xl lg:text-3xl font-bold">{pendingOrders}</p>
               </div>
               <Clock className="h-6 w-6 sm:h-8 sm:w-8 text-orange-500 flex-shrink-0" />

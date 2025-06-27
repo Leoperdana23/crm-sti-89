@@ -30,9 +30,14 @@ const ProgramPromo = () => {
     welcome_message: 'Jadikan belanjamu banyak untung',
     cta_button_1_text: 'Order Sekarang',
     cta_button_2_text: 'Lihat Progress',
-    // New gift-based fields
+    // Gift-based fields with points calculation
     gift_target_10: 'Voucher Belanja Rp 100.000',
-    gift_target_20: 'Smartphone + Bonus Komisi 100%'
+    gift_target_20: 'Smartphone + Bonus Komisi 100%',
+    // New point-based fields
+    points_per_order: 10,
+    points_target_10: 100,
+    points_target_20: 200,
+    commission_per_point: 1000
   });
 
   // Update form states when data is loaded
@@ -51,7 +56,12 @@ const ProgramPromo = () => {
         cta_button_1_text: promoBenefitSettings.cta_button_1_text,
         cta_button_2_text: promoBenefitSettings.cta_button_2_text,
         gift_target_10: promoBenefitSettings.gift_target_10 || 'Voucher Belanja Rp 100.000',
-        gift_target_20: promoBenefitSettings.gift_target_20 || 'Smartphone + Bonus Komisi 100%'
+        gift_target_20: promoBenefitSettings.gift_target_20 || 'Smartphone + Bonus Komisi 100%',
+        // Point-based settings
+        points_per_order: promoBenefitSettings.points_per_order || 10,
+        points_target_10: promoBenefitSettings.points_target_10 || 100,
+        points_target_20: promoBenefitSettings.points_target_20 || 200,
+        commission_per_point: promoBenefitSettings.commission_per_point || 1000
       });
     }
   }, [promoBenefitSettings]);
@@ -156,60 +166,82 @@ const ProgramPromo = () => {
         <TabsContent value="bonus">
           <Card>
             <CardHeader>
-              <CardTitle>Pengaturan Hadiah & Komisi</CardTitle>
+              <CardTitle>Pengaturan Hadiah & Komisi (Berbasis Poin)</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Bonus Komisi Rate (%)</Label>
+                <Label>Poin per Order</Label>
                 <Input 
                   type="number"
-                  value={promoSettings.bonus_commission_rate}
-                  onChange={(e) => setPromoSettings(prev => ({ ...prev, bonus_commission_rate: Number(e.target.value) }))}
-                  placeholder="50"
+                  value={promoSettings.points_per_order}
+                  onChange={(e) => setPromoSettings(prev => ({ ...prev, points_per_order: Number(e.target.value) }))}
+                  placeholder="10"
                 />
-                <p className="text-sm text-gray-500">Persentase komisi dasar untuk reseller</p>
+                <p className="text-sm text-gray-500">Jumlah poin yang didapat reseller untuk setiap order</p>
               </div>
 
               <div className="space-y-2">
-                <Label>Hadiah Target 10 Order</Label>
+                <Label>Komisi per Poin (Rp)</Label>
+                <Input 
+                  type="number"
+                  value={promoSettings.commission_per_point}
+                  onChange={(e) => setPromoSettings(prev => ({ ...prev, commission_per_point: Number(e.target.value) }))}
+                  placeholder="1000"
+                />
+                <p className="text-sm text-gray-500">Nilai komisi dalam rupiah untuk setiap poin</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Target Poin untuk Hadiah Pertama</Label>
+                <Input 
+                  type="number"
+                  value={promoSettings.points_target_10}
+                  onChange={(e) => setPromoSettings(prev => ({ ...prev, points_target_10: Number(e.target.value) }))}
+                  placeholder="100"
+                />
+                <p className="text-sm text-gray-500">Jumlah poin yang diperlukan untuk mendapatkan hadiah pertama</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Hadiah Target Poin Pertama</Label>
                 <Input 
                   value={promoSettings.gift_target_10}
                   onChange={(e) => setPromoSettings(prev => ({ ...prev, gift_target_10: e.target.value }))}
                   placeholder="Voucher Belanja Rp 100.000"
                 />
-                <p className="text-sm text-gray-500">Hadiah yang diberikan saat mencapai target 10 order</p>
+                <p className="text-sm text-gray-500">Hadiah yang diberikan saat mencapai target poin pertama</p>
               </div>
 
               <div className="space-y-2">
-                <Label>Hadiah Target 20 Order</Label>
+                <Label>Target Poin untuk Hadiah Kedua</Label>
+                <Input 
+                  type="number"
+                  value={promoSettings.points_target_20}
+                  onChange={(e) => setPromoSettings(prev => ({ ...prev, points_target_20: Number(e.target.value) }))}
+                  placeholder="200"
+                />
+                <p className="text-sm text-gray-500">Jumlah poin yang diperlukan untuk mendapatkan hadiah kedua</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Hadiah Target Poin Kedua</Label>
                 <Input 
                   value={promoSettings.gift_target_20}
                   onChange={(e) => setPromoSettings(prev => ({ ...prev, gift_target_20: e.target.value }))}
                   placeholder="Smartphone + Bonus Komisi 100%"
                 />
-                <p className="text-sm text-gray-500">Hadiah yang diberikan saat mencapai target 20 order</p>
+                <p className="text-sm text-gray-500">Hadiah yang diberikan saat mencapai target poin kedua</p>
               </div>
 
-              <div className="space-y-2">
-                <Label>Bonus Komisi Target 10 Order (%)</Label>
-                <Input 
-                  type="number"
-                  value={promoSettings.monthly_target_10}
-                  onChange={(e) => setPromoSettings(prev => ({ ...prev, monthly_target_10: Number(e.target.value) }))}
-                  placeholder="50"
-                />
-                <p className="text-sm text-gray-500">Bonus persentase komisi tambahan untuk target 10 order</p>
-              </div>
-
-              <div className="space-y-2">
-                <Label>Bonus Komisi Target 20 Order (%)</Label>
-                <Input 
-                  type="number"
-                  value={promoSettings.monthly_target_20}
-                  onChange={(e) => setPromoSettings(prev => ({ ...prev, monthly_target_20: Number(e.target.value) }))}
-                  placeholder="100"
-                />
-                <p className="text-sm text-gray-500">Bonus persentase komisi tambahan untuk target 20 order</p>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h4 className="font-semibold text-blue-800 mb-2">Simulasi Perhitungan:</h4>
+                <div className="space-y-1 text-sm text-blue-700">
+                  <p>• {promoSettings.points_per_order} poin per order</p>
+                  <p>• Komisi: Rp {promoSettings.commission_per_point.toLocaleString()} per poin</p>
+                  <p>• Target 1: {promoSettings.points_target_10} poin = {promoSettings.gift_target_10}</p>
+                  <p>• Target 2: {promoSettings.points_target_20} poin = {promoSettings.gift_target_20}</p>
+                  <p>• Total komisi jika mencapai target 2: Rp {(promoSettings.points_target_20 * promoSettings.commission_per_point).toLocaleString()}</p>
+                </div>
               </div>
             </CardContent>
           </Card>

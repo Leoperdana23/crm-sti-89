@@ -18,6 +18,11 @@ export interface PromoBenefitSettings {
   cta_button_2_text: string;
   gift_target_10?: string;
   gift_target_20?: string;
+  // New point-based fields
+  points_per_order?: number;
+  points_target_10?: number;
+  points_target_20?: number;
+  commission_per_point?: number;
   is_active: boolean;
   created_at: string;
   updated_at: string;
