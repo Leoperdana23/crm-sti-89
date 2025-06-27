@@ -31,6 +31,7 @@ import SedekatAppContactHelp from './pages/SedekatApp/ContactHelp';
 import SedekatAppStatistics from './pages/SedekatApp/Statistics';
 import Resellers from './pages/Resellers';
 import ProgramPromo from './pages/SedekatApp/ProgramPromo';
+import ResellerApp from './pages/ResellerApp';
 
 const queryClient = new QueryClient();
 
@@ -43,6 +44,7 @@ function App() {
           <Routes>
             <Route path="/auth" element={<Auth />} />
             <Route path="/login" element={<Auth />} />
+            <Route path="/reseller-app" element={<ResellerApp />} />
             <Route path="/" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
             <Route path="/dashboard" element={<ProtectedRoute><Layout><Dashboard /></Layout></ProtectedRoute>} />
             <Route path="/orders" element={<ProtectedRoute><Layout><Orders /></Layout></ProtectedRoute>} />
