@@ -101,6 +101,8 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
   const ctaButton2Text = promoBenefitSettings?.cta_button_2_text || 'Lihat Progress';
   const monthlyTarget10 = promoBenefitSettings?.monthly_target_10 || 50;
   const monthlyTarget20 = promoBenefitSettings?.monthly_target_20 || 100;
+  const giftTarget10 = promoBenefitSettings?.gift_target_10 || 'Voucher Belanja Rp 100.000';
+  const giftTarget20 = promoBenefitSettings?.gift_target_20 || 'Smartphone + Bonus Komisi 100%';
 
   const handleContactAdmin = () => {
     if (contactSettings?.whatsapp_number) {
@@ -138,7 +140,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
         </Card>
       )}
 
-      {/* Program Promo Section - Updated with database settings */}
+      {/* Program Promo Section - Updated with gift information */}
       <Card className="bg-gradient-to-r from-purple-50 to-pink-50 border-purple-200">
         <CardHeader className="pb-3 sm:pb-4">
           <CardTitle className="text-base sm:text-lg flex items-center text-purple-800">
@@ -181,17 +183,14 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
             )}
           </div>
 
-          {/* Promo Khusus */}
+          {/* Promo Khusus dengan Gift Information */}
           {promoBenefitSettings?.monthly_target_enabled && (
             <div className="bg-gradient-to-r from-orange-100 to-red-100 p-3 sm:p-4 rounded-lg border border-orange-200">
-              <div className="flex items-center justify-between">
+              <div className="flex items-center justify-between mb-3">
                 <div className="flex-1">
                   <div className="flex items-center mb-2">
                     <Gift className="h-4 w-4 text-orange-600 mr-2" />
                     <h4 className="font-semibold text-sm sm:text-base text-orange-800">{promoTitle}</h4>
-                  </div>
-                  <div className="text-xs sm:text-sm text-orange-700 whitespace-pre-line">
-                    {promoDescription.replace('50%', `${monthlyTarget10}%`).replace('100%', `${monthlyTarget20}%`)}
                   </div>
                 </div>
                 <div className="text-right ml-3">
@@ -201,9 +200,27 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
                   <div className="text-xs text-orange-600">Order Selesai</div>
                 </div>
               </div>
+
+              {/* Gift Targets */}
+              <div className="space-y-2 mb-3">
+                <div className="flex items-center justify-between p-2 bg-white rounded border border-orange-200">
+                  <div className="flex items-center">
+                    <span className="text-lg mr-2">🎉</span>
+                    <span className="text-xs sm:text-sm font-medium text-orange-800">Target 10 Order:</span>
+                  </div>
+                  <span className="text-xs sm:text-sm text-orange-700 font-semibold">{giftTarget10}</span>
+                </div>
+                <div className="flex items-center justify-between p-2 bg-white rounded border border-orange-200">
+                  <div className="flex items-center">
+                    <span className="text-lg mr-2">🏆</span>
+                    <span className="text-xs sm:text-sm font-medium text-orange-800">Target 20 Order:</span>
+                  </div>
+                  <span className="text-xs sm:text-sm text-orange-700 font-semibold">{giftTarget20}</span>
+                </div>
+              </div>
               
               {/* Progress Bar */}
-              <div className="mt-3">
+              <div>
                 <div className="flex justify-between text-xs text-orange-700 mb-1">
                   <span>Progress Target</span>
                   <span>{Math.min(100, (completedOrders.length / 20) * 100).toFixed(0)}%</span>

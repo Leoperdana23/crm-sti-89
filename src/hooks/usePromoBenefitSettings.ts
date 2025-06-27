@@ -16,6 +16,8 @@ export interface PromoBenefitSettings {
   welcome_message: string;
   cta_button_1_text: string;
   cta_button_2_text: string;
+  gift_target_10?: string;
+  gift_target_20?: string;
   is_active: boolean;
   created_at: string;
   updated_at: string;

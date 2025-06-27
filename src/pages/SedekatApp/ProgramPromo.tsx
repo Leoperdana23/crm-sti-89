@@ -29,7 +29,10 @@ const ProgramPromo = () => {
     promo_description: '🎉 Target 10 Order = Bonus Komisi 50%\n🏆 Target 20 Order = Hadiah Spesial + Bonus Komisi 100%',
     welcome_message: 'Jadikan belanjamu banyak untung',
     cta_button_1_text: 'Order Sekarang',
-    cta_button_2_text: 'Lihat Progress'
+    cta_button_2_text: 'Lihat Progress',
+    // New gift-based fields
+    gift_target_10: 'Voucher Belanja Rp 100.000',
+    gift_target_20: 'Smartphone + Bonus Komisi 100%'
   });
 
   // Update form states when data is loaded
@@ -46,7 +49,9 @@ const ProgramPromo = () => {
         promo_description: promoBenefitSettings.promo_description,
         welcome_message: promoBenefitSettings.welcome_message,
         cta_button_1_text: promoBenefitSettings.cta_button_1_text,
-        cta_button_2_text: promoBenefitSettings.cta_button_2_text
+        cta_button_2_text: promoBenefitSettings.cta_button_2_text,
+        gift_target_10: promoBenefitSettings.gift_target_10 || 'Voucher Belanja Rp 100.000',
+        gift_target_20: promoBenefitSettings.gift_target_20 || 'Smartphone + Bonus Komisi 100%'
       });
     }
   }, [promoBenefitSettings]);
@@ -98,7 +103,7 @@ const ProgramPromo = () => {
           </TabsTrigger>
           <TabsTrigger value="bonus" className="flex items-center gap-2">
             <Zap className="h-4 w-4" />
-            Bonus & Komisi
+            Hadiah & Komisi
           </TabsTrigger>
           <TabsTrigger value="display" className="flex items-center gap-2">
             <Gift className="h-4 w-4" />
@@ -151,7 +156,7 @@ const ProgramPromo = () => {
         <TabsContent value="bonus">
           <Card>
             <CardHeader>
-              <CardTitle>Pengaturan Bonus & Komisi</CardTitle>
+              <CardTitle>Pengaturan Hadiah & Komisi</CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
@@ -162,6 +167,27 @@ const ProgramPromo = () => {
                   onChange={(e) => setPromoSettings(prev => ({ ...prev, bonus_commission_rate: Number(e.target.value) }))}
                   placeholder="50"
                 />
+                <p className="text-sm text-gray-500">Persentase komisi dasar untuk reseller</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Hadiah Target 10 Order</Label>
+                <Input 
+                  value={promoSettings.gift_target_10}
+                  onChange={(e) => setPromoSettings(prev => ({ ...prev, gift_target_10: e.target.value }))}
+                  placeholder="Voucher Belanja Rp 100.000"
+                />
+                <p className="text-sm text-gray-500">Hadiah yang diberikan saat mencapai target 10 order</p>
+              </div>
+
+              <div className="space-y-2">
+                <Label>Hadiah Target 20 Order</Label>
+                <Input 
+                  value={promoSettings.gift_target_20}
+                  onChange={(e) => setPromoSettings(prev => ({ ...prev, gift_target_20: e.target.value }))}
+                  placeholder="Smartphone + Bonus Komisi 100%"
+                />
+                <p className="text-sm text-gray-500">Hadiah yang diberikan saat mencapai target 20 order</p>
               </div>
 
               <div className="space-y-2">
@@ -172,6 +198,7 @@ const ProgramPromo = () => {
                   onChange={(e) => setPromoSettings(prev => ({ ...prev, monthly_target_10: Number(e.target.value) }))}
                   placeholder="50"
                 />
+                <p className="text-sm text-gray-500">Bonus persentase komisi tambahan untuk target 10 order</p>
               </div>
 
               <div className="space-y-2">
@@ -182,6 +209,7 @@ const ProgramPromo = () => {
                   onChange={(e) => setPromoSettings(prev => ({ ...prev, monthly_target_20: Number(e.target.value) }))}
                   placeholder="100"
                 />
+                <p className="text-sm text-gray-500">Bonus persentase komisi tambahan untuk target 20 order</p>
               </div>
             </CardContent>
           </Card>
@@ -210,6 +238,7 @@ const ProgramPromo = () => {
                   placeholder="Deskripsi program promo..."
                   rows={4}
                 />
+                <p className="text-sm text-gray-500">Gunakan \n untuk membuat baris baru</p>
               </div>
 
               <div className="space-y-2">

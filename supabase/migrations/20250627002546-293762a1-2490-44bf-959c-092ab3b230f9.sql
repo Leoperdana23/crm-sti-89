@@ -13,6 +13,8 @@ CREATE TABLE IF NOT EXISTS public.promo_benefit_settings (
   welcome_message TEXT DEFAULT 'Jadikan belanjamu banyak untung',
   cta_button_1_text TEXT DEFAULT 'Order Sekarang',
   cta_button_2_text TEXT DEFAULT 'Lihat Progress',
+  gift_target_10 TEXT DEFAULT 'Voucher Belanja Rp 100.000',
+  gift_target_20 TEXT DEFAULT 'Smartphone + Bonus Komisi 100%',
   is_active BOOLEAN DEFAULT true,
   created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
@@ -43,7 +45,9 @@ INSERT INTO public.promo_benefit_settings (
   promo_description,
   welcome_message,
   cta_button_1_text,
-  cta_button_2_text
+  cta_button_2_text,
+  gift_target_10,
+  gift_target_20
 ) 
 SELECT 
   true,
@@ -56,5 +60,7 @@ SELECT
   '🎉 Target 10 Order = Bonus Komisi 50%\n🏆 Target 20 Order = Hadiah Spesial + Bonus Komisi 100%',
   'Jadikan belanjamu banyak untung',
   'Order Sekarang',
-  'Lihat Progress'
+  'Lihat Progress',
+  'Voucher Belanja Rp 100.000',
+  'Smartphone + Bonus Komisi 100%'
 WHERE NOT EXISTS (SELECT 1 FROM public.promo_benefit_settings);
