@@ -26,14 +26,12 @@ const ProgramPromo = () => {
     monthly_target_10: 50,
     monthly_target_20: 100,
     promo_title: 'Promo Khusus Bulan Ini',
-    promo_description: '🎉 Target 10 Order = Bonus Komisi 50%\n🏆 Target 20 Order = Hadiah Spesial + Bonus Komisi 100%',
+    promo_description: '🎉 Target 100 Poin = Voucher Belanja Rp 100.000\n🏆 Target 200 Poin = Smartphone + Bonus Ekstra',
     welcome_message: 'Jadikan belanjamu banyak untung',
     cta_button_1_text: 'Order Sekarang',
     cta_button_2_text: 'Lihat Progress',
-    // Gift-based fields with points calculation
     gift_target_10: 'Voucher Belanja Rp 100.000',
     gift_target_20: 'Smartphone + Bonus Komisi 100%',
-    // New point-based fields
     points_per_order: 10,
     points_target_10: 100,
     points_target_20: 200,
@@ -57,7 +55,6 @@ const ProgramPromo = () => {
         cta_button_2_text: promoBenefitSettings.cta_button_2_text,
         gift_target_10: promoBenefitSettings.gift_target_10 || 'Voucher Belanja Rp 100.000',
         gift_target_20: promoBenefitSettings.gift_target_20 || 'Smartphone + Bonus Komisi 100%',
-        // Point-based settings
         points_per_order: promoBenefitSettings.points_per_order || 10,
         points_target_10: promoBenefitSettings.points_target_10 || 100,
         points_target_20: promoBenefitSettings.points_target_20 || 200,
@@ -102,7 +99,7 @@ const ProgramPromo = () => {
     <div className="p-6 space-y-6">
       <div>
         <h1 className="text-2xl font-bold">Program Promo & Benefit</h1>
-        <p className="text-gray-600">Kelola pengaturan program promo dan benefit untuk reseller</p>
+        <p className="text-gray-600">Kelola pengaturan program promo dan benefit untuk reseller (Berbasis Poin)</p>
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
@@ -113,7 +110,7 @@ const ProgramPromo = () => {
           </TabsTrigger>
           <TabsTrigger value="bonus" className="flex items-center gap-2">
             <Zap className="h-4 w-4" />
-            Hadiah & Komisi
+            Hadiah & Komisi Poin
           </TabsTrigger>
           <TabsTrigger value="display" className="flex items-center gap-2">
             <Gift className="h-4 w-4" />

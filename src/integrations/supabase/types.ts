@@ -1349,15 +1349,21 @@ export type Database = {
         Row: {
           bonus_commission_enabled: boolean | null
           bonus_commission_rate: number | null
+          commission_per_point: number | null
           created_at: string | null
           cta_button_1_text: string | null
           cta_button_2_text: string | null
+          gift_target_10: string | null
+          gift_target_20: string | null
           id: string
           is_active: boolean | null
           monthly_target_10: number | null
           monthly_target_20: number | null
           monthly_target_enabled: boolean | null
+          points_per_order: number | null
           points_system_enabled: boolean | null
+          points_target_10: number | null
+          points_target_20: number | null
           promo_description: string | null
           promo_title: string | null
           updated_at: string | null
@@ -1366,15 +1372,21 @@ export type Database = {
         Insert: {
           bonus_commission_enabled?: boolean | null
           bonus_commission_rate?: number | null
+          commission_per_point?: number | null
           created_at?: string | null
           cta_button_1_text?: string | null
           cta_button_2_text?: string | null
+          gift_target_10?: string | null
+          gift_target_20?: string | null
           id?: string
           is_active?: boolean | null
           monthly_target_10?: number | null
           monthly_target_20?: number | null
           monthly_target_enabled?: boolean | null
+          points_per_order?: number | null
           points_system_enabled?: boolean | null
+          points_target_10?: number | null
+          points_target_20?: number | null
           promo_description?: string | null
           promo_title?: string | null
           updated_at?: string | null
@@ -1383,15 +1395,21 @@ export type Database = {
         Update: {
           bonus_commission_enabled?: boolean | null
           bonus_commission_rate?: number | null
+          commission_per_point?: number | null
           created_at?: string | null
           cta_button_1_text?: string | null
           cta_button_2_text?: string | null
+          gift_target_10?: string | null
+          gift_target_20?: string | null
           id?: string
           is_active?: boolean | null
           monthly_target_10?: number | null
           monthly_target_20?: number | null
           monthly_target_enabled?: boolean | null
+          points_per_order?: number | null
           points_system_enabled?: boolean | null
+          points_target_10?: number | null
+          points_target_20?: number | null
           promo_description?: string | null
           promo_title?: string | null
           updated_at?: string | null

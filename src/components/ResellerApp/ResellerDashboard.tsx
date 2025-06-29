@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { ResellerSession } from '@/types/resellerApp';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { TrendingUp, Package, Clock, Star, ExternalLink, MessageCircle, Gift, Zap, Target } from 'lucide-react';
+import { TrendingUp, Package, Clock, Star, MessageCircle, Gift, Zap, Target } from 'lucide-react';
 import { useResellerOrders } from '@/hooks/useResellerOrders';
 import { useAppSettings } from '@/hooks/useAppSettings';
 import { useContactSettings } from '@/hooks/useContactSettings';
@@ -27,7 +27,6 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
   // Auto-refresh every 5 seconds
   useEffect(() => {
     const interval = setInterval(() => {
-      // Invalidate and refetch relevant queries
       queryClient.invalidateQueries({ queryKey: ['reseller-orders', reseller.id] });
       queryClient.invalidateQueries({ queryKey: ['reseller-balance', reseller.id] });
       queryClient.invalidateQueries({ queryKey: ['reward-catalog'] });
@@ -66,7 +65,7 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
     (redemption: any) => redemption.reseller_id === reseller.id && redemption.status === 'approved'
   ) || [];
 
-  // Calculate exchanged amounts from approved redemptions
+  // Calculate remaining balances
   const exchangedCommission = resellerRedemptions
     .filter((r: any) => r.reward_type === 'commission')
     .reduce((sum: number, r: any) => sum + r.amount_redeemed, 0);
@@ -75,7 +74,6 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
     .filter((r: any) => r.reward_type === 'points')
     .reduce((sum: number, r: any) => sum + r.amount_redeemed, 0);
 
-  // Calculate remaining balances (accurate calculation)
   const totalCommission = totalCommissionEarned - exchangedCommission;
   const totalPoints = totalPointsEarned - exchangedPoints;
   
@@ -94,13 +92,12 @@ const ResellerDashboard: React.FC<ResellerDashboardProps> = ({ reseller, onTabCh
   const bannerUrl = appSettings?.catalog?.bannerUrl || '';
   const secondaryColor = appSettings?.catalog?.secondaryColor || '#059669';
 
-  // Use promo benefit settings for display with point-based calculations
+  // Point-based settings from database
   const promoTitle = promoBenefitSettings?.promo_title || 'Promo Khusus Bulan Ini';
   const promoDescription = promoBenefitSettings?.promo_description || '🎉 Target 100 Poin = Voucher Belanja\n🏆 Target 200 Poin = Hadiah Spesial';
   const ctaButton1Text = promoBenefitSettings?.cta_button_1_text || 'Order Sekarang';
   const ctaButton2Text = promoBenefitSettings?.cta_button_2_text || 'Lihat Progress';
   
-  // Point-based settings
   const pointsPerOrder = promoBenefitSettings?.points_per_order || 10;
   const pointsTarget10 = promoBenefitSettings?.points_target_10 || 100;
   const pointsTarget20 = promoBenefitSettings?.points_target_20 || 200;
