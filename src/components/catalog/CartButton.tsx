@@ -27,7 +27,7 @@ const CartButton = ({ cart, totalItems, totalPrice, onClick }: CartButtonProps) 
   if (totalItems === 0) return null;
 
   return (
-    <div className="fixed bottom-20 sm:bottom-24 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-sm px-3">
+    <div className="fixed bottom-24 sm:bottom-28 left-1/2 transform -translate-x-1/2 z-50 w-full max-w-sm px-3">
       <Button
         onClick={onClick}
         className="w-full bg-green-600 text-white rounded-xl px-4 py-3 flex items-center justify-between shadow-lg hover:bg-green-700"
