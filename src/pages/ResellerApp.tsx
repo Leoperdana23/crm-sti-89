@@ -9,13 +9,20 @@ import ResellerReports from '@/components/ResellerApp/ResellerReports';
 import ResellerProfile from '@/components/ResellerApp/ResellerProfile';
 import ResellerHelp from '@/components/ResellerApp/ResellerHelp';
 import ResellerNavigation from '@/components/ResellerApp/ResellerNavigation';
+import CartButton from '@/components/catalog/CartButton';
 
 type TabType = 'dashboard' | 'catalog' | 'orders' | 'reports' | 'profile' | 'help';
+
+interface CartItem {
+  product: any;
+  quantity: number;
+}
 
 const ResellerApp = () => {
   const { session } = useResellerApp();
   const [activeTab, setActiveTab] = useState<TabType>('dashboard');
   const [isLoading, setIsLoading] = useState(true);
+  const [cart, setCart] = useState<CartItem[]>([]);
 
   // Check for session changes and handle loading state
   useEffect(() => {
@@ -25,6 +32,21 @@ const ResellerApp = () => {
 
     return () => clearTimeout(timer);
   }, [session]);
+
+  const getTotalItems = () => {
+    return cart.reduce((total, item) => total + item.quantity, 0);
+  };
+
+  const getTotalAmount = () => {
+    return cart.reduce((total, item) => {
+      const price = item.product.reseller_price || item.product.price;
+      return total + (price * item.quantity);
+    }, 0);
+  };
+
+  const handleCartButtonClick = () => {
+    setActiveTab('catalog');
+  };
 
   // Show loading for a brief moment to handle session transitions
   if (isLoading) {
@@ -47,7 +69,7 @@ const ResellerApp = () => {
       case 'dashboard':
         return <ResellerDashboard reseller={session} onTabChange={setActiveTab} />;
       case 'catalog':
-        return <ResellerCatalog reseller={session} />;
+        return <ResellerCatalog reseller={session} cart={cart} setCart={setCart} />;
       case 'orders':
         return <ResellerOrders reseller={session} />;
       case 'reports':
@@ -83,6 +105,14 @@ const ResellerApp = () => {
           {renderContent()}
         </div>
       </div>
+
+      {/* Floating Cart Button - Shows across all tabs */}
+      <CartButton
+        cart={cart}
+        totalItems={getTotalItems()}
+        totalPrice={getTotalAmount()}
+        onClick={handleCartButtonClick}
+      />
 
       {/* Bottom Navigation - Always sticky on mobile */}
       <ResellerNavigation activeTab={activeTab} onTabChange={setActiveTab} />

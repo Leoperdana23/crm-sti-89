@@ -21,9 +21,11 @@ interface CartItem {
 
 interface ResellerCatalogProps {
   reseller: ResellerSession;
+  cart: CartItem[];
+  setCart: React.Dispatch<React.SetStateAction<CartItem[]>>;
 }
 
-const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
+const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller, cart, setCart }) => {
   const { toast } = useToast();
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<ProductCategory[]>([]);
@@ -31,7 +33,6 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
   const [searchTerm, setSearchTerm] = useState('');
   const [categoryFilter, setCategoryFilter] = useState('all');
   const [priceType, setPriceType] = useState<'retail' | 'reseller'>('reseller');
-  const [cart, setCart] = useState<CartItem[]>([]);
   const [showOrderForm, setShowOrderForm] = useState(false);
   const [submittingOrder, setSubmittingOrder] = useState(false);
   const [editingQuantity, setEditingQuantity] = useState<string | null>(null);
@@ -256,7 +257,7 @@ const ResellerCatalog: React.FC<ResellerCatalogProps> = ({ reseller }) => {
         description: 'Pesanan berhasil dibuat dan akan diproses',
       });
 
-      // Reset form and cart
+      // Reset cart and form
       setCart([]);
       setOrderForm({
         customerName: reseller.name,
