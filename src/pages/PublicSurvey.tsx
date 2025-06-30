@@ -3,21 +3,28 @@ import React from 'react';
 import { useParams } from 'react-router-dom';
 import { usePublicSurvey } from '@/hooks/usePublicSurvey';
 import PublicSurveyForm from '@/components/PublicSurveyForm';
+import ErrorBoundary from '@/components/ErrorBoundary';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertCircle, Loader2 } from 'lucide-react';
 
-const PublicSurvey = () => {
+const PublicSurveyContent = () => {
   const { token } = useParams<{ token: string }>();
+  
+  console.log('PublicSurvey component rendered with token:', token);
+  
   const { survey, customer, loading, error, updateCustomer, updateSurvey } = usePublicSurvey(token || '');
 
   const handleSurveySubmit = async (surveyData: any) => {
     try {
+      console.log('Submitting survey data:', surveyData);
       await updateSurvey(surveyData);
     } catch (error) {
       console.error('Error submitting survey:', error);
       throw error;
     }
   };
+
+  console.log('Survey state:', { survey, customer, loading, error });
 
   if (loading) {
     return (
@@ -34,7 +41,8 @@ const PublicSurvey = () => {
     );
   }
 
-  if (error || !survey || !customer) {
+  if (error) {
+    console.error('Survey error:', error);
     return (
       <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
         <Card className="max-w-md md:max-w-lg mx-auto shadow-lg">
@@ -55,30 +63,56 @@ const PublicSurvey = () => {
     );
   }
 
+  if (!survey) {
+    console.warn('No survey data available');
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 flex items-center justify-center p-4">
+        <Card className="max-w-md md:max-w-lg mx-auto shadow-lg">
+          <CardHeader className="text-center bg-yellow-50">
+            <AlertCircle className="h-12 w-12 md:h-16 md:w-16 text-yellow-500 mx-auto mb-4" />
+            <CardTitle className="text-lg md:text-xl text-yellow-600">Data Survei Tidak Tersedia</CardTitle>
+          </CardHeader>
+          <CardContent className="text-center p-4 md:p-6">
+            <p className="text-sm md:text-base text-gray-600 mb-4">
+              Data survei tidak dapat dimuat. Silakan coba lagi nanti.
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-indigo-50 py-6 md:py-8 px-4">
       <div className="container mx-auto max-w-6xl">
         <div className="text-center mb-6 md:mb-8">
           <h1 className="text-2xl md:text-3xl lg:text-4xl font-bold text-gray-900 mb-3 md:mb-4">
-            Data Garansi Resmi & Survei Kepuasan
+            Survei Kepuasan Pelanggan
           </h1>
           <p className="text-sm md:text-base lg:text-lg text-gray-600 max-w-3xl mx-auto">
-            Mohon lengkapi data diri Anda untuk mendapatkan garansi barang 1 tahun ganti baru, 
-            dan berikan penilaian terhadap layanan kami untuk membantu meningkatkan kualitas pelayanan.
+            Mohon berikan penilaian Anda terhadap layanan kami untuk membantu meningkatkan kualitas pelayanan.
           </p>
         </div>
         
         <div className="bg-white rounded-lg shadow-xl p-4 md:p-6 lg:p-8">
           <PublicSurveyForm
             survey={survey}
-            customer={customer}
+            customer={customer || {}}
             onSubmit={handleSurveySubmit}
             onUpdateCustomer={updateCustomer}
-            isCompleted={survey.is_completed}
+            isCompleted={survey.is_completed || false}
           />
         </div>
       </div>
     </div>
+  );
+};
+
+const PublicSurvey = () => {
+  return (
+    <ErrorBoundary>
+      <PublicSurveyContent />
+    </ErrorBoundary>
   );
 };
 
