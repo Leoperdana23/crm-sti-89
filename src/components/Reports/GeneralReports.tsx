@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useOrders } from '@/hooks/useOrders';
 import { useSurveys } from '@/hooks/useSurveys';
-import { Users, ShoppingCart, DollarSign, TrendingUp, Star, Calendar, Package, Award } from 'lucide-react';
+import { Users, ShoppingCart, DollarSign, TrendingUp, Star, Calendar, Package, Award, MessageCircle } from 'lucide-react';
 import DateRangeFilter from './DateRangeFilter';
 import { getDateRange, filterDataByDateRange } from '@/utils/dateFilters';
 
