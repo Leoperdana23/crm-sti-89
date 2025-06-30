@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Plus, Search, Filter, BarChart, Users, CheckCircle, AlertCircle, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -468,13 +467,13 @@ Atas ketersediaan bapak/ibu mengisi data dan survei kami ucapkan terima kasih at
 
               <Card>
                 <CardHeader>
-                  <CardTitle className="text-lg">Persetujuan Harga</CardTitle>
+                  <CardTitle className="text-lg">Tingkat Rekomendasi</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-3xl font-bold text-purple-600">
-                    {averageRatings.priceApprovalRate.toFixed(1)}%
+                    {averageRatings.recommendationRate.toFixed(1)}%
                   </div>
-                  <p className="text-gray-600">Menyetujui harga</p>
+                  <p className="text-gray-600">Pelanggan merekomendasikan</p>
                 </CardContent>
               </Card>
             </>

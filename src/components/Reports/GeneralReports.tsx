@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { useCustomers } from '@/hooks/useCustomers';
@@ -24,7 +25,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
   onCustomStartDateChange,
   onCustomEndDateChange
 }) => {
-  const { data: customers } = useCustomers();
+  const { customers } = useCustomers();
   const { data: orders } = useOrders();
   const { surveys, getAverageRatings } = useSurveys();
   const surveyAverages = getAverageRatings();
