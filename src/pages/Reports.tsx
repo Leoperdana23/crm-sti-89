@@ -1,9 +1,10 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { BarChart, PieChart } from 'lucide-react';
+import { BarChart, PieChart, Star } from 'lucide-react';
 import SedekatAppReports from '@/components/Reports/SedekatAppReports';
 import GeneralReports from '@/components/Reports/GeneralReports';
+import DetailedSurveyReports from '@/components/Reports/DetailedSurveyReports';
 
 const Reports = () => {
   const [selectedPeriod, setSelectedPeriod] = useState('this_month');
@@ -18,10 +19,14 @@ const Reports = () => {
       </div>
 
       <Tabs defaultValue="general" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="general" className="flex items-center gap-2">
             <BarChart className="h-4 w-4" />
             Laporan Umum
+          </TabsTrigger>
+          <TabsTrigger value="survey-detail" className="flex items-center gap-2">
+            <Star className="h-4 w-4" />
+            Detail Survei
           </TabsTrigger>
           <TabsTrigger value="sedekat-app" className="flex items-center gap-2">
             <PieChart className="h-4 w-4" />
@@ -38,6 +43,10 @@ const Reports = () => {
             onCustomStartDateChange={setCustomStartDate}
             onCustomEndDateChange={setCustomEndDate}
           />
+        </TabsContent>
+
+        <TabsContent value="survey-detail">
+          <DetailedSurveyReports />
         </TabsContent>
 
         <TabsContent value="sedekat-app">

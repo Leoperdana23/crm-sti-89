@@ -35,6 +35,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
   // Filter data berdasarkan periode
   const filteredCustomers = filterDataByDateRange(customers || [], 'created_at', startDate, endDate);
   const filteredOrders = filterDataByDateRange(orders || [], 'created_at', startDate, endDate);
+  const filteredSurveys = filterDataByDateRange(surveys || [], 'created_at', startDate, endDate);
 
   // Statistik dasar
   const totalCustomers = filteredCustomers.length;
@@ -46,6 +47,13 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
   const completedOrders = filteredOrders.filter(order => order.status === 'selesai').length;
   const pendingOrders = filteredOrders.filter(order => order.status === 'pending').length;
   const processingOrders = filteredOrders.filter(order => order.status === 'diproses').length;
+
+  // Survey statistics untuk periode yang dipilih
+  const totalSurveysInPeriod = filteredSurveys.length;
+  const surveysWithTestimonials = filteredSurveys.filter(s => s.testimonial && s.testimonial.trim()).length;
+  const surveysWithSuggestions = filteredSurveys.filter(s => s.suggestions && s.suggestions.trim()).length;
+  const recommendationsInPeriod = filteredSurveys.filter(s => s.price_approval).length;
+  const recommendationRateInPeriod = totalSurveysInPeriod > 0 ? (recommendationsInPeriod / totalSurveysInPeriod) * 100 : 0;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -139,12 +147,71 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
         </CardContent>
       </Card>
 
-      {/* Survey Analytics Section */}
+      {/* Survey Analytics Section - Periode Spesifik */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             <Star className="h-5 w-5" />
-            Analitik Survei Kepuasan
+            Analitik Survei Kepuasan - Periode Dipilih
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{totalSurveysInPeriod}</p>
+              <p className="text-sm text-gray-600">Total Survei</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">{surveysWithTestimonials}</p>
+              <p className="text-sm text-gray-600">Testimoni</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-orange-600">{surveysWithSuggestions}</p>
+              <p className="text-sm text-gray-600">Saran & Kritik</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-purple-600">{recommendationRateInPeriod.toFixed(1)}%</p>
+              <p className="text-sm text-gray-600">Tingkat Rekomendasi</p>
+            </div>
+          </div>
+
+          {totalSurveysInPeriod > 0 && (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-blue-600">
+                  {filteredSurveys.length > 0 ? (filteredSurveys.reduce((sum, s) => sum + s.service_technician, 0) / filteredSurveys.length).toFixed(1) : '0.0'}
+                </p>
+                <p className="text-sm text-gray-600">Pelayanan Teknisi</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-600">
+                  {filteredSurveys.length > 0 ? (filteredSurveys.reduce((sum, s) => sum + s.service_sales, 0) / filteredSurveys.length).toFixed(1) : '0.0'}
+                </p>
+                <p className="text-sm text-gray-600">Pelayanan Sales/CS</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-purple-600">
+                  {filteredSurveys.length > 0 ? (filteredSurveys.reduce((sum, s) => sum + s.product_quality, 0) / filteredSurveys.length).toFixed(1) : '0.0'}
+                </p>
+                <p className="text-sm text-gray-600">Kualitas Produk</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-orange-600">
+                  {filteredSurveys.length > 0 ? (filteredSurveys.reduce((sum, s) => sum + s.usage_clarity, 0) / filteredSurveys.length).toFixed(1) : '0.0'}
+                </p>
+                <p className="text-sm text-gray-600">Kejelasan Penggunaan</p>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Survey Analytics Section - Keseluruhan */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Star className="h-5 w-5" />
+            Analitik Survei Kepuasan - Keseluruhan
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -177,6 +244,65 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
         </CardContent>
       </Card>
 
+      {/* Testimoni & Saran Terbaru dari Periode */}
+      {filteredSurveys.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Testimoni */}
+          {filteredSurveys.filter(s => s.testimonial && s.testimonial.trim()).length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageCircle className="h-5 w-5" />
+                  Testimoni Periode Ini
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {filteredSurveys
+                    .filter(s => s.testimonial && s.testimonial.trim())
+                    .slice(0, 3)
+                    .map((survey) => (
+                      <div key={survey.id} className="border-l-4 border-blue-500 pl-3 py-2 bg-blue-50 rounded-r">
+                        <div className="text-xs text-gray-500 mb-1">
+                          {new Date(survey.created_at).toLocaleDateString('id-ID')}
+                        </div>
+                        <p className="text-sm italic">"{survey.testimonial}"</p>
+                      </div>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Saran & Kritik */}
+          {filteredSurveys.filter(s => s.suggestions && s.suggestions.trim()).length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Award className="h-5 w-5" />
+                  Saran & Kritik Periode Ini
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3 max-h-64 overflow-y-auto">
+                  {filteredSurveys
+                    .filter(s => s.suggestions && s.suggestions.trim())
+                    .slice(0, 3)
+                    .map((survey) => (
+                      <div key={survey.id} className="border-l-4 border-orange-500 pl-3 py-2 bg-orange-50 rounded-r">
+                        <div className="text-xs text-gray-500 mb-1">
+                          {new Date(survey.created_at).toLocaleDateString('id-ID')}
+                        </div>
+                        <p className="text-sm">{survey.suggestions}</p>
+                      </div>
+                    ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      )}
+
       {/* Tren Bulanan */}
       <Card>
         <CardHeader>
@@ -206,6 +332,12 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
               <span>Completion Rate:</span>
               <span className="font-medium">
                 {totalOrders > 0 ? ((completedOrders / totalOrders) * 100).toFixed(1) : 0}%
+              </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span>Survey Response Rate:</span>
+              <span className="font-medium">
+                {totalCustomers > 0 ? ((totalSurveysInPeriod / totalCustomers) * 100).toFixed(1) : 0}%
               </span>
             </div>
           </div>
