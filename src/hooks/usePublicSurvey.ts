@@ -84,45 +84,15 @@ export const usePublicSurvey = (token: string) => {
     }
   }, [token]);
 
+  // Simplified updateCustomer function (kept for compatibility but not used)
   const updateCustomer = async (customerData: { 
     name: string; 
     birth_date?: string; 
     id_number?: string;
     address?: string;
   }) => {
-    try {
-      if (!survey) {
-        throw new Error('Survey data tidak tersedia');
-      }
-
-      console.log('Updating customer data:', customerData);
-
-      const { error } = await supabase
-        .from('customers')
-        .update({
-          name: customerData.name,
-          birth_date: customerData.birth_date || null,
-          id_number: customerData.id_number || null,
-          address: customerData.address || null
-        })
-        .eq('id', survey.customer_id);
-
-      if (error) {
-        console.error('Error updating customer:', error);
-        throw error;
-      }
-
-      // Update local customer state
-      setCustomer(prev => ({
-        ...prev,
-        ...customerData
-      }));
-
-      console.log('Customer data updated successfully');
-    } catch (error) {
-      console.error('Error in updateCustomer:', error);
-      throw error;
-    }
+    // This function is kept for compatibility but not used in the simplified form
+    console.log('Customer data update not needed in simplified form');
   };
 
   const updateSurvey = async (updatedData: Partial<Survey>) => {
