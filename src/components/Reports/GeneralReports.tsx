@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -40,7 +41,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
   // Statistik dasar
   const totalCustomers = filteredCustomers.length;
   const totalOrders = filteredOrders.length;
-  const totalRevenue = filteredOrders.reduce((sum, order) => sum + order.total_amount, 0);
+  const totalRevenue = filteredOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
   const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
 
   // Statistik tambahan
@@ -66,7 +67,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
   // Get detailed customer survey data
   const getCustomerSurveyDetails = () => {
     return filteredSurveys.map(survey => {
-      const customer = customers.find(c => c.id === survey.customer_id);
+      const customer = customers?.find(c => c.id === survey.customer_id);
       return {
         ...survey,
         customer_name: customer?.name || 'Tidak Diketahui',
@@ -255,7 +256,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
           </div>
           <div className="mt-4 text-center">
             <p className="text-lg font-semibold">Rating Keseluruhan: {surveyAverages.overall.toFixed(1)}/10</p>
-            <p className="text-sm text-gray-500">Berdasarkan {surveys.length} survei yang telah selesai</p>
+            <p className="text-sm text-gray-500">Berdasarkan {surveys?.length || 0} survei yang telah selesai</p>
           </div>
         </CardContent>
       </Card>
