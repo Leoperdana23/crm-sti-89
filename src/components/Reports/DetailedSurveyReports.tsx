@@ -4,11 +4,13 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { useSurveys } from '@/hooks/useSurveys';
 import { useCustomers } from '@/hooks/useCustomers';
-import { Star, MessageSquare, Lightbulb, TrendingUp, Users, Award, Calendar, User, Phone, MapPin } from 'lucide-react';
+import { useBranches } from '@/hooks/useBranches';
+import { Star, MessageSquare, Lightbulb, TrendingUp, Users, Award, Calendar, User, Phone, MapPin, Building } from 'lucide-react';
 
 const DetailedSurveyReports = () => {
   const { surveys, loading, getAverageRatings } = useSurveys();
   const { customers } = useCustomers();
+  const { branches } = useBranches();
   const averages = getAverageRatings();
 
   if (loading) {
@@ -22,15 +24,17 @@ const DetailedSurveyReports = () => {
     );
   }
 
-  // Get detailed customer survey data with customer information
+  // Get detailed customer survey data with customer and branch information
   const getCustomerSurveyDetails = () => {
     return surveys.map(survey => {
       const customer = customers.find(c => c.id === survey.customer_id);
+      const branch = branches.find(b => b.id === customer?.branch_id);
       return {
         ...survey,
         customer_name: customer?.name || 'Tidak Diketahui',
         customer_phone: customer?.phone || '-',
         customer_address: customer?.address || '-',
+        branch_name: branch?.name || 'Tidak Diketahui',
         average_rating: (survey.service_technician + survey.service_sales + survey.product_quality + survey.usage_clarity) / 4
       };
     }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
@@ -170,10 +174,16 @@ const DetailedSurveyReports = () => {
                   </div>
                 </div>
 
-                {/* Customer Address */}
-                <div className="flex items-center gap-2 mb-3 text-sm text-gray-600">
-                  <MapPin className="h-3 w-3" />
-                  <span>{survey.customer_address}</span>
+                {/* Customer Address & Branch */}
+                <div className="space-y-2 mb-3">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <MapPin className="h-3 w-3" />
+                    <span>{survey.customer_address}</span>
+                  </div>
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Building className="h-3 w-3" />
+                    <span>Cabang: {survey.branch_name}</span>
+                  </div>
                 </div>
 
                 {/* Rating Details */}

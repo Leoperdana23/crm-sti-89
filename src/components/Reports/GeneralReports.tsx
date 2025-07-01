@@ -5,7 +5,8 @@ import { Badge } from '@/components/ui/badge';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useOrders } from '@/hooks/useOrders';
 import { useSurveys } from '@/hooks/useSurveys';
-import { Users, ShoppingCart, DollarSign, TrendingUp, Star, Calendar, Package, Award, MessageCircle, User, Phone, MapPin } from 'lucide-react';
+import { useBranches } from '@/hooks/useBranches';
+import { Users, ShoppingCart, DollarSign, TrendingUp, Star, Calendar, Package, Award, MessageCircle, User, Phone, MapPin, Cake, Building, Clock, CheckCircle } from 'lucide-react';
 import DateRangeFilter from './DateRangeFilter';
 import { getDateRange, filterDataByDateRange } from '@/utils/dateFilters';
 
@@ -29,6 +30,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
   const { customers } = useCustomers();
   const { data: orders } = useOrders();
   const { surveys, getAverageRatings } = useSurveys();
+  const { branches } = useBranches();
   const surveyAverages = getAverageRatings();
 
   const { startDate, endDate } = getDateRange(selectedPeriod, customStartDate, customEndDate);
@@ -38,23 +40,83 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
   const filteredOrders = filterDataByDateRange(orders || [], 'created_at', startDate, endDate);
   const filteredSurveys = filterDataByDateRange(surveys || [], 'created_at', startDate, endDate);
 
-  // Statistik dasar
-  const totalCustomers = filteredCustomers.length;
-  const totalOrders = filteredOrders.length;
-  const totalRevenue = filteredOrders.reduce((sum, order) => sum + (order.total_amount || 0), 0);
-  const averageOrderValue = totalOrders > 0 ? totalRevenue / totalOrders : 0;
+  // Statistik Pelanggan
+  const totalCustomers = customers?.length || 0;
+  const totalCustomersFiltered = filteredCustomers.length;
+  
+  // Status Follow-up
+  const followUpStats = {
+    prospek: customers?.filter(c => c.status === 'Prospek').length || 0,
+    followUp: customers?.filter(c => c.status === 'Follow-up').length || 0,
+    cold: customers?.filter(c => c.status === 'Cold').length || 0,
+    warm: customers?.filter(c => c.status === 'Warm').length || 0,
+    hot: customers?.filter(c => c.status === 'Hot').length || 0,
+    deal: customers?.filter(c => c.status === 'Deal').length || 0,
+    tidakJadi: customers?.filter(c => c.status === 'Tidak Jadi').length || 0,
+  };
 
-  // Statistik tambahan
-  const completedOrders = filteredOrders.filter(order => order.status === 'selesai').length;
-  const pendingOrders = filteredOrders.filter(order => order.status === 'pending').length;
-  const processingOrders = filteredOrders.filter(order => order.status === 'diproses').length;
+  // Statistik Pekerjaan
+  const workStats = {
+    notStarted: customers?.filter(c => c.work_status === 'not_started').length || 0,
+    inProgress: customers?.filter(c => c.work_status === 'in_progress').length || 0,
+    completed: customers?.filter(c => c.work_status === 'completed').length || 0,
+    cancelled: customers?.filter(c => c.work_status === 'cancelled').length || 0,
+  };
 
-  // Survey statistics untuk periode yang dipilih
-  const totalSurveysInPeriod = filteredSurveys.length;
-  const surveysWithTestimonials = filteredSurveys.filter(s => s.testimonial && s.testimonial.trim()).length;
-  const surveysWithSuggestions = filteredSurveys.filter(s => s.suggestions && s.suggestions.trim()).length;
-  const recommendationsInPeriod = filteredSurveys.filter(s => s.price_approval).length;
-  const recommendationRateInPeriod = totalSurveysInPeriod > 0 ? (recommendationsInPeriod / totalSurveysInPeriod) * 100 : 0;
+  // Ulang Tahun (dalam 30 hari ke depan)
+  const today = new Date();
+  const thirtyDaysFromNow = new Date(today.getTime() + (30 * 24 * 60 * 60 * 1000));
+  
+  const upcomingBirthdays = customers?.filter(customer => {
+    if (!customer.birth_date) return false;
+    const birthDate = new Date(customer.birth_date);
+    const thisYearBirthday = new Date(today.getFullYear(), birthDate.getMonth(), birthDate.getDate());
+    return thisYearBirthday >= today && thisYearBirthday <= thirtyDaysFromNow;
+  }) || [];
+
+  // Statistik Survei
+  const totalSurveys = surveys?.length || 0;
+  const surveysCompleted = customers?.filter(c => c.survey_status === 'sudah_disurvei').length || 0;
+  const surveyCompletionRate = totalCustomers > 0 ? (surveysCompleted / totalCustomers) * 100 : 0;
+
+  // Performa Sales Deal
+  const salesWithBranches = customers?.map(customer => {
+    const branch = branches?.find(b => b.id === customer.branch_id);
+    return {
+      ...customer,
+      branch_name: branch?.name || 'Tidak Diketahui'
+    };
+  }) || [];
+
+  const salesPerformance = branches?.map(branch => {
+    const branchCustomers = salesWithBranches.filter(c => c.branch_id === branch.id);
+    const totalProspects = branchCustomers.length;
+    const dealCount = branchCustomers.filter(c => c.status === 'Deal').length;
+    const conversionRate = totalProspects > 0 ? (dealCount / totalProspects) * 100 : 0;
+    
+    return {
+      branchName: branch.name,
+      totalProspects,
+      dealCount,
+      conversionRate: conversionRate.toFixed(1)
+    };
+  }) || [];
+
+  // Calculate average work duration for completed work
+  const completedWork = customers?.filter(c => 
+    c.work_status === 'completed' && 
+    c.work_start_date && 
+    c.work_completed_date
+  ) || [];
+
+  const averageWorkDuration = completedWork.length > 0 
+    ? completedWork.reduce((acc, customer) => {
+        const startDate = new Date(customer.work_start_date!);
+        const endDate = new Date(customer.work_completed_date!);
+        const duration = Math.ceil((endDate.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24));
+        return acc + duration;
+      }, 0) / completedWork.length
+    : 0;
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat('id-ID', {
@@ -63,22 +125,6 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
       minimumFractionDigits: 0,
     }).format(amount);
   };
-
-  // Get detailed customer survey data
-  const getCustomerSurveyDetails = () => {
-    return filteredSurveys.map(survey => {
-      const customer = customers?.find(c => c.id === survey.customer_id);
-      return {
-        ...survey,
-        customer_name: customer?.name || 'Tidak Diketahui',
-        customer_phone: customer?.phone || '-',
-        customer_address: customer?.address || '-',
-        average_rating: (survey.service_technician + survey.service_sales + survey.product_quality + survey.usage_clarity) / 4
-      };
-    }).sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
-  };
-
-  const customerSurveyDetails = getCustomerSurveyDetails();
 
   return (
     <div className="space-y-6">
@@ -91,352 +137,237 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
         onCustomEndDateChange={onCustomEndDateChange}
       />
 
-      {/* Statistik Utama */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+      {/* Statistik Pelanggan */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Statistik Pelanggan
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="text-center">
+              <p className="text-3xl font-bold text-blue-600">{totalCustomers}</p>
+              <p className="text-sm text-gray-600">Total Pelanggan</p>
+            </div>
+            <div className="text-center">
+              <p className="text-3xl font-bold text-green-600">{totalCustomersFiltered}</p>
+              <p className="text-sm text-gray-600">Periode Dipilih</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Status Follow-up */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <TrendingUp className="h-5 w-5" />
+            Status Follow-up Pelanggan
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-600">{followUpStats.prospek}</p>
+              <p className="text-xs text-gray-500">Prospek</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-blue-600">{followUpStats.followUp}</p>
+              <p className="text-xs text-gray-500">Follow-up</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-indigo-600">{followUpStats.cold}</p>
+              <p className="text-xs text-gray-500">Cold</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-yellow-600">{followUpStats.warm}</p>
+              <p className="text-xs text-gray-500">Warm</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-red-600">{followUpStats.hot}</p>
+              <p className="text-xs text-gray-500">Hot</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-green-600">{followUpStats.deal}</p>
+              <p className="text-xs text-gray-500">Deal</p>
+            </div>
+            <div className="text-center">
+              <p className="text-2xl font-bold text-gray-500">{followUpStats.tidakJadi}</p>
+              <p className="text-xs text-gray-500">Tidak Jadi</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Status Pekerjaan & Waktu Pengerjaan */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Pelanggan</CardTitle>
-            <Users className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Package className="h-5 w-5" />
+              Status Pekerjaan
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalCustomers}</div>
-            <p className="text-xs text-muted-foreground">Pelanggan baru periode ini</p>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="text-center">
+                <p className="text-2xl font-bold text-gray-600">{workStats.notStarted}</p>
+                <p className="text-sm text-gray-600">Belum Mulai</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-yellow-600">{workStats.inProgress}</p>
+                <p className="text-sm text-gray-600">Dalam Progress</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-600">{workStats.completed}</p>
+                <p className="text-sm text-gray-600">Selesai</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-red-600">{workStats.cancelled}</p>
+                <p className="text-sm text-gray-600">Dibatalkan</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
 
         <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Order</CardTitle>
-            <ShoppingCart className="h-4 w-4 text-muted-foreground" />
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Clock className="h-5 w-5" />
+              Waktu Pengerjaan
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">{totalOrders}</div>
-            <p className="text-xs text-muted-foreground">Order periode ini</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Revenue</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(totalRevenue)}</div>
-            <p className="text-xs text-muted-foreground">Revenue periode ini</p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Rata-rata Order</CardTitle>
-            <TrendingUp className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{formatCurrency(averageOrderValue)}</div>
-            <p className="text-xs text-muted-foreground">Nilai rata-rata per order</p>
+            <div className="space-y-4">
+              <div className="text-center">
+                <p className="text-3xl font-bold text-blue-600">{averageWorkDuration.toFixed(1)}</p>
+                <p className="text-sm text-gray-600">Rata-rata Hari Pengerjaan</p>
+              </div>
+              <div className="text-center">
+                <p className="text-2xl font-bold text-green-600">{completedWork.length}</p>
+                <p className="text-sm text-gray-600">Pekerjaan Selesai</p>
+              </div>
+            </div>
           </CardContent>
         </Card>
       </div>
 
-      {/* Status Order */}
+      {/* Ulang Tahun */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
-            <Package className="h-5 w-5" />
-            Status Order
+            <Cake className="h-5 w-5" />
+            Ulang Tahun (30 Hari Mendatang)
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="mb-4">
+            <p className="text-2xl font-bold text-purple-600 text-center">{upcomingBirthdays.length}</p>
+            <p className="text-sm text-gray-600 text-center">Pelanggan Berulang Tahun</p>
+          </div>
+          {upcomingBirthdays.length > 0 && (
+            <div className="space-y-2 max-h-48 overflow-y-auto">
+              {upcomingBirthdays.slice(0, 5).map((customer) => (
+                <div key={customer.id} className="flex items-center justify-between p-2 bg-purple-50 rounded">
+                  <div>
+                    <p className="font-medium">{customer.name}</p>
+                    <p className="text-sm text-gray-600">{customer.phone}</p>
+                  </div>
+                  <Badge variant="outline">
+                    {new Date(customer.birth_date!).toLocaleDateString('id-ID', { 
+                      day: 'numeric', 
+                      month: 'short' 
+                    })}
+                  </Badge>
+                </div>
+              ))}
+              {upcomingBirthdays.length > 5 && (
+                <p className="text-center text-sm text-gray-500">
+                  +{upcomingBirthdays.length - 5} lainnya
+                </p>
+              )}
+            </div>
+          )}
+          {upcomingBirthdays.length === 0 && (
+            <p className="text-center text-gray-500">Tidak ada ulang tahun dalam 30 hari ke depan</p>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Statistik Survei */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Star className="h-5 w-5" />
+            Status Survei Kepuasan
           </CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">{completedOrders}</p>
-              <p className="text-sm text-gray-600">Selesai</p>
+              <p className="text-2xl font-bold text-blue-600">{totalSurveys}</p>
+              <p className="text-sm text-gray-600">Total Survei Selesai</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-yellow-600">{processingOrders}</p>
-              <p className="text-sm text-gray-600">Diproses</p>
+              <p className="text-2xl font-bold text-green-600">{surveysCompleted}</p>
+              <p className="text-sm text-gray-600">Pelanggan Sudah Disurvei</p>
             </div>
             <div className="text-center">
-              <p className="text-2xl font-bold text-red-600">{pendingOrders}</p>
-              <p className="text-sm text-gray-600">Pending</p>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Survey Analytics Section - Periode Spesifik */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Star className="h-5 w-5" />
-            Analitik Survei Kepuasan - Periode Dipilih
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{totalSurveysInPeriod}</p>
-              <p className="text-sm text-gray-600">Total Survei</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">{surveysWithTestimonials}</p>
-              <p className="text-sm text-gray-600">Testimoni</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-orange-600">{surveysWithSuggestions}</p>
-              <p className="text-sm text-gray-600">Saran & Kritik</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">{recommendationRateInPeriod.toFixed(1)}%</p>
-              <p className="text-sm text-gray-600">Tingkat Rekomendasi</p>
-            </div>
-          </div>
-
-          {totalSurveysInPeriod > 0 && (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-              <div className="text-center">
-                <p className="text-2xl font-bold text-blue-600">
-                  {filteredSurveys.length > 0 ? (filteredSurveys.reduce((sum, s) => sum + s.service_technician, 0) / filteredSurveys.length).toFixed(1) : '0.0'}
-                </p>
-                <p className="text-sm text-gray-600">Pelayanan Teknisi</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-green-600">
-                  {filteredSurveys.length > 0 ? (filteredSurveys.reduce((sum, s) => sum + s.service_sales, 0) / filteredSurveys.length).toFixed(1) : '0.0'}
-                </p>
-                <p className="text-sm text-gray-600">Pelayanan Sales/CS</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-purple-600">
-                  {filteredSurveys.length > 0 ? (filteredSurveys.reduce((sum, s) => sum + s.product_quality, 0) / filteredSurveys.length).toFixed(1) : '0.0'}
-                </p>
-                <p className="text-sm text-gray-600">Kualitas Produk</p>
-              </div>
-              <div className="text-center">
-                <p className="text-2xl font-bold text-orange-600">
-                  {filteredSurveys.length > 0 ? (filteredSurveys.reduce((sum, s) => sum + s.usage_clarity, 0) / filteredSurveys.length).toFixed(1) : '0.0'}
-                </p>
-                <p className="text-sm text-gray-600">Kejelasan Penggunaan</p>
-              </div>
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Survey Analytics Section - Keseluruhan */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Star className="h-5 w-5" />
-            Analitik Survei Kepuasan - Keseluruhan
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <div className="text-center">
-              <p className="text-2xl font-bold text-blue-600">{surveyAverages.service_technician.toFixed(1)}</p>
-              <p className="text-sm text-gray-600">Pelayanan Teknisi</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-green-600">{surveyAverages.service_sales.toFixed(1)}</p>
-              <p className="text-sm text-gray-600">Pelayanan Sales/CS</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-purple-600">{surveyAverages.product_quality.toFixed(1)}</p>
-              <p className="text-sm text-gray-600">Kualitas Produk</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-orange-600">{surveyAverages.usage_clarity.toFixed(1)}</p>
-              <p className="text-sm text-gray-600">Kejelasan Penggunaan</p>
-            </div>
-            <div className="text-center">
-              <p className="text-2xl font-bold text-red-600">{surveyAverages.recommendationRate.toFixed(1)}%</p>
-              <p className="text-sm text-gray-600">Tingkat Rekomendasi</p>
+              <p className="text-2xl font-bold text-purple-600">{surveyCompletionRate.toFixed(1)}%</p>
+              <p className="text-sm text-gray-600">Tingkat Partisipasi</p>
             </div>
           </div>
           <div className="mt-4 text-center">
             <p className="text-lg font-semibold">Rating Keseluruhan: {surveyAverages.overall.toFixed(1)}/10</p>
-            <p className="text-sm text-gray-500">Berdasarkan {surveys?.length || 0} survei yang telah selesai</p>
+            <p className="text-sm text-gray-500">Tingkat Rekomendasi: {surveyAverages.recommendationRate.toFixed(1)}%</p>
           </div>
         </CardContent>
       </Card>
 
-      {/* Detail Hasil Survei Per Pelanggan */}
-      {customerSurveyDetails.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <User className="h-5 w-5" />
-              Detail Hasil Survei Per Pelanggan - Periode Dipilih
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4 max-h-96 overflow-y-auto">
-              {customerSurveyDetails.map((survey) => (
-                <div key={survey.id} className="border rounded-lg p-4 hover:bg-gray-50">
-                  {/* Customer Info Header */}
-                  <div className="flex items-center justify-between mb-3">
-                    <div className="flex items-center gap-3">
-                      <div className="flex items-center gap-2">
-                        <User className="h-4 w-4 text-blue-500" />
-                        <span className="font-medium text-gray-900">{survey.customer_name}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm text-gray-600">
-                        <Phone className="h-3 w-3" />
-                        <span>{survey.customer_phone}</span>
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <Badge variant="outline" className="text-xs">
-                        {new Date(survey.created_at).toLocaleDateString('id-ID')}
-                      </Badge>
-                      <Badge 
-                        variant={survey.price_approval ? "default" : "secondary"}
-                        className="text-xs"
-                      >
-                        {survey.price_approval ? "Merekomendasikan" : "Tidak Merekomendasikan"}
-                      </Badge>
-                    </div>
+      {/* Performa Sales Deal per Cabang */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Building className="h-5 w-5" />
+            Performa Sales Deal per Cabang
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {salesPerformance.map((branch) => (
+              <div key={branch.branchName} className="border rounded-lg p-4">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="font-semibold text-gray-900">{branch.branchName}</h4>
+                  <Badge variant={parseFloat(branch.conversionRate) >= 50 ? "default" : "secondary"}>
+                    {branch.conversionRate}% Konversi
+                  </Badge>
+                </div>
+                <div className="grid grid-cols-3 gap-4 text-center">
+                  <div>
+                    <p className="text-lg font-bold text-blue-600">{branch.totalProspects}</p>
+                    <p className="text-xs text-gray-600">Total Prospek</p>
                   </div>
-
-                  {/* Customer Address */}
-                  <div className="flex items-center gap-2 mb-3 text-sm text-gray-600">
-                    <MapPin className="h-3 w-3" />
-                    <span>{survey.customer_address}</span>
+                  <div>
+                    <p className="text-lg font-bold text-green-600">{branch.dealCount}</p>
+                    <p className="text-xs text-gray-600">Deal Tercapai</p>
                   </div>
-
-                  {/* Rating Details */}
-                  <div className="grid grid-cols-2 md:grid-cols-5 gap-3 mb-3">
-                    <div className="text-center bg-blue-50 p-2 rounded">
-                      <div className="text-lg font-semibold text-blue-600">{survey.service_technician}</div>
-                      <div className="text-xs text-gray-600">Teknisi</div>
-                    </div>
-                    <div className="text-center bg-green-50 p-2 rounded">
-                      <div className="text-lg font-semibold text-green-600">{survey.service_sales}</div>
-                      <div className="text-xs text-gray-600">Sales/CS</div>
-                    </div>
-                    <div className="text-center bg-purple-50 p-2 rounded">
-                      <div className="text-lg font-semibold text-purple-600">{survey.product_quality}</div>
-                      <div className="text-xs text-gray-600">Produk</div>
-                    </div>
-                    <div className="text-center bg-orange-50 p-2 rounded">
-                      <div className="text-lg font-semibold text-orange-600">{survey.usage_clarity}</div>
-                      <div className="text-xs text-gray-600">Penggunaan</div>
-                    </div>
-                    <div className="text-center bg-yellow-50 p-2 rounded">
-                      <div className="text-lg font-semibold text-yellow-600">{survey.average_rating.toFixed(1)}</div>
-                      <div className="text-xs text-gray-600">Rata-rata</div>
-                    </div>
-                  </div>
-
-                  {/* Testimonial */}
-                  {survey.testimonial && survey.testimonial.trim() && (
-                    <div className="mb-3">
-                      <div className="flex items-center gap-2 mb-1">
-                        <MessageCircle className="h-4 w-4 text-blue-500" />
-                        <span className="text-sm font-medium text-gray-700">Testimoni:</span>
-                      </div>
-                      <div className="bg-blue-50 p-3 rounded border-l-4 border-blue-500">
-                        <p className="text-sm text-gray-700 italic">"{survey.testimonial}"</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Suggestions */}
-                  {survey.suggestions && survey.suggestions.trim() && (
-                    <div>
-                      <div className="flex items-center gap-2 mb-1">
-                        <Award className="h-4 w-4 text-orange-500" />
-                        <span className="text-sm font-medium text-gray-700">Saran & Kritik:</span>
-                      </div>
-                      <div className="bg-orange-50 p-3 rounded border-l-4 border-orange-500">
-                        <p className="text-sm text-gray-700">{survey.suggestions}</p>
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Deal Date */}
-                  <div className="mt-3 pt-2 border-t border-gray-200">
-                    <div className="flex items-center justify-between text-sm text-gray-600">
-                      <span>Tanggal Deal: {new Date(survey.deal_date).toLocaleDateString('id-ID')}</span>
-                      <span>ID Survei: {survey.id.slice(0, 8)}</span>
-                    </div>
+                  <div>
+                    <p className="text-lg font-bold text-purple-600">{branch.conversionRate}%</p>
+                    <p className="text-xs text-gray-600">Tingkat Konversi</p>
                   </div>
                 </div>
-              ))}
-              
-              {customerSurveyDetails.length > 10 && (
-                <div className="text-center py-4">
-                  <p className="text-sm text-gray-500">
-                    Menampilkan semua {customerSurveyDetails.length} hasil survei untuk periode ini
-                  </p>
-                </div>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              </div>
+            ))}
+            {salesPerformance.length === 0 && (
+              <p className="text-center text-gray-500">Tidak ada data cabang</p>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
-      {/* Testimoni & Saran Terbaru dari Periode */}
-      {filteredSurveys.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {/* Testimoni */}
-          {filteredSurveys.filter(s => s.testimonial && s.testimonial.trim()).length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <MessageCircle className="h-5 w-5" />
-                  Testimoni Periode Ini
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {filteredSurveys
-                    .filter(s => s.testimonial && s.testimonial.trim())
-                    .slice(0, 3)
-                    .map((survey) => (
-                      <div key={survey.id} className="border-l-4 border-blue-500 pl-3 py-2 bg-blue-50 rounded-r">
-                        <div className="text-xs text-gray-500 mb-1">
-                          {new Date(survey.created_at).toLocaleDateString('id-ID')}
-                        </div>
-                        <p className="text-sm italic">"{survey.testimonial}"</p>
-                      </div>
-                    ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* Saran & Kritik */}
-          {filteredSurveys.filter(s => s.suggestions && s.suggestions.trim()).length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Award className="h-5 w-5" />
-                  Saran & Kritik Periode Ini
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3 max-h-64 overflow-y-auto">
-                  {filteredSurveys
-                    .filter(s => s.suggestions && s.suggestions.trim())
-                    .slice(0, 3)
-                    .map((survey) => (
-                      <div key={survey.id} className="border-l-4 border-orange-500 pl-3 py-2 bg-orange-50 rounded-r">
-                        <div className="text-xs text-gray-500 mb-1">
-                          {new Date(survey.created_at).toLocaleDateString('id-ID')}
-                        </div>
-                        <p className="text-sm">{survey.suggestions}</p>
-                      </div>
-                    ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-        </div>
-      )}
-
-      {/* Tren Bulanan */}
+      {/* Ringkasan Periode */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -447,7 +378,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
         <CardContent>
           <div className="space-y-4">
             <div className="flex justify-between items-center">
-              <span>Periode:</span>
+              <span>Periode Laporan:</span>
               <span className="font-medium">
                 {selectedPeriod === 'custom' 
                   ? `${customStartDate} - ${customEndDate}`
@@ -456,21 +387,21 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span>Conversion Rate:</span>
+              <span>Total Data Pelanggan:</span>
+              <span className="font-medium">{totalCustomers} Pelanggan</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span>Conversion Rate ke Deal:</span>
               <span className="font-medium">
-                {totalCustomers > 0 ? ((totalOrders / totalCustomers) * 100).toFixed(1) : 0}%
+                {totalCustomers > 0 ? ((followUpStats.deal / totalCustomers) * 100).toFixed(1) : 0}%
               </span>
             </div>
             <div className="flex justify-between items-center">
-              <span>Completion Rate:</span>
+              <span>Completion Rate Pekerjaan:</span>
               <span className="font-medium">
-                {totalOrders > 0 ? ((completedOrders / totalOrders) * 100).toFixed(1) : 0}%
-              </span>
-            </div>
-            <div className="flex justify-between items-center">
-              <span>Survey Response Rate:</span>
-              <span className="font-medium">
-                {totalCustomers > 0 ? ((totalSurveysInPeriod / totalCustomers) * 100).toFixed(1) : 0}%
+                {(workStats.notStarted + workStats.inProgress + workStats.completed + workStats.cancelled) > 0 
+                  ? ((workStats.completed / (workStats.notStarted + workStats.inProgress + workStats.completed + workStats.cancelled)) * 100).toFixed(1)
+                  : 0}%
               </span>
             </div>
           </div>
