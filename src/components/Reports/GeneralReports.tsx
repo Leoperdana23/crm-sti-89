@@ -65,24 +65,26 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
     cancelled: customers?.filter(c => c.work_status === 'cancelled').length || 0,
   };
 
-  // Statistik Karyawan yang Mengerjakan Pekerjaan
+  // Statistik Karyawan berdasarkan Proses Pekerjaan
   const getEmployeeWorkStats = () => {
     const employeeWorkMap = new Map();
     
-    // Initialize all employees
+    // Initialize semua karyawan
     employees?.forEach(emp => {
       const empName = emp.user?.full_name || emp.employee_code;
       employeeWorkMap.set(emp.id, {
+        id: emp.id,
         name: empName,
         code: emp.employee_code,
         totalJobs: 0,
         inProgress: 0,
         completed: 0,
-        notStarted: 0
+        notStarted: 0,
+        cancelled: 0
       });
     });
 
-    // Count work assignments
+    // Hitung penugasan pekerjaan berdasarkan assigned_employees di customers
     customers?.forEach(customer => {
       if (customer.assigned_employees && customer.assigned_employees.length > 0) {
         customer.assigned_employees.forEach(empId => {
@@ -99,6 +101,9 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
                 break;
               case 'not_started':
                 stats.notStarted++;
+                break;
+              case 'cancelled':
+                stats.cancelled++;
                 break;
             }
             
@@ -320,7 +325,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
               <>
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                   {employeeWorkStats.slice(0, 6).map((emp, index) => (
-                    <div key={emp.code} className="border rounded-lg p-4 bg-gray-50">
+                    <div key={emp.id} className="border rounded-lg p-4 bg-gray-50">
                       <div className="flex items-center justify-between mb-2">
                         <h4 className="font-semibold text-gray-900">{emp.name}</h4>
                         <Badge variant="outline">{emp.code}</Badge>
