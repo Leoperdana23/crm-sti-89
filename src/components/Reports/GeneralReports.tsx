@@ -6,7 +6,8 @@ import { useCustomers } from '@/hooks/useCustomers';
 import { useOrders } from '@/hooks/useOrders';
 import { useSurveys } from '@/hooks/useSurveys';
 import { useBranches } from '@/hooks/useBranches';
-import { Users, ShoppingCart, DollarSign, TrendingUp, Star, Calendar, Package, Award, MessageCircle, User, Phone, MapPin, Cake, Building, Clock, CheckCircle } from 'lucide-react';
+import { useEmployees } from '@/hooks/useEmployees';
+import { Users, ShoppingCart, DollarSign, TrendingUp, Star, Calendar, Package, Award, MessageCircle, User, Phone, MapPin, Cake, Building, Clock, CheckCircle, Wrench } from 'lucide-react';
 import DateRangeFilter from './DateRangeFilter';
 import { getDateRange, filterDataByDateRange } from '@/utils/dateFilters';
 
@@ -31,6 +32,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
   const { data: orders } = useOrders();
   const { surveys, getAverageRatings } = useSurveys();
   const { branches } = useBranches();
+  const { employees } = useEmployees();
   const surveyAverages = getAverageRatings();
 
   const { startDate, endDate } = getDateRange(selectedPeriod, customStartDate, customEndDate);
@@ -62,6 +64,56 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
     completed: customers?.filter(c => c.work_status === 'completed').length || 0,
     cancelled: customers?.filter(c => c.work_status === 'cancelled').length || 0,
   };
+
+  // Statistik Karyawan yang Mengerjakan Pekerjaan
+  const getEmployeeWorkStats = () => {
+    const employeeWorkMap = new Map();
+    
+    // Initialize all employees
+    employees?.forEach(emp => {
+      const empName = emp.user?.full_name || emp.employee_code;
+      employeeWorkMap.set(emp.id, {
+        name: empName,
+        code: emp.employee_code,
+        totalJobs: 0,
+        inProgress: 0,
+        completed: 0,
+        notStarted: 0
+      });
+    });
+
+    // Count work assignments
+    customers?.forEach(customer => {
+      if (customer.assigned_employees && customer.assigned_employees.length > 0) {
+        customer.assigned_employees.forEach(empId => {
+          if (employeeWorkMap.has(empId)) {
+            const stats = employeeWorkMap.get(empId);
+            stats.totalJobs++;
+            
+            switch (customer.work_status) {
+              case 'in_progress':
+                stats.inProgress++;
+                break;
+              case 'completed':
+                stats.completed++;
+                break;
+              case 'not_started':
+                stats.notStarted++;
+                break;
+            }
+            
+            employeeWorkMap.set(empId, stats);
+          }
+        });
+      }
+    });
+
+    return Array.from(employeeWorkMap.values())
+      .filter(emp => emp.totalJobs > 0)
+      .sort((a, b) => b.totalJobs - a.totalJobs);
+  };
+
+  const employeeWorkStats = getEmployeeWorkStats();
 
   // Ulang Tahun (dalam 30 hari ke depan)
   const today = new Date();
@@ -254,6 +306,90 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
         </Card>
       </div>
 
+      {/* Laporan Karyawan Proses Pekerjaan */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Wrench className="h-5 w-5" />
+            Laporan Karyawan Proses Pekerjaan
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {employeeWorkStats.length > 0 ? (
+              <>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                  {employeeWorkStats.slice(0, 6).map((emp, index) => (
+                    <div key={emp.code} className="border rounded-lg p-4 bg-gray-50">
+                      <div className="flex items-center justify-between mb-2">
+                        <h4 className="font-semibold text-gray-900">{emp.name}</h4>
+                        <Badge variant="outline">{emp.code}</Badge>
+                      </div>
+                      <div className="grid grid-cols-2 gap-2 text-sm">
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-blue-600">{emp.totalJobs}</p>
+                          <p className="text-xs text-gray-600">Total Kerja</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-green-600">{emp.completed}</p>
+                          <p className="text-xs text-gray-600">Selesai</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-yellow-600">{emp.inProgress}</p>
+                          <p className="text-xs text-gray-600">Progress</p>
+                        </div>
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-gray-600">{emp.notStarted}</p>
+                          <p className="text-xs text-gray-600">Belum Mulai</p>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+                {employeeWorkStats.length > 6 && (
+                  <div className="text-center pt-4 border-t">
+                    <p className="text-sm text-gray-500">
+                      +{employeeWorkStats.length - 6} karyawan lainnya dengan total {employeeWorkStats.slice(6).reduce((acc, emp) => acc + emp.totalJobs, 0)} pekerjaan
+                    </p>
+                  </div>
+                )}
+                <div className="mt-4 p-4 bg-blue-50 rounded-lg">
+                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-center">
+                    <div>
+                      <p className="text-2xl font-bold text-blue-600">{employeeWorkStats.length}</p>
+                      <p className="text-sm text-gray-600">Karyawan Aktif</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-green-600">
+                        {employeeWorkStats.reduce((acc, emp) => acc + emp.totalJobs, 0)}
+                      </p>
+                      <p className="text-sm text-gray-600">Total Pekerjaan</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-yellow-600">
+                        {employeeWorkStats.reduce((acc, emp) => acc + emp.inProgress, 0)}
+                      </p>
+                      <p className="text-sm text-gray-600">Sedang Dikerjakan</p>
+                    </div>
+                    <div>
+                      <p className="text-2xl font-bold text-purple-600">
+                        {employeeWorkStats.reduce((acc, emp) => acc + emp.completed, 0)}
+                      </p>
+                      <p className="text-sm text-gray-600">Telah Selesai</p>
+                    </div>
+                  </div>
+                </div>
+              </>
+            ) : (
+              <div className="text-center py-8">
+                <Wrench className="h-12 w-12 text-gray-400 mx-auto mb-2" />
+                <p className="text-gray-500">Tidak ada data pekerjaan karyawan</p>
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Ulang Tahun */}
       <Card>
         <CardHeader>
@@ -403,6 +539,10 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
                   ? ((workStats.completed / (workStats.notStarted + workStats.inProgress + workStats.completed + workStats.cancelled)) * 100).toFixed(1)
                   : 0}%
               </span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span>Karyawan Aktif Mengerjakan:</span>
+              <span className="font-medium">{employeeWorkStats.length} Karyawan</span>
             </div>
           </div>
         </CardContent>
