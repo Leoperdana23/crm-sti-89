@@ -21,7 +21,7 @@ export interface Customer {
   work_completed_date?: string;
   work_notes?: string;
   estimated_days?: number;
-  assigned_employees?: string[];
+  assigned_employees?: string[] | string; // Support both array and JSON string format
 }
 
 export interface Interaction {

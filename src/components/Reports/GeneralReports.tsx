@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -69,7 +68,7 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
   const getEmployeeWorkStats = () => {
     const employeeWorkMap = new Map();
     
-    // Initialize semua karyawan
+    // Initialize semua karyawan dengan data kosong
     employees?.forEach(emp => {
       const empName = emp.user?.full_name || emp.employee_code;
       employeeWorkMap.set(emp.id, {
@@ -86,8 +85,24 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
 
     // Hitung penugasan pekerjaan berdasarkan assigned_employees di customers
     customers?.forEach(customer => {
-      if (customer.assigned_employees && customer.assigned_employees.length > 0) {
-        customer.assigned_employees.forEach(empId => {
+      if (customer.assigned_employees) {
+        let employeeIds: string[] = [];
+        
+        // Handle both string (JSON) and array formats
+        if (typeof customer.assigned_employees === 'string') {
+          try {
+            const parsed = JSON.parse(customer.assigned_employees);
+            employeeIds = Array.isArray(parsed) ? parsed : [];
+          } catch (e) {
+            // If not valid JSON, skip this customer
+            return;
+          }
+        } else if (Array.isArray(customer.assigned_employees)) {
+          employeeIds = customer.assigned_employees;
+        }
+
+        // Process each assigned employee
+        employeeIds.forEach(empId => {
           if (employeeWorkMap.has(empId)) {
             const stats = employeeWorkMap.get(empId);
             stats.totalJobs++;
@@ -104,6 +119,9 @@ const GeneralReports: React.FC<GeneralReportsProps> = ({
                 break;
               case 'cancelled':
                 stats.cancelled++;
+                break;
+              default:
+                stats.notStarted++;
                 break;
             }
             

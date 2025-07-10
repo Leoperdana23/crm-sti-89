@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Input } from '@/components/ui/input';
 import { Checkbox } from '@/components/ui/checkbox';
 import { UserPlus, X } from 'lucide-react';
-import { useSales } from '@/hooks/useSales';
+import { useEmployees } from '@/hooks/useEmployees';
 
 interface WorkAssignmentDialogProps {
   isOpen: boolean;
@@ -26,7 +26,7 @@ const WorkAssignmentDialog: React.FC<WorkAssignmentDialogProps> = ({
   onAssign,
   customerName
 }) => {
-  const { sales } = useSales();
+  const { employees } = useEmployees();
   const [selectedEmployees, setSelectedEmployees] = useState<string[]>([]);
   const [workNotes, setWorkNotes] = useState('');
   const [estimatedDays, setEstimatedDays] = useState('');
@@ -60,8 +60,8 @@ const WorkAssignmentDialog: React.FC<WorkAssignmentDialogProps> = ({
 
   const getSelectedEmployeeNames = () => {
     return selectedEmployees.map(id => {
-      const employee = sales.find(s => s.id === id);
-      return employee?.name || 'Unknown';
+      const employee = employees.find(emp => emp.id === id);
+      return employee?.user?.full_name || employee?.employee_code || 'Unknown';
     });
   };
 
@@ -100,7 +100,7 @@ const WorkAssignmentDialog: React.FC<WorkAssignmentDialogProps> = ({
             <h4 className="font-medium mb-3">Pilih Karyawan (Opsional):</h4>
             <p className="text-sm text-gray-600 mb-3">Anda dapat mengassign karyawan sekarang atau nanti</p>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-3 max-h-60 overflow-y-auto border rounded-lg p-4">
-              {sales.map((employee) => (
+              {employees.map((employee) => (
                 <div key={employee.id} className="flex items-center space-x-3 p-2 hover:bg-gray-50 rounded">
                   <Checkbox
                     id={employee.id}
@@ -112,8 +112,8 @@ const WorkAssignmentDialog: React.FC<WorkAssignmentDialogProps> = ({
                     className="flex-1 cursor-pointer"
                   >
                     <div>
-                      <p className="font-medium">{employee.name}</p>
-                      <p className="text-sm text-gray-600">{employee.code}</p>
+                      <p className="font-medium">{employee.user?.full_name || employee.employee_code}</p>
+                      <p className="text-sm text-gray-600">{employee.employee_code}</p>
                     </div>
                   </label>
                 </div>

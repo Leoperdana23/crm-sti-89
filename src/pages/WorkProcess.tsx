@@ -10,6 +10,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Calendar, Users, Clock, CheckCircle, XCircle, Search, Filter, Play, Pause, X } from 'lucide-react';
 import { useCustomers } from '@/hooks/useCustomers';
 import { useBranches } from '@/hooks/useBranches';
+import { useEmployees } from '@/hooks/useEmployees';
 import { Customer } from '@/types/customer';
 import { useToast } from '@/hooks/use-toast';
 import WorkAssignmentDialog from '@/components/WorkAssignmentDialog';
@@ -17,6 +18,7 @@ import WorkAssignmentDialog from '@/components/WorkAssignmentDialog';
 const WorkProcess = () => {
   const { customers, loading, updateCustomer, cancelWorkProcess } = useCustomers();
   const { branches } = useBranches();
+  const { employees } = useEmployees();
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState('all');
@@ -75,7 +77,8 @@ const WorkProcess = () => {
           work_status: 'not_started',
           work_start_date: undefined,
           work_completed_date: undefined,
-          work_notes: undefined
+          work_notes: undefined,
+          assigned_employees: undefined
         });
         toast({
           title: "Berhasil",
@@ -94,12 +97,15 @@ const WorkProcess = () => {
   const handleAssignmentComplete = async (assignmentData: any) => {
     try {
       if (selectedCustomer) {
+        // Store employee IDs as array for proper processing
+        const assignedEmployeesArray = assignmentData.employeeIds.length > 0 ? assignmentData.employeeIds : null;
+        
         await updateCustomer({
           id: selectedCustomer.id,
           work_status: 'in_progress',
           work_start_date: new Date().toISOString(),
           estimated_days: assignmentData.estimatedDays ? parseInt(assignmentData.estimatedDays) : undefined,
-          assigned_employees: assignmentData.employeeIds,
+          assigned_employees: assignedEmployeesArray,
           work_notes: assignmentData.workNotes
         });
         
@@ -144,6 +150,16 @@ const WorkProcess = () => {
         variant: "destructive"
       });
     }
+  };
+
+  // Helper function to get employee names from IDs
+  const getEmployeeNames = (employeeIds: string[] | null | undefined): string[] => {
+    if (!employeeIds || !Array.isArray(employeeIds)) return [];
+    
+    return employeeIds.map(id => {
+      const employee = employees.find(emp => emp.id === id);
+      return employee?.user?.full_name || employee?.employee_code || 'Unknown';
+    }).filter(name => name !== 'Unknown');
   };
 
   const stats = {
@@ -265,117 +281,125 @@ const WorkProcess = () => {
 
       {/* Work Process List */}
       <div className="grid grid-cols-1 gap-4">
-        {filteredCustomers.map((customer) => (
-          <Card key={customer.id} className="hover:shadow-lg transition-all duration-300">
-            <CardContent className="p-6">
-              <div className="flex justify-between items-start">
-                <div className="flex-1">
-                  <div className="flex items-center gap-3 mb-2">
-                    <h3 className="font-semibold text-lg text-gray-900">{customer.name}</h3>
-                    <Badge className={getStatusColor(customer.work_status)}>
-                      {getStatusText(customer.work_status)}
-                    </Badge>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
-                    <div>
-                      <strong>Telepon:</strong> {customer.phone}
+        {filteredCustomers.map((customer) => {
+          const assignedEmployeeNames = getEmployeeNames(
+            typeof customer.assigned_employees === 'string' 
+              ? JSON.parse(customer.assigned_employees) 
+              : customer.assigned_employees
+          );
+
+          return (
+            <Card key={customer.id} className="hover:shadow-lg transition-all duration-300">
+              <CardContent className="p-6">
+                <div className="flex justify-between items-start">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-3 mb-2">
+                      <h3 className="font-semibold text-lg text-gray-900">{customer.name}</h3>
+                      <Badge className={getStatusColor(customer.work_status)}>
+                        {getStatusText(customer.work_status)}
+                      </Badge>
                     </div>
-                    <div>
-                      <strong>Alamat:</strong> {customer.address}
-                    </div>
-                    {customer.deal_date && (
+                    
+                    <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm text-gray-600">
                       <div>
-                        <strong>Tanggal Deal:</strong> {new Date(customer.deal_date).toLocaleDateString('id-ID')}
+                        <strong>Telepon:</strong> {customer.phone}
+                      </div>
+                      <div>
+                        <strong>Alamat:</strong> {customer.address}
+                      </div>
+                      {customer.deal_date && (
+                        <div>
+                          <strong>Tanggal Deal:</strong> {new Date(customer.deal_date).toLocaleDateString('id-ID')}
+                        </div>
+                      )}
+                      {customer.estimated_days && (
+                        <div>
+                          <strong>Estimasi:</strong> {customer.estimated_days} hari
+                        </div>
+                      )}
+                    </div>
+
+                    {customer.work_start_date && (
+                      <div className="mt-2 text-sm text-gray-600">
+                        <strong>Dimulai:</strong> {new Date(customer.work_start_date).toLocaleDateString('id-ID')}
                       </div>
                     )}
-                    {customer.estimated_days && (
-                      <div>
-                        <strong>Estimasi:</strong> {customer.estimated_days} hari
+
+                    {customer.work_completed_date && (
+                      <div className="mt-2 text-sm text-gray-600">
+                        <strong>Selesai:</strong> {new Date(customer.work_completed_date).toLocaleDateString('id-ID')}
+                      </div>
+                    )}
+
+                    {assignedEmployeeNames.length > 0 && (
+                      <div className="mt-2">
+                        <strong className="text-sm text-gray-600">Karyawan:</strong>
+                        <div className="flex flex-wrap gap-1 mt-1">
+                          {assignedEmployeeNames.map((name, index) => (
+                            <Badge key={index} variant="secondary" className="text-xs">
+                              {name}
+                            </Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    {customer.work_notes && (
+                      <div className="mt-2 text-sm text-gray-600">
+                        <strong>Catatan:</strong> {customer.work_notes}
                       </div>
                     )}
                   </div>
-
-                  {customer.work_start_date && (
-                    <div className="mt-2 text-sm text-gray-600">
-                      <strong>Dimulai:</strong> {new Date(customer.work_start_date).toLocaleDateString('id-ID')}
-                    </div>
-                  )}
-
-                  {customer.work_completed_date && (
-                    <div className="mt-2 text-sm text-gray-600">
-                      <strong>Selesai:</strong> {new Date(customer.work_completed_date).toLocaleDateString('id-ID')}
-                    </div>
-                  )}
-
-                  {customer.assigned_employees && customer.assigned_employees.length > 0 && (
-                    <div className="mt-2">
-                      <strong className="text-sm text-gray-600">Karyawan:</strong>
-                      <div className="flex flex-wrap gap-1 mt-1">
-                        {customer.assigned_employees.map((employeeId, index) => (
-                          <Badge key={index} variant="secondary" className="text-xs">
-                            {employeeId}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-
-                  {customer.work_notes && (
-                    <div className="mt-2 text-sm text-gray-600">
-                      <strong>Catatan:</strong> {customer.work_notes}
-                    </div>
-                  )}
-                </div>
-                
-                <div className="flex space-x-2 ml-4">
-                  {(!customer.work_status || customer.work_status === 'not_started') && (
-                    <Button
-                      onClick={() => handleStartWork(customer)}
-                      className="bg-green-500 hover:bg-green-600 text-white"
-                      size="sm"
-                    >
-                      <Play className="h-4 w-4 mr-1" />
-                      Mulai
-                    </Button>
-                  )}
                   
-                  {customer.work_status === 'in_progress' && (
-                    <>
+                  <div className="flex space-x-2 ml-4">
+                    {(!customer.work_status || customer.work_status === 'not_started') && (
                       <Button
-                        onClick={() => handleCompleteWork(customer)}
-                        className="bg-blue-500 hover:bg-blue-600 text-white"
+                        onClick={() => handleStartWork(customer)}
+                        className="bg-green-500 hover:bg-green-600 text-white"
                         size="sm"
                       >
-                        <CheckCircle className="h-4 w-4 mr-1" />
-                        Selesai
+                        <Play className="h-4 w-4 mr-1" />
+                        Mulai
                       </Button>
+                    )}
+                    
+                    {customer.work_status === 'in_progress' && (
+                      <>
+                        <Button
+                          onClick={() => handleCompleteWork(customer)}
+                          className="bg-blue-500 hover:bg-blue-600 text-white"
+                          size="sm"
+                        >
+                          <CheckCircle className="h-4 w-4 mr-1" />
+                          Selesai
+                        </Button>
+                        <Button
+                          onClick={() => handleCancelWork(customer)}
+                          variant="destructive"
+                          size="sm"
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Batal
+                        </Button>
+                      </>
+                    )}
+
+                    {customer.work_status === 'completed' && (
                       <Button
                         onClick={() => handleCancelWork(customer)}
-                        variant="destructive"
+                        variant="outline"
                         size="sm"
                       >
                         <X className="h-4 w-4 mr-1" />
-                        Batal
+                        Reset
                       </Button>
-                    </>
-                  )}
-
-                  {customer.work_status === 'completed' && (
-                    <Button
-                      onClick={() => handleCancelWork(customer)}
-                      variant="outline"
-                      size="sm"
-                    >
-                      <X className="h-4 w-4 mr-1" />
-                      Reset
-                    </Button>
-                  )}
+                    )}
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          );
+        })}
       </div>
 
       {filteredCustomers.length === 0 && (
