@@ -86,7 +86,7 @@ const ResellerManagement = () => {
       reseller.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
       reseller.phone.includes(searchTerm) ||
       reseller.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      reseller.reseller_id?.toLowerCase().includes(searchTerm.toLowerCase());
+      reseller.id.toLowerCase().includes(searchTerm.toLowerCase()); // Use reseller.id instead of reseller_id
     
     const matchesStatus = statusFilter === 'all' || 
       (statusFilter === 'active' && reseller.is_active) ||
@@ -274,7 +274,7 @@ const ResellerManagement = () => {
                       <TableCell>
                         <div className="flex items-center gap-1 text-sm">
                           <Hash className="h-3 w-3" />
-                          {reseller.reseller_id || reseller.id.slice(-8)}
+                          {reseller.id.slice(-8)} {/* Use reseller.id instead of reseller_id */}
                         </div>
                       </TableCell>
                       <TableCell>

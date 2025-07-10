@@ -96,13 +96,18 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
     try {
       console.log('Form data before submission:', data);
       
+      // Ensure required fields are present and properly typed
       const processedData = {
-        ...data,
+        name: data.name, // Required field
+        phone: data.phone, // Required field  
+        address: data.address, // Required field
         birth_date: data.birth_date || undefined,
         email: data.email || undefined,
         id_number: data.id_number || undefined,
         notes: data.notes || undefined,
         branch_id: data.branch_id === 'no-branch' ? undefined : data.branch_id || undefined,
+        commission_rate: data.commission_rate,
+        is_active: data.is_active,
         password: data.password || undefined,
       };
       
