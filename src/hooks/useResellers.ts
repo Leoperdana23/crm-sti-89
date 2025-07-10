@@ -39,9 +39,8 @@ export const useCreateReseller = () => {
     mutationFn: async (resellerData: CreateResellerData) => {
       console.log('Creating reseller:', resellerData);
       
-      // Clean the data before sending
+      // Clean the data before sending - remove reseller_id field
       const cleanData = {
-        reseller_id: resellerData.reseller_id || null,
         name: resellerData.name,
         phone: resellerData.phone,
         address: resellerData.address,
@@ -49,9 +48,11 @@ export const useCreateReseller = () => {
         email: resellerData.email || null,
         id_number: resellerData.id_number || null,
         notes: resellerData.notes || null,
-        branch_id: resellerData.branch_id || null,
+        branch_id: resellerData.branch_id === 'no-branch' ? null : resellerData.branch_id || null,
         is_active: resellerData.is_active ?? true,
         password_hash: resellerData.password || null,
+        commission_rate: resellerData.commission_rate || 10,
+        total_points: 0,
       };
       
       const { data, error } = await supabase
@@ -94,9 +95,8 @@ export const useUpdateReseller = () => {
     mutationFn: async ({ id, ...updates }: UpdateResellerData) => {
       console.log('Updating reseller:', id, updates);
       
-      // Clean the data before sending
+      // Clean the data before sending - remove reseller_id field
       const cleanData = {
-        reseller_id: updates.reseller_id || null,
         name: updates.name,
         phone: updates.phone,
         address: updates.address,
@@ -104,7 +104,7 @@ export const useUpdateReseller = () => {
         email: updates.email || null,
         id_number: updates.id_number || null,
         notes: updates.notes || null,
-        branch_id: updates.branch_id || null,
+        branch_id: updates.branch_id === 'no-branch' ? null : updates.branch_id || null,
         is_active: updates.is_active,
         ...(updates.password && { password_hash: updates.password }),
       };

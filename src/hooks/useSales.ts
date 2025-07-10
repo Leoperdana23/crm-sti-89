@@ -15,6 +15,20 @@ export interface Sales {
   updated_at: string;
 }
 
+export interface CreateSalesData {
+  name: string;
+  code: string;
+  email?: string;
+  phone?: string;
+  branch_id?: string;
+  password?: string;
+  is_active?: boolean;
+}
+
+export interface UpdateSalesData extends Partial<CreateSalesData> {
+  id: string;
+}
+
 export const useSales = () => {
   const { data, isLoading, error } = useQuery({
     queryKey: ['sales'],
@@ -50,14 +64,32 @@ export const useCreateSales = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async (salesData: Omit<Sales, 'id' | 'created_at' | 'updated_at'>) => {
+    mutationFn: async (salesData: CreateSalesData) => {
+      console.log('Creating sales:', salesData);
+      
+      // Clean the data before sending
+      const cleanData = {
+        name: salesData.name,
+        code: salesData.code,
+        email: salesData.email || null,
+        phone: salesData.phone || null,
+        branch_id: salesData.branch_id === 'no-branch' ? null : salesData.branch_id || null,
+        is_active: salesData.is_active ?? true,
+        password_hash: salesData.password || null,
+      };
+
       const { data, error } = await supabase
         .from('sales')
-        .insert([salesData])
+        .insert([cleanData])
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error creating sales:', error);
+        throw error;
+      }
+
+      console.log('Sales created successfully:', data);
       return data;
     },
     onSuccess: () => {
@@ -83,15 +115,33 @@ export const useUpdateSales = () => {
   const { toast } = useToast();
 
   return useMutation({
-    mutationFn: async ({ id, ...updateData }: Partial<Sales> & { id: string }) => {
+    mutationFn: async ({ id, ...updateData }: UpdateSalesData) => {
+      console.log('Updating sales:', id, updateData);
+      
+      // Clean the data before sending
+      const cleanData = {
+        name: updateData.name,
+        code: updateData.code,
+        email: updateData.email || null,
+        phone: updateData.phone || null,
+        branch_id: updateData.branch_id === 'no-branch' ? null : updateData.branch_id || null,
+        is_active: updateData.is_active,
+        ...(updateData.password && { password_hash: updateData.password }),
+      };
+
       const { data, error } = await supabase
         .from('sales')
-        .update(updateData)
+        .update(cleanData)
         .eq('id', id)
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error updating sales:', error);
+        throw error;
+      }
+
+      console.log('Sales updated successfully:', data);
       return data;
     },
     onSuccess: () => {

@@ -1,6 +1,8 @@
 
 import React from 'react';
 import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -12,6 +14,22 @@ import { useCreateReseller, useUpdateReseller, useDeleteReseller } from '@/hooks
 import { useBranches } from '@/hooks/useBranches';
 import { Reseller } from '@/types/reseller';
 import { Trash2, Loader2 } from 'lucide-react';
+
+const resellerSchema = z.object({
+  name: z.string().min(1, 'Nama harus diisi'),
+  phone: z.string().min(1, 'Nomor HP harus diisi'),
+  address: z.string().min(1, 'Alamat harus diisi'),
+  birth_date: z.string().optional(),
+  email: z.string().email('Email tidak valid').optional().or(z.literal('')),
+  id_number: z.string().optional(),
+  notes: z.string().optional(),
+  branch_id: z.string().optional(),
+  commission_rate: z.number().min(0).max(100).optional(),
+  is_active: z.boolean().optional(),
+  password: z.string().optional(),
+});
+
+type ResellerFormData = z.infer<typeof resellerSchema>;
 
 interface ResellerFormProps {
   isOpen: boolean;
@@ -25,18 +43,19 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
   const updateResellerMutation = useUpdateReseller();
   const deleteResellerMutation = useDeleteReseller();
 
-  const form = useForm({
+  const form = useForm<ResellerFormData>({
+    resolver: zodResolver(resellerSchema),
     defaultValues: {
-      reseller_id: reseller?.reseller_id || '',
-      name: reseller?.name || '',
-      phone: reseller?.phone || '',
-      address: reseller?.address || '',
-      birth_date: reseller?.birth_date || '',
-      email: reseller?.email || '',
-      id_number: reseller?.id_number || '',
-      notes: reseller?.notes || '',
-      branch_id: reseller?.branch_id || '',
-      is_active: reseller?.is_active ?? true,
+      name: '',
+      phone: '',
+      address: '',
+      birth_date: '',
+      email: '',
+      id_number: '',
+      notes: '',
+      branch_id: '',
+      commission_rate: 10,
+      is_active: true,
       password: '',
     },
   });
@@ -44,7 +63,6 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
   React.useEffect(() => {
     if (reseller) {
       form.reset({
-        reseller_id: reseller.reseller_id || '',
         name: reseller.name,
         phone: reseller.phone,
         address: reseller.address,
@@ -53,12 +71,12 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
         id_number: reseller.id_number || '',
         notes: reseller.notes || '',
         branch_id: reseller.branch_id || '',
+        commission_rate: reseller.commission_rate || 10,
         is_active: reseller.is_active,
         password: '',
       });
     } else {
       form.reset({
-        reseller_id: '',
         name: '',
         phone: '',
         address: '',
@@ -67,25 +85,25 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
         id_number: '',
         notes: '',
         branch_id: '',
+        commission_rate: 10,
         is_active: true,
         password: '',
       });
     }
   }, [reseller, form]);
 
-  const onSubmit = async (data: any) => {
+  const onSubmit = async (data: ResellerFormData) => {
     try {
       console.log('Form data before submission:', data);
       
       const processedData = {
         ...data,
-        reseller_id: data.reseller_id || null,
-        birth_date: data.birth_date || null,
-        email: data.email || null,
-        id_number: data.id_number || null,
-        notes: data.notes || null,
-        branch_id: data.branch_id === 'no-branch' ? null : data.branch_id || null,
-        password: data.password || null,
+        birth_date: data.birth_date || undefined,
+        email: data.email || undefined,
+        id_number: data.id_number || undefined,
+        notes: data.notes || undefined,
+        branch_id: data.branch_id === 'no-branch' ? undefined : data.branch_id || undefined,
+        password: data.password || undefined,
       };
       
       console.log('Processed form data:', processedData);
@@ -159,20 +177,6 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <FormField
-                control={form.control}
-                name="reseller_id"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>ID Reseller</FormLabel>
-                    <FormControl>
-                      <Input placeholder="Masukkan ID reseller (opsional)" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-
               <FormField
                 control={form.control}
                 name="name"
@@ -264,6 +268,25 @@ const ResellerForm = ({ isOpen, onClose, reseller }: ResellerFormProps) => {
                         ))}
                       </SelectContent>
                     </Select>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              <FormField
+                control={form.control}
+                name="commission_rate"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Rate Komisi (%)</FormLabel>
+                    <FormControl>
+                      <Input 
+                        type="number" 
+                        placeholder="10" 
+                        {...field}
+                        onChange={(e) => field.onChange(parseFloat(e.target.value) || 0)}
+                      />
+                    </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}

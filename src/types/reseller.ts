@@ -1,7 +1,6 @@
 
 export interface Reseller {
   id: string;
-  reseller_id?: string; // Custom reseller ID field
   name: string;
   phone: string;
   address: string;
@@ -23,7 +22,6 @@ export interface Reseller {
 }
 
 export interface CreateResellerData {
-  reseller_id?: string; // Custom reseller ID
   name: string;
   phone: string;
   address: string;
